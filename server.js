@@ -44,6 +44,7 @@ function getWordList(packKey) {
   if (packKey && wordPacks[packKey]) {
     return wordPacks[packKey].slice();
   }
+  // "all" או לא הוגדר -> מחברים את הכל
   const set = new Set();
   Object.values(wordPacks).forEach(list => {
     list.forEach(w => set.add(w));
@@ -69,6 +70,7 @@ function pickRandomWord(game) {
   }
 
   if (game.usedIndices.size >= game.wordList.length) {
+    // התחלה מחודשת של רשימת המילים
     game.usedIndices = new Set();
   }
 
@@ -196,14 +198,17 @@ io.on("connection", socket => {
     let explainerId = data.explainerId;
     const roundTime = Number(data.roundTime) || 60;
 
-    // אם לא נבחר מסביר ספציפי – ניקח אוטומטית מישהו מהקבוצה
+    // אם לא נבחר מסביר ספציפי – נבחר אוטומטית שחקן מהקבוצה (מעדיפים לא-מנהל)
     if (!explainerId || !game.players[explainerId] || game.players[explainerId].teamId !== teamId) {
-      const candidates = Object.values(game.players).filter(p => p.teamId === teamId);
-      if (candidates.length === 0) {
+      const allCandidates = Object.values(game.players).filter(p => p.teamId === teamId);
+      const nonHostCandidates = allCandidates.filter(p => !p.isHost);
+
+      const chosenList = nonHostCandidates.length ? nonHostCandidates : allCandidates;
+      if (chosenList.length === 0) {
         console.log("אין שחקנים בקבוצה", teamId, "למשחק", code);
         return;
       }
-      explainerId = candidates[0].id;
+      explainerId = chosenList[0].id;
     }
 
     game.state.phase = "playing";
