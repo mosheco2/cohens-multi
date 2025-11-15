@@ -88,6 +88,16 @@
       color: #451a03;
       flex: 1;
     }
+    .btn-exit {
+      background: transparent;
+      border: 1px solid #f97373;
+      color: #fecaca;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .btn-exit:hover {
+      background: rgba(248,113,113,0.18);
+    }
     .btn[disabled] {
       opacity: 0.5;
       cursor: default;
@@ -149,6 +159,7 @@
 </head>
 <body>
   <div class="app">
+    <!-- כרטיס הצטרפות -->
     <div class="card" id="join-card">
       <h2 style="margin-bottom:8px;">כהנ'ס - הצטרפות למשחק</h2>
       <p style="margin:0 0 10px; font-size:0.85rem; color:#9ca3af;">
@@ -176,6 +187,7 @@
       <p id="joinError" class="status-text" style="color:#f97373; margin-top:8px;"></p>
     </div>
 
+    <!-- כרטיס שחקן לאחר הצטרפות -->
     <div class="card hidden" id="player-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <h3 style="margin:0; font-size:1.1rem;">כהנ'ס - משחק פעיל</h3>
@@ -186,8 +198,10 @@
       <div class="status-text" id="playerInfo">
         מחכה להתחלת המשחק...
       </div>
+      <button id="leaveBtn" class="btn btn-exit">🚪 יציאה מהמשחק</button>
     </div>
 
+    <!-- כרטיס למסביר -->
     <div class="card hidden" id="explainer-card">
       <div class="tag" style="margin-bottom:6px;">
         אתה המסביר בסיבוב הזה
@@ -202,11 +216,13 @@
       </div>
     </div>
 
+    <!-- סטטוס סיבוב -->
     <div class="card hidden" id="round-status-card">
       <h3 style="margin:0 0 8px; font-size:1rem;">מצב סיבוב</h3>
       <div class="status-text" id="roundStatus">מחכים להתחלת סיבוב...</div>
     </div>
 
+    <!-- ניקוד + באנר -->
     <div class="card hidden" id="score-card">
       <h3 style="margin:0 0 8px; font-size:1rem;">ניקוד</h3>
       <div id="scoreboardDynamic"></div>
@@ -241,6 +257,7 @@
     const playerCard = document.getElementById("player-card");
     const tagGameCode = document.getElementById("tagGameCode");
     const playerInfo = document.getElementById("playerInfo");
+    const leaveBtn = document.getElementById("leaveBtn");
 
     const explainerCard = document.getElementById("explainer-card");
     const currentWordEl = document.getElementById("currentWord");
@@ -255,6 +272,7 @@
     const scoreboardDynamic = document.getElementById("scoreboardDynamic");
     const scoreTarget = document.getElementById("scoreTarget");
 
+    // טעינת מצב קודם מהטלפון (בשביל auto-rejoin)
     (function loadFromStorage() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -299,6 +317,21 @@
           })
         );
       } catch (e) {}
+    }
+
+    function clearStateAndReload() {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {}
+      hasJoined = false;
+      joinedGameCode = null;
+      myName = null;
+      myTeamId = null;
+      lastGameState = null;
+      isExplainer = false;
+      savedStateForAutoJoin = null;
+      // רענון מלא למסך השחקן בלי הצטרפות אוטומטית
+      window.location.href = "/player.html";
     }
 
     function updatePlayerInfo() {
@@ -399,6 +432,7 @@
       );
     }
 
+    // הצטרפות ידנית למשחק
     joinBtn.addEventListener("click", () => {
       joinError.textContent = "";
       const code = (joinCodeInput.value || "").trim().toUpperCase();
@@ -545,6 +579,7 @@
       isExplainer = false;
       explainerCard.classList.add("hidden");
 
+      // מנקים את הזיכרון כדי שלא ייכנסו אוטומטית למשחק שכבר נגמר
       try {
         localStorage.removeItem(STORAGE_KEY);
       } catch (e) {}
@@ -558,6 +593,13 @@
     skipBtn.addEventListener("click", () => {
       if (!isExplainer || !joinedGameCode) return;
       socket.emit("skipWord", { gameCode: joinedGameCode });
+    });
+
+    // כפתור יציאה מהמשחק
+    leaveBtn.addEventListener("click", () => {
+      const ok = confirm("לצאת מהמשחק? תוכל להצטרף שוב עם קוד חדש.");
+      if (!ok) return;
+      clearStateAndReload();
     });
 
     // טעינת באנר לשחקן
