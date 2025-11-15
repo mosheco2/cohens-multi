@@ -1,433 +1,534 @@
+// server.js
+const path = require("path");
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
-const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
-
-// מגישים את קבצי ה-HTML / JS / CSS מתוך public
+app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// מצב המשחקים בזיכרון (לא בבסיס נתונים)
-const games = {};
+const ADMIN_CODE = process.env.COHENS_ADMIN_CODE || "cohens1234";
 
-// מאגרי מילים לפי חבילות
-const wordPacks = {
-  family: [
-    "כלב","חתול","אמא","אבא","אח","אחות","גן","בית ספר","מחברת","עיפרון",
-    "כדור","נדנדה","גלידה","עוגה","פיצה","מים","חולצה","מכנסיים","נעליים",
-    "חדר","מיטה","שמיכה","צעצוע","בובה","בלון","סוכריה","קניון","סבא",
-    "סבתא","ים","בריכה","מעלית","מדרגות","חנות צעצועים","טלוויזיה","מסעדה",
-    "חג","מתנה","יום הולדת"
-  ],
+// ----------------- BANNNERS (IN-MEMORY) -----------------
+
+let banners = {
+  index: {
+    imageUrl: "",
+    linkUrl: ""
+  },
+  host: {
+    imageUrl: "",
+    linkUrl: ""
+  },
+  player: {
+    imageUrl: "",
+    linkUrl: ""
+  }
+};
+
+app.get("/api/banners", (req, res) => {
+  res.json(banners);
+});
+
+app.post("/api/admin/banners", (req, res) => {
+  const { adminCode, index, host, player } = req.body || {};
+  if (!adminCode || adminCode !== ADMIN_CODE) {
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
+  }
+
+  if (index) {
+    banners.index = {
+      ...banners.index,
+      ...index
+    };
+  }
+  if (host) {
+    banners.host = {
+      ...banners.host,
+      ...host
+    };
+  }
+  if (player) {
+    banners.player = {
+      ...banners.player,
+      ...player
+    };
+  }
+
+  return res.json({ ok: true, banners });
+});
+
+// ----------------- GAME LOGIC -----------------
+
+const TEAM_LETTERS = ["A", "B", "C", "D", "E"];
+
+let games = {}; // gameCode -> game object
+let socketToPlayer = {}; // socket.id -> { gameCode, clientId }
+
+// מילים לדוגמה
+const WORD_PACKS = {
   classic: [
-    "מטוס","מחשב","טלפון","עיתון","מגדל","חשמל","ספרייה","תאטרון","רופא",
-    "נהג מונית","אינטרנט","מקרר","חלון","חברה","משפחה","מכונית","תחנת דלק",
-    "גשר","משטרה","חייל","אוטובוס","רמזור","כביש","פקק תנועה","משרד","שכן",
-    "גינה ציבורית","קפה","כיסא","שולחן","חניה","קופה רושמת","מרפאה","ספר",
-    "חנות נעליים","חנות בגדים","שלט חוצות","תחנת אוטובוס"
+    "טלפון",
+    "שולחן",
+    "כורסה",
+    "חולצה",
+    "חבר",
+    "מפתח",
+    "עיתון",
+    "מסך",
+    "חול",
+    "עץ",
+    "חלון",
+    "מטבח",
+    "מדרגות",
+    "אוטובוס",
+    "קניון"
+  ],
+  family: [
+    "צעצוע",
+    "חד קרן",
+    "ממתק",
+    "ארמון",
+    "כדורגל",
+    "לגו",
+    "בריכה",
+    "חדשות",
+    "אבטיח",
+    "אייסקريم"
   ],
   hard: [
-    "דמוקרטיה","חופש","אחריות","לחץ","השראה","יצירתיות","חברות","סבלנות",
-    "שאפתנות","בדידות","פחד","אומץ","אמון","תסכול","ויתור","ניצחון","תחרות",
-    "אסטרטגיה","דמיון","עתיד","עבר","הווה","משבר","הצלחה","כישלון","שגרה",
-    "הפתעה","זיכרון","חלום","ציפיות"
+    "פילוסופיה",
+    "מקריות",
+    "אשליה",
+    "אינטואיציה",
+    "השראה",
+    "תודעה",
+    "שגרה",
+    "פוטנציאל",
+    "אחריות",
+    "עצמאות"
   ]
 };
 
-const TEAM_LETTERS = ["A","B","C","D","E"];
-
-// מחזיר רשימת מילים לפי חבילה (או הכל)
-function getWordList(packKey) {
-  if (packKey && wordPacks[packKey]) {
-    return wordPacks[packKey].slice();
-  }
-  // "all" או לא הוגדר -> מחברים את הכל
-  const set = new Set();
-  Object.values(wordPacks).forEach(list => {
-    list.forEach(w => set.add(w));
-  });
-  return Array.from(set);
+function getWordsForPack(key) {
+  if (key && WORD_PACKS[key]) return [...WORD_PACKS[key]];
+  // ברירת מחדל - הכל
+  return [
+    ...WORD_PACKS.classic,
+    ...WORD_PACKS.family,
+    ...WORD_PACKS.hard
+  ];
 }
 
-// מייצר קוד משחק קצר, למשל AB4F
 function generateGameCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
   for (let i = 0; i < 4; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
+  if (games[code]) return generateGameCode();
   return code;
 }
 
-// בוחר מילה רנדומלית שלא חזרה על עצמה יותר מדי
-function pickRandomWord(game) {
-  if (!game.wordList || game.wordList.length === 0) {
-    game.wordList = getWordList(game.wordPack);
-    game.usedIndices = new Set();
-  }
-
-  if (game.usedIndices.size >= game.wordList.length) {
-    // התחלה מחודשת של רשימת המילים
-    game.usedIndices = new Set();
-  }
-
-  let idx;
-  let tries = 0;
-  do {
-    idx = Math.floor(Math.random() * game.wordList.length);
-    tries++;
-    if (tries > 200) break;
-  } while (game.usedIndices.has(idx));
-
-  game.usedIndices.add(idx);
-  return game.wordList[idx];
+function serializeTeams(game) {
+  const out = {};
+  Object.entries(game.teams).forEach(([id, t]) => {
+    out[id] = {
+      id,
+      name: t.name,
+      score: t.score || 0
+    };
+  });
+  return out;
 }
 
-// מה אנחנו מחזירים לפרונט (בלי כל הפרטים הפנימיים)
-function getPublicGameSummary(game) {
+function buildScores(game) {
+  const s = {};
+  Object.entries(game.teams).forEach(([id, t]) => {
+    s[id] = t.score || 0;
+  });
+  return s;
+}
+
+function serializeGame(game) {
   return {
     code: game.code,
     targetScore: game.targetScore,
-    wordPack: game.wordPack,
-    teams: game.teams,
-    players: Object.values(game.players).map(p => ({
+    teams: serializeTeams(game),
+    players: game.players.map((p) => ({
       id: p.clientId,
       name: p.name,
       teamId: p.teamId,
       isHost: !!p.isHost,
       isConnected: !!p.isConnected
-    })),
-    state: game.state
+    }))
   };
 }
 
-// בונה אובייקט ניקוד {A: מספר, B: מספר, ...}
-function buildScoresObject(game) {
-  const scores = {};
-  for (const [id, team] of Object.entries(game.teams)) {
-    scores[id] = team.score;
-  }
-  return scores;
+function broadcastGameUpdate(game) {
+  io.to(game.code).emit("gameUpdated", serializeGame(game));
 }
 
-io.on("connection", socket => {
-  console.log("לקוח התחבר:", socket.id);
+function getNextWord(game) {
+  if (!game.words || !game.words.length) {
+    game.words = getWordsForPack(game.wordPackKey);
+  }
+  if (!game.words.length) {
+    return "אין מילים זמינות";
+  }
+  const idx = Math.floor(Math.random() * game.words.length);
+  const word = game.words.splice(idx, 1)[0];
+  return word || "מילה";
+}
 
-  // יצירת משחק (על ידי המנהל)
-  socket.on("createGame", (data, cb) => {
-    let code;
-    do {
-      code = generateGameCode();
-    } while (games[code]);
-
-    const targetScore = Number(data.targetScore) || 30;
-    const wordPack = data.wordPack || "classic";
-
-    let teamCount = Number(data.teamCount) || 2;
-    if (teamCount < 2) teamCount = 2;
-    if (teamCount > 5) teamCount = 5;
-
-    const teamNames = data.teamNames || {};
-    const teams = {};
-
-    for (let i = 0; i < teamCount; i++) {
-      const id = TEAM_LETTERS[i];
-      const fallbackName = "קבוצה " + (i + 1);
-      const nameFromClient = teamNames[id];
-      teams[id] = {
-        id,
-        name: nameFromClient && nameFromClient.trim()
-          ? nameFromClient.trim()
-          : fallbackName,
-        score: 0
-      };
-    }
-
-    const hostClientId = (data && data.clientId) ? String(data.clientId) : socket.id;
-
-    const game = {
-      code,
-      hostId: socket.id, // מזהה socket של המנהל
-      wordPack,
-      targetScore,
-      teams,
-      players: {},
-      state: {
-        phase: "lobby", // lobby | playing
-        currentTeamId: null,
-        explainerId: null, // כאן נשמור socketId של המסביר הפעיל
-        currentWord: null
-      },
-      wordList: getWordList(wordPack),
-      usedIndices: new Set()
-    };
-
-    game.players[hostClientId] = {
-      clientId: hostClientId,
-      socketId: socket.id,
-      name: data.hostName || "מנהל",
-      teamId: TEAM_LETTERS[0], // ברירת מחדל: הקבוצה הראשונה
-      isHost: true,
-      isConnected: true
-    };
-
-    games[code] = game;
-    socket.join(code);
-
-    const summary = getPublicGameSummary(game);
-    cb && cb({ ok: true, gameCode: code, game: summary, clientId: hostClientId });
-    io.to(code).emit("gameUpdated", summary);
-
-    console.log("נוצר משחק חדש:", code);
+function computeWinnerTeamIds(game) {
+  const scores = buildScores(game);
+  let max = -Infinity;
+  Object.values(scores).forEach((v) => {
+    if (v > max) max = v;
   });
+  if (max < 0) return [];
+  const winners = Object.entries(scores)
+    .filter(([, s]) => s === max)
+    .map(([id]) => id);
+  return winners;
+}
 
-  // שחקן מצטרף למשחק / מתחבר מחדש
-  socket.on("joinGame", (data, cb) => {
-    const code = (data.gameCode || "").toUpperCase().trim();
-    const name = (data.playerName || "").trim();
-    const game = games[code];
+function endGameInternal(game, forceWinnerIds) {
+  if (game.isEnded) return;
+  game.isEnded = true;
+  const scores = buildScores(game);
+  let winnerTeamIds = forceWinnerIds;
+  if (!winnerTeamIds || !winnerTeamIds.length) {
+    winnerTeamIds = computeWinnerTeamIds(game);
+  }
+  io.to(game.code).emit("gameEnded", {
+    teams: serializeTeams(game),
+    scores,
+    winnerTeamIds
+  });
+}
 
-    if (!game) {
-      cb && cb({ ok: false, error: "המשחק לא נמצא" });
-      return;
-    }
-    if (!name) {
-      cb && cb({ ok: false, error: "חייבים שם שחקן" });
-      return;
-    }
+// ----------------- SOCKET.IO -----------------
 
-    const requestedTeamId = (data.teamId || "").toUpperCase();
-    const teamId = game.teams[requestedTeamId]
-      ? requestedTeamId
-      : Object.keys(game.teams)[0];
+io.on("connection", (socket) => {
+  // יצירת משחק (Host)
+  socket.on("createGame", (payload, callback) => {
+    try {
+      const hostName = (payload.hostName || "מנהל").toString().trim();
+      let teamCount = parseInt(payload.teamCount || 2, 10);
+      if (Number.isNaN(teamCount) || teamCount < 2) teamCount = 2;
+      if (teamCount > 5) teamCount = 5;
 
-    let rawClientId = (data.clientId || "").trim();
-    if (!rawClientId) {
-      rawClientId = "c-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    }
+      let targetScore = parseInt(payload.targetScore || 30, 10);
+      if (Number.isNaN(targetScore) || targetScore < 5) targetScore = 30;
+      if (targetScore > 200) targetScore = 200;
 
-    let player = game.players[rawClientId];
-    if (player) {
-      // חיבור מחדש לאותו שחקן
-      player.socketId = socket.id;
-      player.name = name;
-      player.teamId = teamId;
-      player.isConnected = true;
-    } else {
-      // שחקן חדש
-      player = {
-        clientId: rawClientId,
+      const wordPackKey = payload.wordPack || "classic";
+      const teamNames = payload.teamNames || {};
+
+      const code = generateGameCode();
+
+      const teams = {};
+      for (let i = 0; i < teamCount; i++) {
+        const id = TEAM_LETTERS[i];
+        teams[id] = {
+          id,
+          name: teamNames[id] && teamNames[id].trim()
+            ? teamNames[id].trim()
+            : "קבוצה " + id,
+          score: 0
+        };
+      }
+
+      const hostClientId = "host-" + code;
+      const hostPlayer = {
+        clientId: hostClientId,
         socketId: socket.id,
-        name,
-        teamId,
-        isHost: false,
+        name: hostName,
+        teamId: "A",
+        isHost: true,
         isConnected: true
       };
-      game.players[rawClientId] = player;
+
+      const game = {
+        code,
+        hostSocketId: socket.id,
+        targetScore,
+        wordPackKey,
+        teams,
+        players: [hostPlayer],
+        words: getWordsForPack(wordPackKey),
+        currentRound: null,
+        isEnded: false
+      };
+
+      games[code] = game;
+      socket.join(code);
+      socketToPlayer[socket.id] = { gameCode: code, clientId: hostClientId };
+
+      const responseGame = serializeGame(game);
+
+      if (callback) {
+        callback({ ok: true, gameCode: code, game: responseGame });
+      }
+
+      broadcastGameUpdate(game);
+    } catch (err) {
+      console.error("createGame error", err);
+      if (callback) callback({ ok: false, error: "Server error" });
     }
-
-    socket.join(code);
-
-    const summary = getPublicGameSummary(game);
-    cb && cb({ ok: true, gameCode: code, game: summary, clientId: rawClientId });
-    io.to(code).emit("gameUpdated", summary);
-
-    console.log(`שחקן ${name} הצטרף למשחק ${code} לקבוצה ${teamId}`);
   });
 
-  // התחלת סיבוב (רק המנהל)
-  socket.on("startRound", data => {
-    const code = (data.gameCode || "").toUpperCase().trim();
-    const game = games[code];
-    if (!game) return;
-    if (socket.id !== game.hostId) return;
+  // הצטרפות למשחק (Player)
+  socket.on("joinGame", (payload, callback) => {
+    try {
+      const code = (payload.gameCode || "").toString().trim().toUpperCase();
+      const playerName = (payload.playerName || "").toString().trim() || "שחקן";
+      let teamId = (payload.teamId || "A").toString().toUpperCase();
+      const clientIdFromClient = (payload.clientId || "").toString().trim();
 
-    const requestedTeamId = (data.teamId || "").toUpperCase();
-    const teamId = game.teams[requestedTeamId]
-      ? requestedTeamId
-      : Object.keys(game.teams)[0];
-
-    let explainerClientId = data.explainerId;
-    let explainerPlayer = explainerClientId ? game.players[explainerClientId] : null;
-    const roundTime = Number(data.roundTime) || 60;
-
-    // אם לא נבחר מסביר תקין – נבחר אוטומטית שחקן מהקבוצה (מחוברים, מעדיפים לא-מנהל)
-    if (!explainerPlayer || explainerPlayer.teamId !== teamId || !explainerPlayer.isConnected) {
-      const allCandidates = Object.values(game.players).filter(
-        p => p.teamId === teamId && p.isConnected
-      );
-      const nonHostCandidates = allCandidates.filter(p => !p.isHost);
-
-      const chosenList = nonHostCandidates.length ? nonHostCandidates : allCandidates;
-      if (chosenList.length === 0) {
-        console.log("אין שחקנים מחוברים בקבוצה", teamId, "למשחק", code);
+      const game = games[code];
+      if (!game || game.isEnded) {
+        if (callback) callback({ ok: false, error: "המשחק לא קיים או הסתיים." });
         return;
       }
-      explainerPlayer = chosenList[0];
+
+      if (!game.teams[teamId]) {
+        const defaultTeamId = Object.keys(game.teams)[0] || "A";
+        teamId = defaultTeamId;
+      }
+
+      let clientId = clientIdFromClient;
+      if (!clientId) {
+        clientId = "c-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      }
+
+      let player = game.players.find((p) => p.clientId === clientId);
+
+      if (!player) {
+        player = {
+          clientId,
+          socketId: socket.id,
+          name: playerName,
+          teamId,
+          isHost: false,
+          isConnected: true
+        };
+        game.players.push(player);
+      } else {
+        player.socketId = socket.id;
+        player.name = playerName;
+        player.teamId = teamId;
+        player.isConnected = true;
+      }
+
+      socket.join(code);
+      socketToPlayer[socket.id] = { gameCode: code, clientId };
+
+      const responseGame = serializeGame(game);
+      if (callback) {
+        callback({ ok: true, gameCode: code, clientId, game: responseGame });
+      }
+
+      broadcastGameUpdate(game);
+    } catch (err) {
+      console.error("joinGame error", err);
+      if (callback) callback({ ok: false, error: "Server error" });
     }
+  });
 
-    if (!explainerPlayer || !explainerPlayer.socketId) {
-      console.log("לא נמצא socketId למסביר במשחק", code);
-      return;
+  // התחלת סיבוב
+  socket.on("startRound", (payload) => {
+    try {
+      const code = (payload.gameCode || "").toString().trim().toUpperCase();
+      const game = games[code];
+      if (!game || game.isEnded) return;
+
+      let teamId = (payload.teamId || "").toString().toUpperCase();
+      if (!game.teams[teamId]) {
+        teamId = Object.keys(game.teams)[0];
+      }
+
+      let roundTime = parseInt(payload.roundTime || 60, 10);
+      if (Number.isNaN(roundTime) || roundTime < 20) roundTime = 60;
+      if (roundTime > 240) roundTime = 240;
+
+      let explainerClientId = payload.explainerId || null;
+      if (!explainerClientId) {
+        const candidates = game.players.filter(
+          (p) => p.teamId === teamId && p.isConnected
+        );
+        if (candidates.length) {
+          explainerClientId = candidates[0].clientId;
+        }
+      }
+
+      game.currentRound = {
+        isActive: true,
+        teamId,
+        explainerClientId,
+        endsAt: Date.now() + roundTime * 1000,
+        currentWord: null
+      };
+
+      const scores = buildScores(game);
+      const roundPayload = {
+        teamId,
+        explainerId: explainerClientId || null,
+        roundTime,
+        teams: serializeTeams(game),
+        scores,
+        targetScore: game.targetScore
+      };
+
+      io.to(code).emit("roundStarted", roundPayload);
+
+      if (explainerClientId) {
+        const explainer = game.players.find((p) => p.clientId === explainerClientId);
+        if (explainer && explainer.socketId) {
+          const word = getNextWord(game);
+          game.currentRound.currentWord = word;
+          io.to(explainer.socketId).emit("wordForExplainer", { word });
+        }
+      }
+    } catch (err) {
+      console.error("startRound error", err);
     }
-
-    game.state.phase = "playing";
-    game.state.currentTeamId = teamId;
-    game.state.explainerId = explainerPlayer.socketId; // שומרים socketId
-    game.state.currentWord = pickRandomWord(game);
-
-    const payload = {
-      teamId,
-      explainerId: explainerPlayer.socketId,
-      roundTime,
-      scores: buildScoresObject(game),
-      targetScore: game.targetScore,
-      teams: game.teams
-    };
-
-    io.to(code).emit("roundStarted", payload);
-    io.to(explainerPlayer.socketId).emit("wordForExplainer", {
-      word: game.state.currentWord
-    });
-
-    console.log(`סיבוב התחיל במשחק ${code}, קבוצה ${teamId}, מסביר clientId=${explainerPlayer.clientId}`);
   });
 
-  // המסביר לוחץ "נכון"
-  socket.on("markCorrect", data => {
-    const code = (data.gameCode || "").toUpperCase().trim();
-    const game = games[code];
-    if (!game) return;
-    if (game.state.phase !== "playing") return;
-    if (socket.id !== game.state.explainerId) return;
+  // סיום סיבוב
+  socket.on("endRound", (payload) => {
+    try {
+      const code = (payload.gameCode || "").toString().trim().toUpperCase();
+      const game = games[code];
+      if (!game || !game.currentRound || !game.currentRound.isActive) return;
 
-    const teamId = game.state.currentTeamId;
-    if (!teamId || !game.teams[teamId]) return;
+      const round = game.currentRound;
+      round.isActive = false;
 
-    game.teams[teamId].score += 1;
-    game.state.currentWord = pickRandomWord(game);
+      const scores = buildScores(game);
+      io.to(code).emit("roundEnded", {
+        teamId: round.teamId,
+        teams: serializeTeams(game),
+        scores
+      });
 
-    io.to(code).emit("scoreUpdated", {
-      scores: buildScoresObject(game),
-      targetScore: game.targetScore,
-      teams: game.teams
-    });
-
-    io.to(game.state.explainerId).emit("wordForExplainer", {
-      word: game.state.currentWord
-    });
-  });
-
-  // המסביר לוחץ "דילוג"
-  socket.on("skipWord", data => {
-    const code = (data.gameCode || "").toUpperCase().trim();
-    const game = games[code];
-    if (!game) return;
-    if (game.state.phase !== "playing") return;
-    if (socket.id !== game.state.explainerId) return;
-
-    game.state.currentWord = pickRandomWord(game);
-    io.to(game.state.explainerId).emit("wordForExplainer", {
-      word: game.state.currentWord
-    });
-  });
-
-  // סיום סיבוב (רק המנהל)
-  socket.on("endRound", data => {
-    const code = (data.gameCode || "").toUpperCase().trim();
-    const game = games[code];
-    if (!game) return;
-    if (socket.id !== game.hostId) return;
-
-    const teamId = game.state.currentTeamId;
-
-    game.state.phase = "lobby";
-    game.state.currentTeamId = null;
-    game.state.explainerId = null;
-    game.state.currentWord = null;
-
-    io.to(code).emit("roundEnded", {
-      scores: buildScoresObject(game),
-      teamId,
-      teams: game.teams
-    });
-  });
-
-  // סיום משחק (רק המנהל)
-  socket.on("endGame", data => {
-    const code = (data.gameCode || "").toUpperCase().trim();
-    const game = games[code];
-    if (!game) return;
-    if (socket.id !== game.hostId) return;
-
-    let maxScore = -Infinity;
-    for (const t of Object.values(game.teams)) {
-      if (t.score > maxScore) maxScore = t.score;
+      // בדיקת ניצחון
+      const winners = computeWinnerTeamIds(game);
+      if (winners.length && Math.max(...Object.values(scores)) >= game.targetScore) {
+        endGameInternal(game, winners);
+      }
+    } catch (err) {
+      console.error("endRound error", err);
     }
-    const winners = Object.values(game.teams).filter(t => t.score === maxScore);
+  });
 
-    const payload = {
-      scores: buildScoresObject(game),
-      teams: game.teams,
-      winnerTeamIds: winners.map(t => t.id)
-    };
+  // תשובה נכונה
+  socket.on("markCorrect", (payload) => {
+    try {
+      const code = (payload.gameCode || "").toString().trim().toUpperCase();
+      const game = games[code];
+      if (!game || !game.currentRound || !game.currentRound.isActive) return;
 
-    io.to(code).emit("gameEnded", payload);
-    delete games[code];
+      const teamId = game.currentRound.teamId;
+      if (!game.teams[teamId]) return;
 
-    console.log("משחק הסתיים ונמחק:", code);
+      game.teams[teamId].score = (game.teams[teamId].score || 0) + 1;
+
+      const scores = buildScores(game);
+      io.to(code).emit("scoreUpdated", {
+        teams: serializeTeams(game),
+        scores,
+        targetScore: game.targetScore
+      });
+
+      const round = game.currentRound;
+      if (round && round.isActive && round.explainerClientId) {
+        const explainer = game.players.find(
+          (p) => p.clientId === round.explainerClientId
+        );
+        if (explainer && explainer.socketId) {
+          const word = getNextWord(game);
+          round.currentWord = word;
+          io.to(explainer.socketId).emit("wordForExplainer", { word });
+        }
+      }
+
+      if (scores[teamId] >= game.targetScore) {
+        endGameInternal(game, [teamId]);
+      }
+    } catch (err) {
+      console.error("markCorrect error", err);
+    }
+  });
+
+  // דילוג על מילה
+  socket.on("skipWord", (payload) => {
+    try {
+      const code = (payload.gameCode || "").toString().trim().toUpperCase();
+      const game = games[code];
+      if (!game || !game.currentRound || !game.currentRound.isActive) return;
+
+      const round = game.currentRound;
+      if (!round.explainerClientId) return;
+
+      const explainer = game.players.find(
+        (p) => p.clientId === round.explainerClientId
+      );
+      if (!explainer || !explainer.socketId) return;
+
+      const word = getNextWord(game);
+      round.currentWord = word;
+      io.to(explainer.socketId).emit("wordForExplainer", { word });
+    } catch (err) {
+      console.error("skipWord error", err);
+    }
+  });
+
+  // סיום משחק ע"י המנהל
+  socket.on("endGame", (payload) => {
+    try {
+      const code = (payload.gameCode || "").toString().trim().toUpperCase();
+      const game = games[code];
+      if (!game) return;
+      endGameInternal(game);
+    } catch (err) {
+      console.error("endGame error", err);
+    }
   });
 
   // ניתוק שחקן
   socket.on("disconnect", () => {
-    console.log("לקוח התנתק:", socket.id);
-    for (const code of Object.keys(games)) {
-      const game = games[code];
+    try {
+      const mapping = socketToPlayer[socket.id];
+      if (!mapping) return;
+      const { gameCode, clientId } = mapping;
+      delete socketToPlayer[socket.id];
 
-      let foundPlayer = null;
-      for (const p of Object.values(game.players)) {
-        if (p.socketId === socket.id) {
-          foundPlayer = p;
-          break;
-        }
-      }
-      if (!foundPlayer) continue;
+      const game = games[gameCode];
+      if (!game) return;
 
-      const wasHost = socket.id === game.hostId;
+      const player = game.players.find((p) => p.clientId === clientId);
+      if (!player) return;
 
-      // לא מוחקים את השחקן – רק מסמנים כמנותק
-      foundPlayer.isConnected = false;
-      foundPlayer.socketId = null;
+      player.isConnected = false;
+      player.socketId = null;
 
-      // אם אין אף שחקן מחובר – מוחקים את המשחק
-      const anyConnected = Object.values(game.players).some(p => p.isConnected);
-      if (!anyConnected) {
-        delete games[code];
-        console.log("משחק נמחק כי אין שחקנים מחוברים:", code);
-        continue;
-      }
-
-      // אם המנהל התנתק – מעבירים מנהל למישהו אחר שמחובר
-      if (wasHost) {
-        const candidates = Object.values(game.players).filter(p => p.isConnected);
-        if (candidates.length) {
-          game.hostId = candidates[0].socketId;
-          candidates[0].isHost = true;
-        }
-      }
-
-      const summary = getPublicGameSummary(game);
-      io.to(code).emit("gameUpdated", summary);
+      broadcastGameUpdate(game);
+    } catch (err) {
+      console.error("disconnect error", err);
     }
   });
 });
 
+// ----------------- START SERVER -----------------
+
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log("שרת כהנ'ס רץ על פורט", PORT);
-  console.log("פתח דפדפן על http://localhost:" + PORT + "/");
+  console.log("Cohens Alias server listening on port", PORT);
 });
