@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const ADMIN_CODE = process.env.COHENS_ADMIN_CODE || "cohens1234";
 
-// ----------------- BANNNERS (IN-MEMORY) -----------------
+// ----------------- BANNERS (IN-MEMORY) -----------------
 
 let banners = {
   index: {
@@ -69,7 +69,7 @@ const TEAM_LETTERS = ["A", "B", "C", "D", "E"];
 let games = {}; // gameCode -> game object
 let socketToPlayer = {}; // socket.id -> { gameCode, clientId }
 
-// מילים לדוגמה
+// מאגר מילים לפי קטגוריות
 const WORD_PACKS = {
   classic: [
     "טלפון",
@@ -86,7 +86,16 @@ const WORD_PACKS = {
     "מטבח",
     "מדרגות",
     "אוטובוס",
-    "קניון"
+    "קניון",
+    "אורז",
+    "חגורה",
+    "ספה",
+    "תיק",
+    "מקרר",
+    "שכנים",
+    "מעלית",
+    "חניה",
+    "דלת"
   ],
   family: [
     "צעצוע",
@@ -96,9 +105,19 @@ const WORD_PACKS = {
     "כדורגל",
     "לגו",
     "בריכה",
-    "חדשות",
     "אבטיח",
-    "אייסקريم"
+    "ארוחת ערב",
+    "טיול משפחתי",
+    "אחים",
+    "סבתא",
+    "סבא",
+    "חיבוק",
+    "סיפור לפני השינה",
+    "גן ילדים",
+    "בית ספר",
+    "חגיגת יום הולדת",
+    "חיבוק דובי",
+    "עגלת תינוק"
   ],
   hard: [
     "פילוסופיה",
@@ -110,18 +129,109 @@ const WORD_PACKS = {
     "שגרה",
     "פוטנציאל",
     "אחריות",
-    "עצמאות"
+    "עצמאות",
+    "זיכרון",
+    "אמפתיה",
+    "פרספקטיבה",
+    "התנגדות",
+    "תובנה"
+  ],
+  food: [
+    "חומוס",
+    "פלאפל",
+    "שווארמה",
+    "קוסקוס",
+    "ג׳חנון",
+    "מלוואח",
+    "קובה",
+    "ממולאים",
+    "סלט חצילים",
+    "טחינה",
+    "פיתות",
+    "שקשוקה",
+    "מרק עוף",
+    "חמין",
+    "שיפודים",
+    "בורקס",
+    "עוגת גבינה",
+    "אורז לבן",
+    "קישואים ממולאים",
+    "עלי גפן",
+    "סלט ישראלי",
+    "לחם טרי",
+    "ספינג׳"
+  ],
+  sports: [
+    "כדורגל",
+    "כדורסל",
+    "טניס",
+    "שחייה",
+    "ריצה",
+    "אופניים",
+    "כדורעף",
+    "כדוריד",
+    "התעמלות",
+    "כדורגל שולחן",
+    "סטנגה",
+    "אימון כוח",
+    "מגרש",
+    "שופט",
+    "נבחרת",
+    "איצטדיון",
+    "שוער",
+    "גול",
+    "מדליה",
+    "טורניר"
+  ],
+  professions: [
+    "רופא",
+    "אחות",
+    "מורה",
+    "נהג מונית",
+    "שוטר",
+    "כבאי",
+    "עורך דין",
+    "אדריכל",
+    "טבח",
+    "מלצר",
+    "מוכר בחנות",
+    "תוכניתן",
+    "מעצב גרפי",
+    "מנכ״ל",
+    "מנהלת משרד",
+    "יועץ עסקי",
+    "ספר",
+    "חשמלאי",
+    "אינסטלטור",
+    "נהג אוטובוס"
   ]
 };
 
-function getWordsForPack(key) {
-  if (key && WORD_PACKS[key]) return [...WORD_PACKS[key]];
-  // ברירת מחדל - הכל
-  return [
-    ...WORD_PACKS.classic,
-    ...WORD_PACKS.family,
-    ...WORD_PACKS.hard
-  ];
+// מחזיר מערך מילים לפי כמה קטגוריות
+function getWordsForPacks(keys) {
+  let packs = Array.isArray(keys) && keys.length ? keys : Object.keys(WORD_PACKS);
+  let allWords = [];
+
+  packs.forEach((k) => {
+    const key = (k || "").toString().trim();
+    if (!key) return;
+
+    if (key === "all") {
+      Object.values(WORD_PACKS).forEach((arr) => {
+        allWords.push(...arr);
+      });
+    } else if (WORD_PACKS[key]) {
+      allWords.push(...WORD_PACKS[key]);
+    }
+  });
+
+  if (!allWords.length) {
+    Object.values(WORD_PACKS).forEach((arr) => {
+      allWords.push(...arr);
+    });
+  }
+
+  return [...allWords];
 }
 
 function generateGameCode() {
@@ -165,7 +275,8 @@ function serializeGame(game) {
       teamId: p.teamId,
       isHost: !!p.isHost,
       isConnected: !!p.isConnected
-    }))
+    })),
+    wordPackKeys: game.wordPackKeys || []
   };
 }
 
@@ -175,7 +286,7 @@ function broadcastGameUpdate(game) {
 
 function getNextWord(game) {
   if (!game.words || !game.words.length) {
-    game.words = getWordsForPack(game.wordPackKey);
+    game.words = getWordsForPacks(game.wordPackKeys);
   }
   if (!game.words.length) {
     return "אין מילים זמינות";
@@ -228,7 +339,22 @@ io.on("connection", (socket) => {
       if (Number.isNaN(targetScore) || targetScore < 5) targetScore = 30;
       if (targetScore > 200) targetScore = 200;
 
-      const wordPackKey = payload.wordPack || "classic";
+      // קטגוריות מילים - אפשר כמה בבת אחת
+      const rawKeys = Array.isArray(payload.wordPackKeys) ? payload.wordPackKeys : [];
+      let wordPackKeys = rawKeys
+        .map((k) => (k || "").toString().trim())
+        .filter((k) => k);
+
+      if (!wordPackKeys.length) {
+        let single = (payload.wordPack || "classic").toString().trim();
+        if (!single) single = "classic";
+        if (single === "all") {
+          wordPackKeys = Object.keys(WORD_PACKS);
+        } else {
+          wordPackKeys = [single];
+        }
+      }
+
       const teamNames = payload.teamNames || {};
 
       const code = generateGameCode();
@@ -259,10 +385,10 @@ io.on("connection", (socket) => {
         code,
         hostSocketId: socket.id,
         targetScore,
-        wordPackKey,
+        wordPackKeys,
         teams,
         players: [hostPlayer],
-        words: getWordsForPack(wordPackKey),
+        words: getWordsForPacks(wordPackKeys),
         currentRound: null,
         isEnded: false
       };
@@ -373,7 +499,8 @@ io.on("connection", (socket) => {
         teamId,
         explainerClientId,
         endsAt: Date.now() + roundTime * 1000,
-        currentWord: null
+        currentWord: null,
+        roundScore: 0
       };
 
       const scores = buildScores(game);
@@ -412,10 +539,14 @@ io.on("connection", (socket) => {
       round.isActive = false;
 
       const scores = buildScores(game);
+      const roundScore =
+        typeof round.roundScore === "number" ? round.roundScore : 0;
+
       io.to(code).emit("roundEnded", {
         teamId: round.teamId,
         teams: serializeTeams(game),
-        scores
+        scores,
+        roundScore
       });
 
       // בדיקת ניצחון
@@ -439,6 +570,11 @@ io.on("connection", (socket) => {
       if (!game.teams[teamId]) return;
 
       game.teams[teamId].score = (game.teams[teamId].score || 0) + 1;
+
+      if (game.currentRound) {
+        game.currentRound.roundScore =
+          (game.currentRound.roundScore || 0) + 1;
+      }
 
       const scores = buildScores(game);
       io.to(code).emit("scoreUpdated", {
@@ -467,7 +603,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // דילוג על מילה
+  // דילוג על מילה - מוריד נקודה
   socket.on("skipWord", (payload) => {
     try {
       const code = (payload.gameCode || "").toString().trim().toUpperCase();
@@ -475,8 +611,24 @@ io.on("connection", (socket) => {
       if (!game || !game.currentRound || !game.currentRound.isActive) return;
 
       const round = game.currentRound;
-      if (!round.explainerClientId) return;
+      const teamId = round.teamId;
+      if (!game.teams[teamId]) return;
 
+      const currentScore = game.teams[teamId].score || 0;
+      game.teams[teamId].score = Math.max(0, currentScore - 1);
+
+      if (round) {
+        round.roundScore = (round.roundScore || 0) - 1;
+      }
+
+      const scores = buildScores(game);
+      io.to(code).emit("scoreUpdated", {
+        teams: serializeTeams(game),
+        scores,
+        targetScore: game.targetScore
+      });
+
+      if (!round.explainerClientId) return;
       const explainer = game.players.find(
         (p) => p.clientId === round.explainerClientId
       );
