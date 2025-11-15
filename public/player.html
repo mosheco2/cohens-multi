@@ -155,6 +155,26 @@
       display: block;
       border-radius: 14px;
     }
+    /* Popup סוף סיבוב */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .modal {
+      background: #020617;
+      border-radius: 18px;
+      padding: 16px 18px 18px;
+      border: 1px solid rgba(148,163,184,0.65);
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -216,10 +236,11 @@
       </div>
     </div>
 
-    <!-- סטטוס סיבוב -->
+    <!-- סטטוס סיבוב + טיימר -->
     <div class="card hidden" id="round-status-card">
       <h3 style="margin:0 0 8px; font-size:1rem;">מצב סיבוב</h3>
       <div class="status-text" id="roundStatus">מחכים להתחלת סיבוב...</div>
+      <div class="status-text" id="roundTimerText" style="margin-top:4px;">זמן נותר: --:--</div>
     </div>
 
     <!-- ניקוד + באנר -->
@@ -229,6 +250,15 @@
       <div class="status-text" id="scoreTarget" style="margin-top:6px;"></div>
 
       <div id="player-banner-slot"></div>
+    </div>
+  </div>
+
+  <!-- Popup סוף סיבוב -->
+  <div id="roundPopup" class="modal-backdrop hidden">
+    <div class="modal">
+      <h3 id="roundPopupTitle" style="margin:0 0 8px;">סיום סיבוב</h3>
+      <p id="roundPopupText" style="font-size:0.9rem; margin:8px 0 16px;"></p>
+      <button id="roundPopupClose" class="btn btn-primary">סגור</button>
     </div>
   </div>
 
@@ -246,6 +276,9 @@
     let clientId = null;
     let savedStateForAutoJoin = null;
     let hasJoined = false;
+
+    let roundTimeLeft = 0;
+    let roundTimerId = null;
 
     const joinCard = document.getElementById("join-card");
     const joinCodeInput = document.getElementById("joinCode");
@@ -267,12 +300,17 @@
 
     const roundStatusCard = document.getElementById("round-status-card");
     const roundStatus = document.getElementById("roundStatus");
+    const roundTimerText = document.getElementById("roundTimerText");
 
     const scoreCard = document.getElementById("score-card");
     const scoreboardDynamic = document.getElementById("scoreboardDynamic");
     const scoreTarget = document.getElementById("scoreTarget");
 
-    // טעינת מצב קודם מהטלפון (בשביל auto-rejoin)
+    const popupEl = document.getElementById("roundPopup");
+    const popupTitleEl = document.getElementById("roundPopupTitle");
+    const popupTextEl = document.getElementById("roundPopupText");
+    const popupCloseBtn = document.getElementById("roundPopupClose");
+
     (function loadFromStorage() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -305,6 +343,33 @@
       }
     });
 
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+      const s = (seconds % 60).toString().padStart(2, "0");
+      return m + ":" + s;
+    }
+
+    function updateRoundTimerUI() {
+      if (!roundTimerText) return;
+      roundTimerText.textContent = "זמן נותר: " + formatTime(roundTimeLeft);
+    }
+
+    function startRoundTimer(durationSeconds) {
+      clearInterval(roundTimerId);
+      roundTimeLeft = durationSeconds;
+      updateRoundTimerUI();
+      roundTimerId = setInterval(() => {
+        roundTimeLeft--;
+        if (roundTimeLeft <= 0) {
+          roundTimeLeft = 0;
+          clearInterval(roundTimerId);
+          updateRoundTimerUI();
+        } else {
+          updateRoundTimerUI();
+        }
+      }, 1000);
+    }
+
     function saveStateToStorage() {
       try {
         localStorage.setItem(
@@ -330,7 +395,6 @@
       lastGameState = null;
       isExplainer = false;
       savedStateForAutoJoin = null;
-      // רענון מלא למסך השחקן בלי הצטרפות אוטומטית
       window.location.href = "/player.html";
     }
 
@@ -432,7 +496,6 @@
       );
     }
 
-    // הצטרפות ידנית למשחק
     joinBtn.addEventListener("click", () => {
       joinError.textContent = "";
       const code = (joinCodeInput.value || "").trim().toUpperCase();
@@ -492,6 +555,26 @@
       renderScoresFromGame(game);
     });
 
+    function showRoundPopup(roundScore, teamName) {
+      if (!popupEl) return;
+      const score = typeof roundScore === "number" ? roundScore : 0;
+      let msg;
+      if (score < 5) {
+        msg = "אתם חלשים";
+      } else if (score <= 10) {
+        msg = "צוות נחמד הייתי אומר";
+      } else {
+        msg = "אתם חזקים במילים אה? מקווה שגם במעשים";
+      }
+      popupTitleEl.textContent = "סיום סיבוב - " + (teamName || "");
+      popupTextEl.textContent = msg + " (" + score + " נקודות בסיבוב הזה)";
+      popupEl.classList.remove("hidden");
+    }
+
+    popupCloseBtn.addEventListener("click", () => {
+      popupEl.classList.add("hidden");
+    });
+
     socket.on("roundStarted", (payload) => {
       if (!joinedGameCode || !payload) return;
 
@@ -509,6 +592,8 @@
         txt += " כרגע זו קבוצה אחרת.";
       }
       roundStatus.textContent = txt;
+
+      startRoundTimer(payload.roundTime || 60);
 
       if (isExplainer) {
         explainerCard.classList.remove("hidden");
@@ -533,9 +618,14 @@
     });
 
     socket.on("roundEnded", (payload) => {
+      clearInterval(roundTimerId);
+      roundTimeLeft = 0;
+      updateRoundTimerUI();
+
       let txt = "הסיבוב הסתיים.";
+      let teamName = "";
       if (payload && payload.teamId && lastGameState && lastGameState.teams) {
-        const teamName = lastGameState.teams[payload.teamId]?.name || payload.teamId;
+        teamName = lastGameState.teams[payload.teamId]?.name || payload.teamId;
         txt = "הסיבוב של " + teamName + " הסתיים.";
       }
       roundStatus.textContent = txt;
@@ -546,10 +636,17 @@
         ensureLastGameStateFromPayload(payload);
         renderScoresFromGame(lastGameState);
       }
+
+      const rs = payload && typeof payload.roundScore === "number" ? payload.roundScore : 0;
+      showRoundPopup(rs, teamName);
     });
 
     socket.on("gameEnded", (payload) => {
       if (!payload) return;
+
+      clearInterval(roundTimerId);
+      roundTimeLeft = 0;
+      updateRoundTimerUI();
 
       if (!lastGameState) lastGameState = {};
       if (payload.teams) {
@@ -579,7 +676,6 @@
       isExplainer = false;
       explainerCard.classList.add("hidden");
 
-      // מנקים את הזיכרון כדי שלא ייכנסו אוטומטית למשחק שכבר נגמר
       try {
         localStorage.removeItem(STORAGE_KEY);
       } catch (e) {}
