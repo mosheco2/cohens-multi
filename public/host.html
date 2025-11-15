@@ -246,6 +246,21 @@
     .status-bar strong {
       color: #e5e7eb;
     }
+    /* באנר למסך מנהל */
+    .ad-banner {
+      display: block;
+      margin-top: 6px;
+      border-radius: 18px;
+      padding: 4px;
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.25), rgba(15,23,42,0.98));
+      border: 1px solid rgba(148,163,184,0.6);
+      text-decoration: none;
+    }
+    .ad-banner img {
+      width: 100%;
+      display: block;
+      border-radius: 14px;
+    }
   </style>
 </head>
 <body>
@@ -395,6 +410,14 @@
       </div>
       <p id="timerDisplay" class="timer">00:00</p>
       <p class="timer-label" id="timerLabel">לא התחיל סיבוב</p>
+    </div>
+
+    <!-- כרטיס באנר/פרסומת -->
+    <div id="ads-section" class="card">
+      <div class="card-header">
+        <h3>באנר / פרסומת</h3>
+      </div>
+      <div id="host-banner-slot"></div>
     </div>
   </div>
 
@@ -806,7 +829,6 @@
 
     // התחלת משחק חדש אחרי סגירה
     newGameBtn.addEventListener("click", () => {
-      // איפוס מצב ל־"לפני משחק"
       gameEnded = false;
       currentGameCode = null;
       currentTeams = {};
@@ -826,13 +848,37 @@
       endRoundBtn.disabled = true;
       newGameBtn.disabled = true;
 
-      // מציגים שוב את כרטיס יצירת המשחק ומסתירים את שאר הכרטיסים
       createSection.classList.remove("hidden");
       lobbySection.classList.add("hidden");
       roundSection.classList.add("hidden");
       scoreSection.classList.add("hidden");
       timerSection.classList.add("hidden");
     });
+
+    // טעינת באנר למסך המנהל
+    (function loadHostBanner() {
+      const slot = document.getElementById("host-banner-slot");
+      if (!slot) return;
+      fetch("/api/banners")
+        .then(res => res.json())
+        .then(data => {
+          const cfg = data && data.host;
+          if (!cfg || !cfg.imageUrl || !cfg.linkUrl) return;
+          const a = document.createElement("a");
+          a.className = "ad-banner";
+          a.href = cfg.linkUrl;
+          a.target = "_blank";
+          a.rel = "noopener";
+
+          const img = document.createElement("img");
+          img.src = cfg.imageUrl;
+          img.alt = "Banner";
+
+          a.appendChild(img);
+          slot.appendChild(a);
+        })
+        .catch(() => {});
+    })();
   </script>
 </body>
 </html>
