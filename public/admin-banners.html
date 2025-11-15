@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>כהנ'ס - ניהול באנרים</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #020617;
+      color: #e5e7eb;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    .app {
+      max-width: 720px;
+      width: 100%;
+      padding: 20px 16px 40px;
+    }
+    .card {
+      background: #020617;
+      border-radius: 18px;
+      padding: 16px 16px 20px;
+      box-shadow: 0 14px 35px rgba(0,0,0,0.8);
+      border: 1px solid rgba(148,163,184,0.3);
+      margin-bottom: 16px;
+    }
+    h1, h2, h3 {
+      margin-top: 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+    input {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: 10px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.85rem;
+    }
+    input:focus {
+      outline: none;
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 1px #38bdf8;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .row > div {
+      flex: 1 1 200px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      color: #020617;
+      box-shadow: 0 10px 25px rgba(56,189,248,0.35);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 35px rgba(56,189,248,0.5);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #4b5563;
+      color: #e5e7eb;
+    }
+    .btn-ghost:hover {
+      background: rgba(55,65,81,0.7);
+    }
+    .hidden {
+      display: none !important;
+    }
+    .status-text {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      margin-top: 6px;
+    }
+    .status-text.error {
+      color: #f97373;
+    }
+    .status-text.success {
+      color: #4ade80;
+    }
+    .banner-preview {
+      margin-top: 6px;
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px dashed rgba(148,163,184,0.5);
+      background: rgba(15,23,42,0.75);
+    }
+    .banner-preview img {
+      max-width: 100%;
+      border-radius: 10px;
+      display: block;
+    }
+    .badge {
+      display: inline-flex;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="card" id="login-card">
+      <h1 style="margin-bottom:10px;">כהנ'ס - ניהול באנרים</h1>
+      <p style="margin:0 0 10px; font-size:0.85rem; color:#9ca3af;">
+        דף זה לא מופיע בשום מקום במשחק. נכנסים אליו רק בדפדפן עם הכתובת המלאה.
+      </p>
+      <label for="adminCode">קוד מנהל (נקבע ב-server.js)</label>
+      <input id="adminCode" type="password" placeholder="cohens1234 (ברירת מחדל)" />
+      <button id="loginBtn" class="btn btn-primary" style="margin-top:10px;">כניסה לניהול</button>
+      <div id="loginStatus" class="status-text"></div>
+    </div>
+
+    <div class="card hidden" id="manage-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0 0 4px;">ניהול באנרים</h2>
+        <span class="badge">Tip: הבאנרים נטענים לפי URL לתמונה</span>
+      </div>
+      <p style="margin:0 0 10px; font-size:0.8rem; color:#9ca3af;">
+        כדי להגדיר באנר: העלה את התמונה לאתר/אחסון (למשל אתר שלך, GitHub, CDN), קח את ה-URL המלא של התמונה והדבק כאן יחד עם קישור היעד.
+      </p>
+
+      <!-- באנר למסך פתיחה -->
+      <h3 style="margin:10px 0 4px;">באנר - מסך פתיחה (index)</h3>
+      <div class="row">
+        <div>
+          <label for="indexImageUrl">כתובת תמונה (Image URL)</label>
+          <input id="indexImageUrl" type="text" placeholder="https://.../banner-index.png" />
+        </div>
+        <div>
+          <label for="indexLinkUrl">קישור יעד (Link URL)</label>
+          <input id="indexLinkUrl" type="text" placeholder="https://onebtn.co.il" />
+        </div>
+      </div>
+      <div class="banner-preview">
+        <div style="font-size:0.75rem; color:#9ca3af; margin-bottom:4px;">תצוגה מקדימה:</div>
+        <img id="indexPreview" alt="Index Banner Preview" />
+      </div>
+
+      <!-- באנר למסך מנהל -->
+      <h3 style="margin:14px 0 4px;">באנר - מסך מנהל (host)</h3>
+      <div class="row">
+        <div>
+          <label for="hostImageUrl">כתובת תמונה (Image URL)</label>
+          <input id="hostImageUrl" type="text" placeholder="https://.../banner-host.png" />
+        </div>
+        <div>
+          <label for="hostLinkUrl">קישור יעד (Link URL)</label>
+          <input id="hostLinkUrl" type="text" placeholder="https://onebtn.co.il" />
+        </div>
+      </div>
+      <div class="banner-preview">
+        <div style="font-size:0.75rem; color:#9ca3af; margin-bottom:4px;">תצוגה מקדימה:</div>
+        <img id="hostPreview" alt="Host Banner Preview" />
+      </div>
+
+      <!-- באנר למסך שחקן -->
+      <h3 style="margin:14px 0 4px;">באנר - מסך שחקן (player)</h3>
+      <div class="row">
+        <div>
+          <label for="playerImageUrl">כתובת תמונה (Image URL)</label>
+          <input id="playerImageUrl" type="text" placeholder="https://.../banner-player.png" />
+        </div>
+        <div>
+          <label for="playerLinkUrl">קישור יעד (Link URL)</label>
+          <input id="playerLinkUrl" type="text" placeholder="https://onebtn.co.il" />
+        </div>
+      </div>
+      <div class="banner-preview">
+        <div style="font-size:0.75rem; color:#9ca3af; margin-bottom:4px;">תצוגה מקדימה:</div>
+        <img id="playerPreview" alt="Player Banner Preview" />
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:8px;">
+        <button id="saveBtn" class="btn btn-primary">שמירה</button>
+        <button id="reloadBtn" class="btn btn-ghost">רענון מהשרת</button>
+      </div>
+      <div id="manageStatus" class="status-text"></div>
+    </div>
+  </div>
+
+  <script>
+    const loginCard = document.getElementById("login-card");
+    const manageCard = document.getElementById("manage-card");
+
+    const adminCodeInput = document.getElementById("adminCode");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginStatus = document.getElementById("loginStatus");
+
+    const indexImageUrlInput = document.getElementById("indexImageUrl");
+    const indexLinkUrlInput = document.getElementById("indexLinkUrl");
+    const indexPreview = document.getElementById("indexPreview");
+
+    const hostImageUrlInput = document.getElementById("hostImageUrl");
+    const hostLinkUrlInput = document.getElementById("hostLinkUrl");
+    const hostPreview = document.getElementById("hostPreview");
+
+    const playerImageUrlInput = document.getElementById("playerImageUrl");
+    const playerLinkUrlInput = document.getElementById("playerLinkUrl");
+    const playerPreview = document.getElementById("playerPreview");
+
+    const saveBtn = document.getElementById("saveBtn");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const manageStatus = document.getElementById("manageStatus");
+
+    let adminCode = null;
+
+    function applyPreview() {
+      indexPreview.src = indexImageUrlInput.value.trim() || "";
+      hostPreview.src = hostImageUrlInput.value.trim() || "";
+      playerPreview.src = playerImageUrlInput.value.trim() || "";
+    }
+
+    indexImageUrlInput.addEventListener("input", applyPreview);
+    hostImageUrlInput.addEventListener("input", applyPreview);
+    playerImageUrlInput.addEventListener("input", applyPreview);
+
+    async function loadBanners() {
+      manageStatus.textContent = "טוען נתונים...";
+      manageStatus.className = "status-text";
+      try {
+        const res = await fetch("/api/banners");
+        if (!res.ok) throw new Error("Error fetching banners");
+        const data = await res.json();
+        if (data.index) {
+          indexImageUrlInput.value = data.index.imageUrl || "";
+          indexLinkUrlInput.value = data.index.linkUrl || "";
+        }
+        if (data.host) {
+          hostImageUrlInput.value = data.host.imageUrl || "";
+          hostLinkUrlInput.value = data.host.linkUrl || "";
+        }
+        if (data.player) {
+          playerImageUrlInput.value = data.player.imageUrl || "";
+          playerLinkUrlInput.value = data.player.linkUrl || "";
+        }
+        applyPreview();
+        manageStatus.textContent = "נטען בהצלחה.";
+      } catch (err) {
+        console.error(err);
+        manageStatus.textContent = "שגיאה בטעינת הבאנרים.";
+        manageStatus.className = "status-text error";
+      }
+    }
+
+    loginBtn.addEventListener("click", async () => {
+      loginStatus.textContent = "";
+      adminCode = adminCodeInput.value.trim();
+      if (!adminCode) {
+        loginStatus.textContent = "יש להזין קוד מנהל.";
+        loginStatus.className = "status-text error";
+        return;
+      }
+      loginStatus.textContent = "בודק גישה...";
+      loginStatus.className = "status-text";
+
+      // לא צריך לבדוק בשרת עכשיו – נבדוק בזמן שמירה.
+      // פשוט טוענים את הנתונים.
+      await loadBanners();
+      loginCard.classList.add("hidden");
+      manageCard.classList.remove("hidden");
+    });
+
+    reloadBtn.addEventListener("click", () => {
+      loadBanners();
+    });
+
+    saveBtn.addEventListener("click", async () => {
+      manageStatus.textContent = "";
+      manageStatus.className = "status-text";
+
+      if (!adminCode) {
+        manageStatus.textContent = "אין קוד מנהל. התחבר שוב.";
+        manageStatus.className = "status-text error";
+        return;
+      }
+
+      const payload = {
+        adminCode,
+        index: {
+          imageUrl: indexImageUrlInput.value.trim(),
+          linkUrl: indexLinkUrlInput.value.trim()
+        },
+        host: {
+          imageUrl: hostImageUrlInput.value.trim(),
+          linkUrl: hostLinkUrlInput.value.trim()
+        },
+        player: {
+          imageUrl: playerImageUrlInput.value.trim(),
+          linkUrl: playerLinkUrlInput.value.trim()
+        }
+      };
+
+      manageStatus.textContent = "שומר...";
+      try {
+        const res = await fetch("/api/admin/banners", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          manageStatus.textContent = data.error || "שגיאה בשמירה.";
+          manageStatus.className = "status-text error";
+          return;
+        }
+        manageStatus.textContent = "נשמר בהצלחה ✅";
+        manageStatus.className = "status-text success";
+      } catch (err) {
+        console.error(err);
+        manageStatus.textContent = "שגיאה בשמירה.";
+        manageStatus.className = "status-text error";
+      }
+    });
+
+    // תצוגה ראשונית ריקה
+    applyPreview();
+  </script>
+</body>
+</html>
