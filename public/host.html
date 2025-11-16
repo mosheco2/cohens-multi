@@ -197,7 +197,6 @@
     .hidden {
       display: none !important;
     }
-
     /* הטיימר – מודגש יותר כברירת מחדל */
     #roundTimer {
       margin-top: 4px;
@@ -205,7 +204,6 @@
       font-weight: 700;
       letter-spacing: 0.04em;
     }
-
     /* שיפור פריסה וגדלים במובייל */
     @media (max-width: 640px) {
       body {
@@ -470,7 +468,6 @@
       }
     }
 
-    // טיימר סיבוב - כולל סיום אוטומטי ושליחת endRound לשרת
     function startLocalRoundTimer(duration) {
       clearInterval(roundTimerId);
       roundActive = true;
@@ -507,7 +504,6 @@
       return selected;
     }
 
-    // בחר הכל / עדכון “בחר הכל” לפי שינויים
     if (selectAllCatsCheckbox) {
       selectAllCatsCheckbox.addEventListener("change", () => {
         const checked = selectAllCatsCheckbox.checked;
@@ -532,12 +528,18 @@
       const teamId = roundTeamSelect.value;
       explainerSelect.innerHTML = '<option value="">בחירה אוטומטית</option>';
       if (!teamId || !lastGameState || !lastGameState.teams) return;
+
       const team = lastGameState.teams[teamId];
       if (!team || !Array.isArray(team.players)) return;
+
+      const playersMap = lastGameState.players || lastGameState.playersByClientId || {};
+
       team.players.forEach((cid, idx) => {
         const opt = document.createElement("option");
         opt.value = cid;
-        opt.textContent = "שחקן #" + (idx + 1);
+        const p = playersMap[cid];
+        const displayName = p && p.name ? p.name : ("שחקן #" + (idx + 1));
+        opt.textContent = displayName;
         explainerSelect.appendChild(opt);
       });
     }
@@ -562,6 +564,8 @@
         return;
       }
 
+      const playersMap = game.players || game.playersByClientId || {};
+
       currentGameCode = game.code;
       endGameBtn.disabled = false;
       gameCodeRow.innerHTML =
@@ -584,12 +588,16 @@
         const t = teams[id];
         const div = document.createElement("div");
         div.className = "team-row";
+
         const left = document.createElement("span");
         left.textContent = t.name || "קבוצה " + id;
+
         const middle = document.createElement("span");
         middle.className = "team-players";
-        const playersCount = (t.players && t.players.length) || 0;
+        const players = t.players || [];
+        const playersCount = players.length;
         middle.textContent = playersCount ? playersCount + " שחקנים" : "אין שחקנים עדיין";
+
         const right = document.createElement("span");
         right.className = "team-score";
         right.textContent = t.score || 0;
@@ -626,7 +634,8 @@
           ul.style.paddingRight = "1.1rem";
           players.forEach((cid, idx) => {
             const li = document.createElement("li");
-            li.textContent = "שחקן #" + (idx + 1);
+            const p = playersMap[cid];
+            li.textContent = p && p.name ? p.name : ("שחקן #" + (idx + 1));
             ul.appendChild(li);
           });
           playersByTeamEl.appendChild(ul);
