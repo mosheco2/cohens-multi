@@ -57,15 +57,18 @@
       gap: 12px;
       flex-wrap: wrap;
     }
+    /* לוגו מוגדל ודומיננטי יותר */
     .logo-main {
-      height: 56px;
+      height: 88px;
       width: auto;
-      border-radius: 14px;
+      border-radius: 18px;
       object-fit: contain;
       background: #020617;
-      padding: 4px 6px;
-      border: 1px solid rgba(148,163,184,0.5);
+      padding: 6px 8px;
+      border: 1px solid rgba(148,163,184,0.55);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.7);
     }
+
     .btn {
       display: inline-flex;
       justify-content: center;
@@ -135,6 +138,7 @@
     }
     @media (max-width: 640px) {
       h1 { font-size: 1.9rem; }
+      .logo-main { height: 76px; }
     }
   </style>
 </head>
@@ -190,7 +194,6 @@
     <div class="card">
       <p class="small-text" style="margin-bottom:4px;">שותף המשחק להיום:</p>
       <div class="banner-wrapper">
-        <!-- הקובץ שנמצא בתיקיית public -->
         <a href="#" target="_blank" rel="noopener">
           <img src="madanei-karmela-banner.png.png" alt="מעדני כרמלה - באנר" />
         </a>
