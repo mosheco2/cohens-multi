@@ -17,8 +17,7 @@
       padding: 0;
       background: #020617;
       color: #e5e7eb;
-      /* חשוב: גוף הדף לא בפלקס – שומר על עמוד אחד, ללא שתי עמודות */
-      display: block;
+      display: block; /* חשוב – עמוד אחד, לא שתי עמודות */
       font-size: 1rem;
     }
     .app {
@@ -136,6 +135,7 @@
       color: #cbd5f5;
       gap: 6px;
       background: radial-gradient(circle at top left, rgba(56,189,248,0.22), rgba(15,23,42,0.95));
+      margin-bottom: 4px;
     }
     .logo-small {
       height: 32px;
@@ -158,7 +158,7 @@
       text-align: center;
     }
 
-    /* טיימר גדול ומודגש למסך שחקן */
+    /* טיימר גדול למסך שחקן */
     #playerTimer {
       font-size: 2.2rem;
       font-weight: 800;
@@ -350,6 +350,9 @@
       <!-- ניקוד וקבוצות -->
       <div class="scoreboard" id="playerScoreboard"></div>
 
+      <!-- שמות השחקנים בקבוצה שלי -->
+      <div id="myTeamPlayers" class="status-text" style="margin-top:10px;"></div>
+
       <div id="player-banner-slot" style="margin-top:10px;"></div>
     </div>
   </div>
@@ -392,6 +395,8 @@
     const skipBtn = document.getElementById("skipBtn");
 
     const playerScoreboardEl = document.getElementById("playerScoreboard");
+    const myTeamPlayersEl = document.getElementById("myTeamPlayers");
+
     const playerLogoEl = document.getElementById("player-logo");
     const playerBannerSlot = document.getElementById("player-banner-slot");
 
@@ -437,7 +442,10 @@
 
     function renderScoreboard(teams) {
       playerScoreboardEl.innerHTML = "";
-      if (!teams) return;
+      if (!teams) {
+        myTeamPlayersEl.innerHTML = "";
+        return;
+      }
       const ids = Object.keys(teams);
       ids.forEach((id) => {
         const t = teams[id];
@@ -466,6 +474,42 @@
         row.appendChild(scoreSpan);
         playerScoreboardEl.appendChild(row);
       });
+
+      renderMyTeamPlayers();
+    }
+
+    function renderMyTeamPlayers() {
+      myTeamPlayersEl.innerHTML = "";
+      if (!currentGameState || !currentTeamId) return;
+
+      const teams = currentGameState.teams || {};
+      const team = teams[currentTeamId];
+      if (!team) return;
+
+      const playersMap = currentGameState.players || currentGameState.playersByClientId || {};
+      const players = team.players || [];
+
+      if (!players.length) {
+        myTeamPlayersEl.textContent = "אין עדיין שחקנים בקבוצה שלך.";
+        return;
+      }
+
+      const title = document.createElement("div");
+      title.innerHTML = "<strong>השחקנים בקבוצה שלך:</strong>";
+      myTeamPlayersEl.appendChild(title);
+
+      const ul = document.createElement("ul");
+      ul.style.margin = "4px 0 0";
+      ul.style.paddingRight = "1.2rem";
+
+      players.forEach((cid, idx) => {
+        const li = document.createElement("li");
+        const p = playersMap[cid];
+        li.textContent = p && p.name ? p.name : ("שחקן #" + (idx + 1));
+        ul.appendChild(li);
+      });
+
+      myTeamPlayersEl.appendChild(ul);
     }
 
     function savePlayerState() {
@@ -502,6 +546,7 @@
       roundInfoEl.textContent = "ממתינים לתחילת הסיבוב...";
       roleInfoEl.textContent = "עדיין אין מסביר בסיבוב הזה.";
       playerScoreboardEl.innerHTML = "";
+      myTeamPlayersEl.innerHTML = "";
     }
 
     joinBtn.addEventListener("click", () => {
@@ -541,7 +586,10 @@
           currentGameState = res.game || null;
 
           myNameLabel.textContent = name;
-          const team = currentGameState && currentGameState.teams && currentGameState.teams[teamId];
+          const team =
+            currentGameState &&
+            currentGameState.teams &&
+            currentGameState.teams[teamId];
           myTeamLabel.textContent = team ? (team.name || ("קבוצה " + teamId)) : ("קבוצה " + teamId);
 
           renderScoreboard(currentGameState ? currentGameState.teams : null);
@@ -603,6 +651,9 @@
         wordBox.classList.add("hidden");
         explainerButtons.classList.add("hidden");
       }
+
+      // אחרי התחלת סיבוב – לעדכן גם רשימת שחקנים בקבוצה
+      renderMyTeamPlayers();
     });
 
     socket.on("wordForExplainer", (data) => {
