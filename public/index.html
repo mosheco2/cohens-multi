@@ -219,21 +219,21 @@
     const SHEET_ID = "1RDpEq7cL0lY3K3GFQd9BqiLA0xnPki2toV1PU2x86G4";
     const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
+    // פרסור CSV פשוט: מתעלם מהכותרת, משתמש לפי סדר עמודות
     function parseCsv(text) {
       const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
-      if (lines.length === 0) return [];
-      const headers = lines[0].split(",").map(h => h.trim());
+      if (lines.length <= 1) return [];
       const rows = [];
       for (let i = 1; i < lines.length; i++) {
         const raw = lines[i];
         if (!raw.trim()) continue;
-        // פיצול בסיסי – מניח שאין פסיקים בתוך הערכים
-        const cols = raw.split(",").map(c => c.trim());
-        const obj = {};
-        headers.forEach((h, idx) => {
-          obj[h] = cols[idx] || "";
+        const cols = raw.split(","); // מניח שאין פסיקים בתוך הערכים
+        rows.push({
+          slot: (cols[0] || "").trim(),
+          imageUrl: (cols[1] || "").trim(),
+          linkUrl: (cols[2] || "").trim(),
+          altText: (cols[3] || "").trim()
         });
-        rows.push(obj);
       }
       return rows;
     }
@@ -241,9 +241,8 @@
     function resolveUrl(url) {
       const trimmed = (url || "").trim();
       if (!trimmed) return null;
-      // אם מתחיל ב-http נשתמש כמו שהוא, אחרת נתייחס כנתיב יחסי לשרת שלנו
       if (/^https?:\/\//i.test(trimmed)) return trimmed;
-      return trimmed;
+      return trimmed; // נתיב יחסי כמו /logo.png
     }
 
     function applyBrandingFromSheet(rows) {
@@ -284,7 +283,6 @@
           img.src = src;
           img.alt = homeCfg.altText || "באנר";
 
-          let container = wrapper;
           const link = (homeCfg.linkUrl || "").trim();
           if (link) {
             const a = document.createElement("a");
@@ -292,9 +290,9 @@
             a.target = "_blank";
             a.rel = "noopener";
             a.appendChild(img);
-            container.appendChild(a);
+            wrapper.appendChild(a);
           } else {
-            container.appendChild(img);
+            wrapper.appendChild(img);
           }
 
           slotEl.innerHTML = "";
