@@ -5,6 +5,9 @@
   <title>כהנ'ס - ניהול משחק</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root {
+      font-size: 16px;
+    }
     * {
       box-sizing: border-box;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -18,6 +21,7 @@
       justify-content: center;
       align-items: flex-start;
       min-height: 100vh;
+      font-size: 1rem;
     }
     .app {
       max-width: 1024px;
@@ -38,17 +42,17 @@
     label {
       display: block;
       margin-bottom: 2px;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: #9ca3af;
     }
     input, select {
       width: 100%;
-      padding: 7px 9px;
+      padding: 8px 10px;
       border-radius: 10px;
       border: 1px solid #4b5563;
       background: #020617;
       color: #e5e7eb;
-      font-size: 0.85rem;
+      font-size: 0.95rem;
     }
     input:focus, select:focus {
       outline: none;
@@ -68,11 +72,11 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 8px 14px;
+      padding: 9px 16px;
       border-radius: 999px;
       border: none;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-weight: 600;
       transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease;
       white-space: nowrap;
@@ -123,7 +127,7 @@
       padding: 4px 10px;
       border-radius: 999px;
       border: 1px solid rgba(148,163,184,0.4);
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       color: #cbd5f5;
       gap: 6px;
       background: radial-gradient(circle at top left, rgba(56,189,248,0.22), rgba(15,23,42,0.95));
@@ -135,11 +139,11 @@
       object-fit: contain;
     }
     .status-text {
-      font-size: 0.8rem;
+      font-size: 0.9rem;
       color: #9ca3af;
     }
     .status-strong {
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: 600;
     }
     .grid-2 {
@@ -155,15 +159,15 @@
     .team-row {
       display: flex;
       justify-content: space-between;
-      font-size: 0.9rem;
-      margin-bottom: 3px;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
     }
     .team-score {
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 1.05rem;
     }
     .team-players {
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       color: #9ca3af;
     }
     .badge {
@@ -192,6 +196,59 @@
     }
     .hidden {
       display: none !important;
+    }
+
+    /* הטיימר – מודגש יותר כברירת מחדל */
+    #roundTimer {
+      margin-top: 4px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    /* שיפור פריסה וגדלים במובייל */
+    @media (max-width: 640px) {
+      body {
+        font-size: 1.05rem;
+      }
+      .app {
+        padding: 16px 10px 32px;
+      }
+      .card {
+        padding: 18px 14px 20px;
+        border-radius: 18px;
+      }
+      h1 {
+        font-size: 1.6rem;
+      }
+      h3 {
+        font-size: 1.1rem;
+      }
+      label {
+        font-size: 0.9rem;
+      }
+      input, select {
+        font-size: 1rem;
+        padding: 9px 12px;
+      }
+      .btn {
+        font-size: 1rem;
+        padding: 10px 16px;
+      }
+      .status-text {
+        font-size: 0.95rem;
+      }
+      #roundTimer {
+        font-size: 1.8rem;
+        text-align: center;
+        margin-top: 8px;
+      }
+      .team-row {
+        font-size: 1rem;
+      }
+      .team-players {
+        font-size: 0.85rem;
+      }
     }
   </style>
 </head>
@@ -305,7 +362,7 @@
         <h3 style="margin:0 0 6px;">סטטוס משחק</h3>
         <div id="gameCodeRow" class="status-text">אין משחק פעיל כרגע.</div>
         <div id="roundStatus" class="status-text" style="margin-top:4px;">אין סיבוב פעיל.</div>
-        <div id="roundTimer" class="status-strong" style="margin-top:4px;">טיימר: --:--</div>
+        <div id="roundTimer" class="status-strong">טיימר: --:--</div>
 
         <hr style="border-color:rgba(31,41,55,0.9); margin:10px 0;" />
 
