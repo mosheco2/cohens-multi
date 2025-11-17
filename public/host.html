@@ -133,7 +133,7 @@
       background: radial-gradient(circle at top left, rgba(56,189,248,0.22), rgba(15,23,42,0.95));
     }
     .logo-small {
-      height: 32px;
+      height: 40px;
       width: auto;
       border-radius: 10px;
       object-fit: contain;
@@ -819,6 +819,7 @@
       renderGameState(null);
     });
 
+    // טעינת לוגו ובאנר למסך מנהל המשחק
     (function loadBrandingForHost() {
       fetch("/api/banners")
         .then((res) => res.json())
@@ -844,7 +845,7 @@
 
           const img = document.createElement("img");
           img.src = cfg.imageUrl;
-          img.alt = "Banner";
+          img.alt = cfg.altText || "Banner";
 
           a.appendChild(img);
           hostBannerSlot.appendChild(a);
