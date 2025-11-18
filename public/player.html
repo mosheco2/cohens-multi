@@ -137,12 +137,6 @@
       background: radial-gradient(circle at top left, rgba(56,189,248,0.22), rgba(15,23,42,0.95));
       margin-bottom: 4px;
     }
-    .logo-small {
-      height: 32px;
-      width: auto;
-      border-radius: 10px;
-      object-fit: contain;
-    }
     .status-text {
       font-size: 0.9rem;
       color: #9ca3af;
@@ -156,6 +150,27 @@
     }
     .center {
       text-align: center;
+    }
+
+    /* לוגו בראש מסך השחקן – גדול ודומיננטי */
+    .player-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .player-header-main {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    .player-header-logo {
+      height: 52px;
+      width: auto;
+      border-radius: 12px;
+      object-fit: contain;
     }
 
     /* טיימר גדול למסך שחקן */
@@ -260,18 +275,16 @@
   <div class="app">
     <!-- כותרת -->
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <img id="player-logo" class="logo-small hidden" alt="כהנ'ס לוגו" />
-          <div>
-            <div class="chip">כהנ'ס · שחקן</div>
-            <h1 style="margin:4px 0 0;">מסך שחקן</h1>
-          </div>
+      <div class="player-header">
+        <div class="player-header-main">
+          <div class="chip">כהנ'ס · שחקן</div>
+          <h1 style="margin:4px 0 0;">מסך שחקן</h1>
         </div>
-        <div style="display:flex; gap:6px;">
-          <button class="btn btn-ghost btn-small" onclick="location.href='instructions.html'">❔ הוראות</button>
-          <button class="btn btn-ghost btn-small" onclick="location.href='/'">⬅ מסך הבית</button>
-        </div>
+        <img id="player-logo" class="player-header-logo hidden" alt="כהנ'ס לוגו" />
+      </div>
+      <div style="display:flex; gap:6px; margin-top:10px;">
+        <button class="btn btn-ghost btn-small" onclick="location.href='instructions.html'">❔ הוראות</button>
+        <button class="btn btn-ghost btn-small" onclick="location.href='/'">⬅ מסך הבית</button>
       </div>
       <p class="status-text" style="margin-top:6px;">
         הזן את השם שלך, קוד המשחק והקבוצה, ותתחיל לשחק.
@@ -308,6 +321,9 @@
       </button>
 
       <div id="joinStatus" class="status-text" style="margin-top:8px;"></div>
+
+      <!-- באנר במסך ההצטרפות -->
+      <div id="player-banner-slot-join" style="margin-top:10px;"></div>
     </div>
 
     <!-- מסך משחק לאחר הצטרפות -->
@@ -353,8 +369,8 @@
       <!-- שמות השחקנים בקבוצה שלי -->
       <div id="myTeamPlayers" class="status-text" style="margin-top:10px;"></div>
 
-      <!-- חריץ לבאנר -->
-      <div id="player-banner-slot" style="margin-top:10px;"></div>
+      <!-- באנר במסך המשחק -->
+      <div id="player-banner-slot-game" style="margin-top:10px;"></div>
     </div>
   </div>
 
@@ -399,7 +415,8 @@
     const myTeamPlayersEl = document.getElementById("myTeamPlayers");
 
     const playerLogoEl = document.getElementById("player-logo");
-    const playerBannerSlot = document.getElementById("player-banner-slot");
+    const playerBannerJoinSlot = document.getElementById("player-banner-slot-join");
+    const playerBannerGameSlot = document.getElementById("player-banner-slot-game");
 
     function formatTime(seconds) {
       const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -786,9 +803,25 @@
     function normalizeImageUrl(url) {
       if (!url) return null;
       if (url.startsWith("http://") || url.startsWith("https://")) return url;
-      // אם הנתיב יחסי (לדוגמה "logo.png" או "public/logo.png") – נהפוך לנתיב מהשורש
       if (!url.startsWith("/")) return "/" + url.replace(/^public\//, "");
       return url.replace(/^\/public\//, "/");
+    }
+
+    function renderBanner(slot, imgUrl, altText, linkUrl) {
+      if (!slot || !imgUrl) return;
+      slot.innerHTML = "";
+      const a = document.createElement("a");
+      a.className = "ad-banner";
+      a.href = linkUrl || "#";
+      if (linkUrl) {
+        a.target = "_blank";
+        a.rel = "noopener";
+      }
+      const img = document.createElement("img");
+      img.src = imgUrl;
+      img.alt = altText || "Banner";
+      a.appendChild(img);
+      slot.appendChild(a);
     }
 
     function applyDefaultBrandingForPlayer() {
@@ -799,27 +832,17 @@
         playerLogoEl.classList.remove("hidden");
       }
 
-      // באנר ברירת מחדל
-      if (playerBannerSlot) {
-        playerBannerSlot.innerHTML = "";
-        const a = document.createElement("a");
-        a.className = "ad-banner";
-        a.href = "#";
-
-        const img = document.createElement("img");
-        img.src = "/player-banner.png";
-        img.alt = "Banner";
-
-        a.appendChild(img);
-        playerBannerSlot.appendChild(a);
-      }
+      // באנר ברירת מחדל – מייד מרנדר לשני הסלוטים
+      const defaultBannerUrl = "/madanei-karmela-banner.png";
+      renderBanner(playerBannerJoinSlot, defaultBannerUrl, "Banner", "#");
+      renderBanner(playerBannerGameSlot, defaultBannerUrl, "Banner", "#");
     }
 
     (function loadBrandingForPlayer() {
-      // קודם כל נטען ברירת מחדל מהתיקייה public
+      // קודם כל ברירות מחדל מה-public
       applyDefaultBrandingForPlayer();
 
-      // ואז ננסה לעדכן לפי ה־API (אם קיים)
+      // ואז מנסים למשוך קונפיג דינמי מ-API (אם קיים)
       fetch("/api/banners")
         .then((res) => {
           if (!res.ok) throw new Error("banners api error");
@@ -839,31 +862,18 @@
             }
           }
 
-          // באנר שחקן – קודם player, אח"כ home
+          // באנר – קודם player ואז home
           const cfg = data.player || data.home;
-          if (!cfg || !cfg.imageUrl || !playerBannerSlot) return;
+          if (!cfg || !cfg.imageUrl) return;
 
           const imgUrl = normalizeImageUrl(cfg.imageUrl);
           if (!imgUrl) return;
 
-          playerBannerSlot.innerHTML = "";
-          const a = document.createElement("a");
-          a.className = "ad-banner";
-          a.href = cfg.linkUrl || "#";
-          if (cfg.linkUrl) {
-            a.target = "_blank";
-            a.rel = "noopener";
-          }
-
-          const img = document.createElement("img");
-          img.src = imgUrl;
-          img.alt = cfg.altText || "Banner";
-
-          a.appendChild(img);
-          playerBannerSlot.appendChild(a);
+          renderBanner(playerBannerJoinSlot, imgUrl, cfg.altText || "Banner", cfg.linkUrl);
+          renderBanner(playerBannerGameSlot, imgUrl, cfg.altText || "Banner", cfg.linkUrl);
         })
         .catch(() => {
-          // אם יש שגיאה, נשארים עם ברירות המחדל
+          // אם ה-API נופל, נשארים עם ברירות המחדל
         });
     })();
   </script>
