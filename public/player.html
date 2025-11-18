@@ -137,6 +137,35 @@
       background: radial-gradient(circle at top left, rgba(56,189,248,0.22), rgba(15,23,42,0.95));
       margin-bottom: 4px;
     }
+
+    /* כותרת + לוגו */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .page-header-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .page-header-title h1 {
+      margin: 2px 0 0;
+      font-size: 1.7rem;
+    }
+    .logo-small {
+      height: 52px;
+      width: auto;
+      border-radius: 14px;
+      object-fit: contain;
+      box-shadow:
+        0 0 0 2px rgba(15,23,42,0.95),
+        0 12px 30px rgba(0,0,0,0.6);
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.3), #020617);
+    }
     .status-text {
       font-size: 0.9rem;
       color: #9ca3af;
@@ -150,36 +179,6 @@
     }
     .center {
       text-align: center;
-    }
-
-    /* סרגל כותרת + לוגו */
-    .header-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .header-main {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-    .header-logo {
-      height: 64px;
-      width: auto;
-      border-radius: 16px;
-      flex-shrink: 0;
-    }
-    .header-title h1 {
-      margin: 4px 0 0;
-    }
-    .header-actions {
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
     }
 
     /* טיימר גדול למסך שחקן */
@@ -239,7 +238,6 @@
       margin-right: 6px;
     }
 
-    /* באנר פרסום */
     .ad-banner {
       display: block;
       margin-top: 14px;
@@ -248,11 +246,21 @@
       background: radial-gradient(circle at top left, rgba(56,189,248,0.25), rgba(15,23,42,0.98));
       border: 1px solid rgba(148,163,184,0.6);
       text-decoration: none;
+      position: relative;
+      overflow: hidden;
     }
     .ad-banner img {
       width: 100%;
       display: block;
       border-radius: 14px;
+    }
+    .ad-banner-label {
+      position: absolute;
+      top: 8px;
+      left: 14px;
+      font-size: 0.85rem;
+      color: #a855f7;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.7);
     }
 
     @media (max-width: 640px) {
@@ -268,6 +276,12 @@
       h1 {
         font-size: 1.5rem;
       }
+      .page-header {
+        align-items: center;
+      }
+      .logo-small {
+        height: 56px;
+      }
       #playerTimer {
         font-size: 2.5rem;
         margin-top: 12px;
@@ -278,9 +292,6 @@
       .btn {
         font-size: 1.02rem;
       }
-      .header-logo {
-        height: 72px;
-      }
     }
   </style>
 </head>
@@ -288,15 +299,15 @@
   <div class="app">
     <!-- כותרת -->
     <div class="card">
-      <div class="header-bar">
-        <div class="header-main">
-          <img src="logo.png" alt="כהנ'ס לוגו" class="header-logo" />
-          <div class="header-title">
+      <div class="page-header">
+        <div class="page-header-main">
+          <img id="player-logo" class="logo-small hidden" alt="כהנ'ס לוגו" />
+          <div class="page-header-title">
             <div class="chip">כהנ'ס · שחקן</div>
             <h1>מסך שחקן</h1>
           </div>
         </div>
-        <div class="header-actions">
+        <div style="display:flex; gap:6px;">
           <button class="btn btn-ghost btn-small" onclick="location.href='instructions.html'">❔ הוראות</button>
           <button class="btn btn-ghost btn-small" onclick="location.href='/'">⬅ מסך הבית</button>
         </div>
@@ -336,11 +347,6 @@
       </button>
 
       <div id="joinStatus" class="status-text" style="margin-top:8px;"></div>
-
-      <!-- באנר שחקן -->
-      <a href="#" class="ad-banner">
-        <img src="madanei-karmela-banner.png" alt="מעדני כרמלה" />
-      </a>
     </div>
 
     <!-- מסך משחק לאחר הצטרפות -->
@@ -386,10 +392,7 @@
       <!-- שמות השחקנים בקבוצה שלי -->
       <div id="myTeamPlayers" class="status-text" style="margin-top:10px;"></div>
 
-      <!-- באנר גם במסך המשחק -->
-      <a href="#" class="ad-banner">
-        <img src="madanei-karmela-banner.png" alt="מעדני כרמלה" />
-      </a>
+      <div id="player-banner-slot" style="margin-top:10px;"></div>
     </div>
   </div>
 
@@ -432,6 +435,12 @@
 
     const playerScoreboardEl = document.getElementById("playerScoreboard");
     const myTeamPlayersEl = document.getElementById("myTeamPlayers");
+
+    const playerLogoEl = document.getElementById("player-logo");
+    const playerBannerSlot = document.getElementById("player-banner-slot");
+
+    const DEFAULT_LOGO = "logo.png";
+    const DEFAULT_BANNER = "madanei-karmela-banner.png";
 
     function formatTime(seconds) {
       const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -811,6 +820,84 @@
           joinStatus.textContent = "";
         }
       );
+    })();
+
+    /* לוגו + באנר: טעינה דינמית עם נפילה לברירת מחדל */
+    function applyLogo(src, alt) {
+      if (!playerLogoEl) return;
+      playerLogoEl.src = src || DEFAULT_LOGO;
+      playerLogoEl.alt = alt || "כהנ'ס";
+      playerLogoEl.classList.remove("hidden");
+    }
+
+    function applyBanner(src, alt, link, title) {
+      if (!playerBannerSlot) return;
+      playerBannerSlot.innerHTML = "";
+
+      const bannerSrc = src || DEFAULT_BANNER;
+
+      const a = document.createElement("a");
+      a.className = "ad-banner";
+      a.href = link || "#";
+      if (link) {
+        a.target = "_blank";
+        a.rel = "noopener";
+      }
+
+      if (title) {
+        const label = document.createElement("div");
+        label.className = "ad-banner-label";
+        label.textContent = title;
+        a.appendChild(label);
+      }
+
+      const img = document.createElement("img");
+      img.src = bannerSrc;
+      img.alt = alt || "Banner";
+      a.appendChild(img);
+
+      playerBannerSlot.appendChild(a);
+    }
+
+    (function loadBrandingForPlayer() {
+      fetch("/api/banners")
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          // אם אין בכלל נתונים – נופלים ישר לברירות המחדל
+          if (!data) {
+            applyLogo(DEFAULT_LOGO, "כהנ'ס");
+            applyBanner(DEFAULT_BANNER, "מעדני כרמלה");
+            return;
+          }
+
+          // לוגו
+          const logoCfg = data.logo || {};
+          const logoSrc =
+            logoCfg.imageUrl ||
+            logoCfg.image ||
+            logoCfg.src ||
+            DEFAULT_LOGO;
+          applyLogo(logoSrc, logoCfg.altText || "כהנ'ס");
+
+          // באנר לשחקן – קודם slot ייעודי, אם אין נשתמש ב-home
+          const bCfg = data.player || data.home || {};
+          const bannerSrc =
+            bCfg.imageUrl ||
+            bCfg.image ||
+            bCfg.src ||
+            DEFAULT_BANNER;
+          applyBanner(
+            bannerSrc,
+            bCfg.altText || bCfg.title || "Banner",
+            bCfg.linkUrl || bCfg.href || "",
+            bCfg.title || ""
+          );
+        })
+        .catch(() => {
+          // במקרה של שגיאה – גם נופלים לברירות המחדל
+          applyLogo(DEFAULT_LOGO, "כהנ'ס");
+          applyBanner(DEFAULT_BANNER, "מעדני כרמלה");
+        });
     })();
   </script>
 </body>
