@@ -2,146 +2,385 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <title>כהנ'ס - הוראות משחק</title>
+  <title>הוראות משחק – כהנ'ס Alias Party</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- פונטים -->
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+
   <style>
     * {
       box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    body {
       margin: 0;
       padding: 0;
-      background: #020617;
+    }
+
+    body {
+      font-family: "Heebo", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
       color: #e5e7eb;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      min-height: 100vh;
+      padding: 16px;
     }
-    .app {
-      max-width: 720px;
+
+    .page-shell {
       width: 100%;
-      padding: 20px 14px 32px;
+      max-width: 960px;
     }
+
     .card {
-      background: #020617;
-      border-radius: 20px;
-      padding: 18px 18px 20px;
-      box-shadow: 0 18px 45px rgba(0,0,0,0.85);
-      border: 1px solid rgba(148,163,184,0.25);
-      margin-bottom: 16px;
+      background: radial-gradient(circle at top left, rgba(59,130,246,0.15), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(16,185,129,0.12), transparent 60%),
+                  #020617;
+      border-radius: 32px;
+      border: 1px solid rgba(148,163,184,0.35);
+      padding: 20px 18px 24px;
+      box-shadow:
+        0 22px 45px rgba(15,23,42,0.9),
+        0 0 0 1px rgba(15,23,42,0.9);
     }
-    h1, h2, h3 {
-      margin-top: 0;
+
+    @media (min-width: 768px) {
+      .card {
+        padding: 26px 28px 32px;
+      }
     }
-    h1 {
-      font-size: 1.7rem;
+
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 8px;
     }
-    h2 {
-      font-size: 1.25rem;
-      margin-top: 18px;
-    }
-    p {
-      margin: 4px 0 10px;
-      font-size: 0.97rem;
-      color: #cbd5f5;
-    }
-    ul {
-      margin: 4px 0 10px;
-      padding-right: 1.2rem;
-      font-size: 0.95rem;
-      color: #e5e7eb;
-    }
-    li {
-      margin-bottom: 4px;
-    }
-    .chip {
+
+    .pill {
       display: inline-flex;
       align-items: center;
-      padding: 4px 10px;
+      gap: 8px;
+      padding: 6px 14px;
       border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.4);
-      font-size: 0.8rem;
-      color: #cbd5f5;
-      gap: 6px;
-      background: radial-gradient(circle at top left, rgba(56,189,248,0.22), rgba(15,23,42,0.95));
-      margin-bottom: 4px;
+      background: rgba(15,23,42,0.85);
+      border: 1px solid rgba(148,163,184,0.6);
+      font-size: 13px;
+      color: #e5e7eb;
+      box-shadow: 0 10px 25px rgba(15,23,42,0.7);
+      white-space: nowrap;
     }
-    .btn {
+
+    .pill span.icon {
+      font-size: 16px;
+    }
+
+    .brand-logo-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex: 1;
+    }
+
+    .brand-logo-wrapper a {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 8px 14px;
+      padding: 6px 10px;
       border-radius: 999px;
-      border: 1px solid #4b5563;
-      background: transparent;
-      color: #e5e7eb;
-      font-size: 0.9rem;
-      cursor: pointer;
-      margin-bottom: 10px;
-      white-space: nowrap;
-    }
-    .btn:hover {
       background: rgba(15,23,42,0.9);
-    }
-    .section-tag {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: #9ca3af;
-      margin-bottom: 2px;
-    }
-    .highlight {
-      color: #38bdf8;
-      font-weight: 600;
-    }
-    .logo-small {
-      height: 40px;
-      width: auto;
-      border-radius: 10px;
-      object-fit: contain;
+      border: 1px solid rgba(148,163,184,0.5);
+      box-shadow: 0 10px 25px rgba(15,23,42,0.9);
     }
 
-    /* באנר פרסומת */
-    .ad-banner {
+    .brand-logo-wrapper img {
+      max-height: 40px;
+      width: auto;
       display: block;
-      border-radius: 18px;
-      padding: 4px;
-      background: radial-gradient(circle at top left, rgba(56,189,248,0.25), rgba(15,23,42,0.98));
-      border: 1px solid rgba(148,163,184,0.6);
-      text-decoration: none;
     }
-    .ad-banner img {
+
+    @media (min-width: 768px) {
+      .brand-logo-wrapper img {
+        max-height: 48px;
+      }
+    }
+
+    .title {
+      font-size: 28px;
+      line-height: 1.3;
+      font-weight: 800;
+      color: #f9fafb;
+      margin-top: 6px;
+      margin-bottom: 10px;
+    }
+
+    @media (min-width: 768px) {
+      .title {
+        font-size: 32px;
+      }
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: #cbd5f5;
+      margin-bottom: 18px;
+    }
+
+    .subtitle strong {
+      color: #e5e7eb;
+    }
+
+    .buttons-row {
+      display: flex;
+      justify-content: flex-start;
+      gap: 12px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.95);
+      color: #e5e7eb;
+      font-size: 14px;
+      text-decoration: none;
+      box-shadow: 0 14px 30px rgba(15,23,42,0.8);
+    }
+
+    .btn-secondary span.icon {
+      font-size: 18px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #e5e7eb;
+      margin-top: 10px;
+      margin-bottom: 6px;
+    }
+
+    .section-subtitle {
+      font-size: 14px;
+      color: #9ca3af;
+      margin-bottom: 14px;
+    }
+
+    .instructions-list {
+      list-style: none;
+      font-size: 15px;
+      line-height: 1.7;
+      color: #e5e7eb;
+      margin-bottom: 18px;
+    }
+
+    .instructions-list li {
+      margin-bottom: 6px;
+      padding-right: 1.2em;
+      position: relative;
+    }
+
+    .instructions-list li::before {
+      content: "•";
+      position: absolute;
+      right: 0;
+      top: 0;
+      color: #38bdf8;
+    }
+
+    .highlight-box {
+      margin-top: 10px;
+      border-radius: 18px;
+      border: 1px solid rgba(56, 189, 248, 0.6);
+      background: linear-gradient(135deg, rgba(15,23,42,0.85), rgba(15,23,42,0.98));
+      padding: 10px 12px;
+      font-size: 14px;
+      color: #e0f2fe;
+    }
+
+    .highlight-box strong {
+      color: #7dd3fc;
+    }
+
+    .section-spacer {
+      margin-top: 18px;
+    }
+
+    .banner-wrapper {
+      margin-top: 20px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(148,163,184,0.35);
+      background: radial-gradient(circle at top, rgba(15,23,42,0.95), rgba(15,23,42,1));
+    }
+
+    .banner-wrapper a {
+      display: block;
+    }
+
+    .banner-wrapper img {
       width: 100%;
       display: block;
-      border-radius: 14px;
+      height: auto;
     }
 
-    @media (max-width: 640px) {
-      .card {
-        padding: 16px 14px 18px;
-      }
-      h1 {
-        font-size: 1.5rem;
-      }
+    .small-footnote {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="card">
-      <!-- כותרת עם לוגו + חזרה למסך הבית -->
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <img src="logo.png" alt="כהנ'ס לוגו" class="logo-small" />
-          <div>
-            <div class="chip">כהנ'ס · Alias Party</div>
-            <h1>הוראות משחק – כהנ'ס</h1>
-          </div>
+  <div class="page-shell">
+    <main class="card">
+      <!-- שורת עליונה: שם המשחק + לוגו -->
+      <div class="top-row">
+        <div class="pill">
+          <span class="icon">🎲</span>
+          <span>כהנ'ס · Alias Party</span>
         </div>
-        <button class="btn" onclick="location.href='/'">⬅ חזרה למסך הבית</button>
+        <div class="brand-logo-wrapper">
+          <a id="brandLogoLink" href="#" target="_blank" rel="noopener">
+            <img id="brandLogo" src="logo.png" alt="לוגו כהנ'ס" />
+          </a>
+        </div>
       </div>
 
-      <p>
-        משחק אליאס משפ
+      <!-- כותרת -->
+      <h1 class="title">הוראות משחק – כהנ'ס</h1>
+      <p class="subtitle">
+        דף אחד קצר שיעשה סדר – איך נכנסים, מי לוחץ איפה, ומה עושים עם כל המילים שרצות על המסך.
+      </p>
+
+      <!-- כפתור חזרה -->
+      <div class="buttons-row">
+        <a href="index.html" class="btn-secondary">
+          <span class="icon">⬅️</span>
+          <span>חזרה למסך הבית</span>
+        </a>
+      </div>
+
+      <!-- איך מתחילים -->
+      <h2 class="section-title">איך מתחילים לשחק?</h2>
+      <p class="section-subtitle">שומרים את המסך הזה איפשהו בראש – ואז:</p>
+      <ul class="instructions-list">
+        <li><strong>המנהל</strong> נכנס לכתובת: <strong>cohens-multi.onrender.com</strong> ובוחר "אני מנהל – פתיחת משחק".</li>
+        <li>המנהל נותן שם למשחק, בוחר כמה קבוצות יש, מגדיר יעד נקודות וזמן לכל סיבוב – ולוחץ על <strong>"פתח משחק"</strong>.</li>
+        <li>המערכת יוצרת <strong>קוד משחק</strong>. שולחים את הקוד לכל המשתתפים (וואטסאפ משפחתי, קבוצה, צעקה מהסלון – מה שעובד 😅).</li>
+        <li>כל השחקנים נכנסים גם הם לכתובת <strong>cohens-multi.onrender.com</strong>, בוחרים "אני שחקן – הצטרפות למשחק".</li>
+        <li>כל שחקן כותב שם (שיראה בלוח הניקוד), בוחר קבוצה, מקליד את קוד המשחק – ולוחץ על <strong>"הצטרפות למשחק"</strong>.</li>
+      </ul>
+
+      <!-- איך משחקים סיבוב -->
+      <div class="section-spacer">
+        <h2 class="section-title">איך עובד סיבוב?</h2>
+        <ul class="instructions-list">
+          <li>בכל סיבוב יש <strong>מציג אחד</strong> – המערכת יכולה לבחור אותו אוטומטית, או שהמנהל בוחר ידנית.</li>
+          <li>רק המציג רואה את המילה על המסך. הוא צריך להסביר לקבוצה בלי לומר את המילה עצמה, בלי שורשים דומים, ובלי מחוות מוגזמות מדי 😉.</li>
+          <li>הקבוצה צועקת תשובות. ברגע שמישהו פוגע – המציג לוחץ על <strong>"אישור"</strong> ועוברים למילה הבאה.</li>
+          <li>אם המילה בלתי אפשרית / כלב נובח / מישהו שופך קפה – אפשר ללחוץ <strong>"דלג"</strong>, אבל שים לב:
+            <br />כל דילוג <strong>מוריד נקודה אחת</strong> מהסיבוב.
+          </li>
+          <li>ברגע שהטיימר נגמר – הסיבוב נעצר, קופצת הודעה מצחיקה בהתאם לכמה נקודות השגתם, והמנהל מתקדם לסיבוב הבא.</li>
+        </ul>
+      </div>
+
+      <!-- ניקוד וניצחון -->
+      <div class="section-spacer">
+        <h2 class="section-title">ניקוד וניצחון</h2>
+        <ul class="instructions-list">
+          <li>כל מילה שנפתרה בזמן – שווה <strong>נקודה אחת</strong>.</li>
+          <li>כל דילוג – <strong>מינוס נקודה</strong> (כן, כן… אי אפשר לברוח לנצח).</li>
+          <li>המערכת סופרת את הנקודות לכל קבוצה. ברגע שקבוצה מגיעה ליעד שהמנהל הגדיר – המשחק נגמר והקבוצה מוכתרת כאלופי כהנ'ס! 👑</li>
+        </ul>
+      </div>
+
+      <!-- טיפ מנהל -->
+      <div class="highlight-box section-spacer">
+        <strong>טיפ למנהל:</strong>
+        לפני שמתחילים, בקשו מכל השחקנים לשמור את המסך פתוח. יציאה מהדפדפן או רענון עלולים לזרוק אותם מהמשחק – ואז כולם כועסים על המנהל. לא חבל? 😉
+      </div>
+
+      <!-- באנר פרסומת -->
+      <div class="banner-wrapper">
+        <a id="bottomBannerLink" href="#" target="_blank" rel="noopener">
+          <img id="bottomBannerImage" src="madanei-karmela-banner.png.png" alt="באנר" />
+        </a>
+      </div>
+
+      <p class="small-footnote">
+        כהנ'ס – משחק האליאס המשפחתי שלא צריך קופסה, רק טלפונים והומור.
+      </p>
+    </main>
+  </div>
+
+  <script>
+    // === טענת לוגו ובאנר מגיליון גוגל ===
+    // מבוסס על הגיליון: slot | imageUrl | linkUrl | altText
+    const SHEET_CSV_URL =
+      "https://docs.google.com/spreadsheets/d/1RDpEq7cL0lY3K3GFQd9BqiLA0xnPki2toV1PU2x86G4/export?format=csv";
+
+    const bannerSlots = {
+      logo: { imgId: "brandLogo", linkId: "brandLogoLink" },
+      home: { imgId: "bottomBannerImage", linkId: "bottomBannerLink" } // משתמשים בבאנר הבית גם בדף הוראות
+    };
+
+    function parseCsv(text) {
+      const lines = text.trim().split(/\r?\n/);
+      if (!lines.length) return [];
+      const headers = lines[0].split(",").map(h => h.trim());
+      return lines.slice(1).map(line => {
+        const cols = line.split(",").map(c => c.trim());
+        const obj = {};
+        headers.forEach((h, i) => (obj[h] = cols[i] || ""));
+        return obj;
+      });
+    }
+
+    async function loadBrandFromSheet() {
+      try {
+        const res = await fetch(SHEET_CSV_URL);
+        if (!res.ok) return;
+        const text = await res.text();
+        const rows = parseCsv(text);
+
+        const bySlot = {};
+        rows.forEach(row => {
+          if (!row.slot) return;
+          bySlot[row.slot] = row;
+        });
+
+        Object.entries(bannerSlots).forEach(([slot, cfg]) => {
+          const row = bySlot[slot];
+          if (!row) return;
+
+          const imgEl = document.getElementById(cfg.imgId);
+          const linkEl = document.getElementById(cfg.linkId);
+          if (imgEl && row.imageUrl) {
+            imgEl.src = row.imageUrl;
+            if (row.altText) imgEl.alt = row.altText;
+          }
+          if (linkEl && row.linkUrl) {
+            linkEl.href = row.linkUrl;
+          } else if (linkEl) {
+            // אם אין קישור – שלא יעשה כלום
+            linkEl.removeAttribute("href");
+          }
+        });
+      } catch (err) {
+        // במקרה של שגיאה – פשוט נשארים עם התמונות הדיפולטיות
+        console.error("Banner / logo load error:", err);
+      }
+    }
+
+    loadBrandFromSheet();
+  </script>
+</body>
+</html>
