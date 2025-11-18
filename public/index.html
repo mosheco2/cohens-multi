@@ -1,222 +1,39 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <title>כהנ'ס - Alias Party</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", sans-serif;
-    }
-    body {
-      margin: 0;
-      background: #020617;
-      color: #f9fafb;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 16px;
-    }
-    .page {
-      width: 100%;
-      max-width: 800px;
-    }
-    .card {
-      background: #020617;
-      border-radius: 24px;
-      padding: 18px;
-      border: 1px solid rgba(148,163,184,0.4);
-      box-shadow: 0 20px 45px rgba(0,0,0,0.85);
-      margin-bottom: 16px;
-      overflow: hidden;
-    }
-    h1 {
-      margin: 4px 0 0;
-      font-size: 2.2rem;
-    }
-    p {
-      margin: 4px 0;
-    }
-    .chip {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.5);
-      font-size: 0.8rem;
-      color: #cbd5f5;
-      background: radial-gradient(circle at top left,
-        rgba(56,189,248,0.2),
-        rgba(15,23,42,0.95));
-      margin-bottom: 4px;
-    }
-    .top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    /* לוגו */
-    .logo-main {
-      height: 88px;
-      width: auto;
-      border-radius: 18px;
-      object-fit: contain;
-      background: #020617;
-      padding: 6px 8px;
-      border: 1px solid rgba(148,163,184,0.55);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.7);
-    }
+// server.js
+const express = require('express');
+const path = require('path');
+const app = express();
 
-    .btn {
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      padding: 11px 18px;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: 600;
-      width: 100%;
-      margin-top: 6px;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-      color: #020617;
-      box-shadow: 0 12px 30px rgba(56,189,248,0.45);
-    }
-    .btn-success {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: #022c22;
-      box-shadow: 0 12px 30px rgba(34,197,94,0.45);
-    }
-    .btn-ghost {
-      background: transparent;
-      border: 1px solid #4b5563;
-      color: #e5e7eb;
-      width: auto;
-      padding: 6px 12px;
-      font-size: 0.9rem;
-    }
-    .mode-title {
-      font-size: 1.05rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    .mode-text {
-      font-size: 0.9rem;
-      color: #9ca3af;
-      margin-bottom: 6px;
-    }
-    .mode-card {
-      background: radial-gradient(circle at top,
-        rgba(56,189,248,0.07),
-        rgba(15,23,42,0.98));
-      border-radius: 18px;
-      padding: 12px 14px 14px;
-      border: 1px solid rgba(148,163,184,0.35);
-      margin-bottom: 10px;
-    }
-    .small-text {
-      font-size: 0.9rem;
-      color: #9ca3af;
-    }
-    .banner-wrapper {
-      border-radius: 20px;
-      padding: 4px;
-      background: radial-gradient(circle at top left,
-        rgba(56,189,248,0.25),
-        rgba(15,23,42,0.98));
-      border: 1px solid rgba(148,163,184,0.65);
-    }
-    .banner-wrapper img {
-      width: 100%;
-      display: block;
-      border-radius: 16px;
-    }
+// Render נותן PORT כ־env variable
+const PORT = process.env.PORT || 10000;
 
-    /* התאמה למובייל */
-    @media (max-width: 640px) {
-      h1 {
-        font-size: 1.9rem;
-        text-align: center;
-      }
-      .top-row {
-        flex-direction: column-reverse;   /* קודם טקסט, מתחת לוגו */
-        align-items: center;
-        gap: 16px;
-      }
-      .top-row > div {
-        text-align: center;
-      }
-      .logo-main {
-        height: 110px;      /* לוגו גדול יותר */
-        margin-top: 4px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <!-- כרטיס כותרת + לוגו -->
-    <div class="card">
-      <div class="top-row">
-        <div>
-          <div class="chip">כהנ'ס · Alias Party 🎲</div>
-          <h1>כהנ'ס</h1>
-          <p class="small-text">
-            בחרו מצב משחק לפי התפקיד שלכם, ותנו לאליאס המשפחתי להתחיל לעבוד.
-          </p>
-        </div>
-        <img src="logo.png" alt="כהנ'ס לוגו" class="logo-main" />
-      </div>
-    </div>
+// סטטיקה מהתיקייה public
+app.use(express.static(path.join(__dirname, 'public')));
 
-    <!-- כרטיס מצבי משחק -->
-    <div class="card">
-      <div class="mode-card">
-        <div class="mode-title">אני מנהל – פתיחת משחק 👑</div>
-        <div class="mode-text">
-          יצירת חדר משחק חדש, הגדרת קבוצות וניקוד יעד, צפייה בכל השחקנים והתחלת סיבובים.
-        </div>
-        <button class="btn btn-primary" onclick="location.href='host.html'">
-          להיכנס כמנהל
-        </button>
-      </div>
+// דף הבית
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-      <div class="mode-card">
-        <div class="mode-title">אני שחקן – הצטרפות למשחק 🎮</div>
-        <div class="mode-text">
-          מצטרף למשחק קיים עם קוד שמנהל נותן, בוחר שם וקבוצה, ומתחיל לשחק מהטלפון.
-        </div>
-        <button class="btn btn-success" onclick="location.href='player.html'">
-          להיכנס כשחקן
-        </button>
-      </div>
+// דף מנהל
+app.get('/host', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'host.html'));
+});
 
-      <div style="margin-top: 6px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-        <button class="btn-ghost" onclick="location.href='instructions.html'">
-          ❔ הוראות משחק
-        </button>
-        <span class="small-text">
-          המנהל פותח משחק חדש → השחקנים נכנסים כ"שחקן" ומקלידים את קוד המשחק.
-        </span>
-      </div>
-    </div>
+// דף שחקן
+app.get('/player', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'player.html'));
+});
 
-    <!-- כרטיס באנר -->
-    <div class="card">
-      <p class="small-text" style="margin-bottom:4px;">שותף המשחק להיום:</p>
-      <div class="banner-wrapper">
-        <a href="#" target="_blank" rel="noopener">
-          <img src="madanei-karmela-banner.png.png" alt="מעדני כרמלה - באנר" />
-        </a>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
+// דף הוראות
+app.get('/instructions', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'instructions.html'));
+});
+
+// דף ניהול באנרים (אם תרצה)
+app.get('/admin-banners', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin-banners.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
