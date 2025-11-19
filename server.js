@@ -82,6 +82,54 @@ app.post("/api/admin/banners", (req, res) => {
 });
 
 // ----------------------
+//   דוח חדרים פתוחים למנהל
+// ----------------------
+
+app.get("/api/admin/rooms", (req, res) => {
+  try {
+    const rooms = [];
+
+    Object.entries(games).forEach(([code, game]) => {
+      if (!game) return;
+
+      const playersMap = game.players || {};
+      const playersArr = Object.values(playersMap).map((p, idx) => ({
+        name: p && p.name ? p.name : `שחקן ${idx + 1}`,
+        teamId: p && p.teamId ? p.teamId : null,
+      }));
+
+      rooms.push({
+        code: game.code || code,
+        name:
+          game.name ||
+          game.title ||
+          `משחק ${code}`,
+        managerName: game.hostName || null,
+        status: game.currentRound && game.currentRound.active ? "round-active" : "active",
+        createdAt: game.createdAt || null,
+        playersCount: playersArr.length,
+        players: playersArr,
+      });
+    });
+
+    const totalPlayers = rooms.reduce(
+      (sum, r) => sum + (r.playersCount || 0),
+      0
+    );
+
+    res.json({
+      ok: true,
+      rooms,
+      totalRooms: rooms.length,
+      totalPlayers,
+    });
+  } catch (err) {
+    console.error("Error in /api/admin/rooms:", err);
+    res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
+// ----------------------
 //   מאגר מילים / קטגוריות
 // ----------------------
 
