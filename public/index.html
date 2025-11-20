@@ -60,6 +60,25 @@
       max-width: 820px;
     }
 
+    /* לוגו גדול בראש הדף */
+    .logo-hero {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .logo-hero img {
+      height: 150px;
+      max-width: 90%;
+      object-fit: contain;
+      border-radius: 28px;
+      padding: 6px 10px;
+      background: #FFFFFF;
+      box-shadow:
+        0 0 0 3px #FFFFFF,
+        0 18px 40px rgba(0, 0, 0, 0.18);
+    }
+
     .card {
       background: #FFFFFF;
       border-radius: 32px;
@@ -103,16 +122,6 @@
       align-items: center;
       gap: 18px;
       flex-wrap: wrap;
-    }
-
-    /* לוגו מילמניה */
-    .logo-main {
-      height: 110px;
-      width: auto;
-      object-fit: contain;
-      border-radius: 24px;
-      padding: 4px 8px;
-      background: transparent;
     }
 
     .subtitle {
@@ -238,19 +247,15 @@
         text-align: center;
       }
       .top-row {
-        flex-direction: column-reverse;
-        align-items: center;
-        gap: 16px;
-      }
-      .top-row > div {
-        text-align: center;
-      }
-      .logo-main {
-        height: 140px;
-        margin-top: 4px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
       }
       .subtitle {
         font-size: 0.95rem;
+      }
+      .logo-hero img {
+        height: 140px;
       }
       .bottom-row {
         flex-direction: column;
@@ -266,12 +271,17 @@
 </head>
 <body>
   <div class="page">
-    <!-- כרטיס כותרת + לוגו -->
+    <!-- לוגו גדול בראש הדף -->
+    <div class="logo-hero">
+      <img src="logo.png" alt="מילמניה - Wordmania לוגו" />
+    </div>
+
+    <!-- כרטיס כותרת + טקסט -->
     <div class="card">
       <div class="top-row">
         <div>
           <div class="chip">
-            <span>מילמניה</span> · Wordmania 🎲
+            <span>Wordmania</span> · מילמניה 🎲
           </div>
           <h1>מילמניה</h1>
           <p class="subtitle">
@@ -279,8 +289,6 @@
             את המילה בלי להגיד אותה. צחוקים מובטחים 😄
           </p>
         </div>
-        <!-- שים כאן את קובץ הלוגו החדש (אפשר להשאיר בשם logo.png ולהחליף את הקובץ ב-public) -->
-        <img src="logo.png" alt="מילמניה - Wordmania לוגו" class="logo-main" />
       </div>
     </div>
 
