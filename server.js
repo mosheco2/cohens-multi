@@ -1,4 +1,4 @@
-// server.js - כהנ'ס Alias Party
+// server.js - כהנ'ס Party
 
 const express = require("express");
 const http = require("http");
@@ -801,10 +801,6 @@ async function loadGameFromDb(code) {
 // ----------------------
 //   Socket.IO - events
 // ----------------------
-
-io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
-
   // יצירת משחק חדש
   socket.on("createGame", async (payload, cb) => {
     try {
