@@ -257,7 +257,6 @@ app.post("/api/admin/rooms/:code/close", async (req, res) => {
     const code = (req.params.code || "").toUpperCase();
     const game = games[code];
     if (!game) {
-      // גם אם המשחק לא בזיכרון – נסמן אותו כ"סגור" ב-DB
       if (hasDb && pool) {
         await pool.query(
           `UPDATE games SET status = 'manual-close', updated_at = NOW(), last_activity = NOW()
@@ -499,13 +498,8 @@ const WORD_SETS = {
 //   לוגיקת משחק (in-memory + DB sync)
 // ----------------------
 
-// ----------------------
-//   לוגיקת משחק (in-memory + DB sync)
-// ----------------------
+// games כבר מוגדר למעלה (const games = {})
 
-// games הוגדר כבר למעלה (const games = {})
-
-// יצירת קוד משחק
 function makeGameCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let c = "";
@@ -515,7 +509,6 @@ function makeGameCode() {
   return c;
 }
 
-// עדכון זמני פעילות בזיכרון וגם ב-DB
 async function touchGame(game) {
   const now = Date.now();
   game.updatedAt = now;
@@ -527,7 +520,7 @@ async function touchGame(game) {
         `UPDATE games
          SET updated_at = NOW(), last_activity = NOW()
          WHERE code = $1`,
-      [game.code]
+        [game.code]
       );
     } catch (err) {
       console.error("touchGame DB error:", err);
@@ -535,7 +528,6 @@ async function touchGame(game) {
   }
 }
 
-// בחירת מילה לסיבוב
 function pickWordForGame(game) {
   const categories =
     game.categories && game.categories.length
@@ -567,7 +559,6 @@ function pickWordForGame(game) {
   return word;
 }
 
-// החזרת אובייקט משחק "נקי" ללקוח
 function sanitizeGame(game) {
   if (!game) return null;
   return {
@@ -598,7 +589,6 @@ function broadcastGame(game) {
   io.to("game-" + game.code).emit("gameUpdated", safe);
 }
 
-// חישוב ניקוד לכל קבוצה
 function getScores(game) {
   const scores = {};
   Object.keys(game.teams).forEach((id) => {
@@ -607,7 +597,6 @@ function getScores(game) {
   return scores;
 }
 
-// סיום משחק – כולל עדכון DB ומחיקת המשחק מהזיכרון
 function endGame(game, reason) {
   const scores = getScores(game);
   let maxScore = -Infinity;
@@ -648,7 +637,6 @@ function endGame(game, reason) {
   delete games[game.code];
 }
 
-// יצירת משחק חדש ב-DB
 async function saveNewGameToDb(game) {
   if (!hasDb || !pool) return;
   try {
@@ -676,7 +664,6 @@ async function saveNewGameToDb(game) {
   }
 }
 
-// שמירת שחקן ב-DB (צירוף / עדכון)
 async function upsertPlayerInDb(gameCode, clientId, name, teamId) {
   if (!hasDb || !pool) return;
   try {
@@ -693,7 +680,6 @@ async function upsertPlayerInDb(gameCode, clientId, name, teamId) {
   }
 }
 
-// מחיקת שחקן מה-DB
 async function deletePlayerFromDb(gameCode, clientId) {
   if (!hasDb || !pool) return;
   try {
@@ -707,7 +693,6 @@ async function deletePlayerFromDb(gameCode, clientId) {
   }
 }
 
-// טעינת משחק מה-DB אם הוא לא בזיכרון (ל-reconnect אחרי ריסט)
 async function loadGameFromDb(code) {
   if (!hasDb || !pool) return null;
 
@@ -801,176 +786,10 @@ async function loadGameFromDb(code) {
 // ----------------------
 //   Socket.IO - events
 // ----------------------
-  // יצירת משחק חדש
-  socket.on("createGame", async (payload, cb) => {
-    try {
-      const {
-        hostName,
-        numTeams,
-        teamNames,
-        targetScore,
-        defaultRoundSeconds,
-        categories,
-      } = payload || {};
-
-      const code = makeGameCode();
-      const teams = {};
-      const namesArray = teamNames || [];
-
-      const count = Math.min(Math.max(numTeams || 2, 1), 5);
-      const teamIds = ["A", "B", "C", "D", "E"].slice(0, count);
-
-      teamIds.forEach((id, idx) => {
-        teams[id] = {
-          id,
-          name: namesArray[idx] || `קבוצה ${idx + 1}`,
-          score: 0,
-          players: [],
-        };
-      });
-
-      const now = Date.now();
-
-      const game = {
-        code,
-        hostSocketId: socket.id,
-        hostName: hostName || "מנהל",
-        createdAt: now,
-        updatedAt: now,
-        lastActivity: now,
-        targetScore: targetScore || 30,
-        defaultRoundSeconds: defaultRoundSeconds || 60,
-        categories: Array.isArray(categories) ? categories : [],
-        teams,
-        players: {},
-        currentRound: null,
-        usedWords: new Set(),
-      };
-
-      games[code] = game;
-      await saveNewGameToDb(game);
-
-      socket.join("game-" + code);
-
-      const safeGame = sanitizeGame(game);
-      cb && cb({ ok: true, gameCode: code, game: safeGame });
-
-      broadcastGame(game);
-    } catch (err) {
-      console.error("createGame error:", err);
-      cb && cb({ ok: false, error: "Server error" });
-    }
-  });
-
-  // הצטרפות למשחק (כולל ניסיון שחזור אחרי ריסט)
-  socket.on("joinGame", async (payload, cb) => {
-    try {
-      const { gameCode, playerName, teamId, clientId } = payload || {};
-      const code = (gameCode || "").toUpperCase();
-
-      let game = games[code];
-      if (!game) {
-        game = await loadGameFromDb(code);
-      }
-
-      if (!game) {
-        return cb && cb({ ok: false, error: "המשחק לא נמצא" });
-      }
-      if (!playerName) {
-        return cb && cb({ ok: false, error: "צריך שם שחקן" });
-      }
-
-      const teamKey = teamId || "A";
-      if (!game.teams[teamKey]) {
-        return cb && cb({ ok: false, error: "קבוצה לא קיימת" });
-      }
-
-      const cid =
-        clientId && typeof clientId === "string"
-          ? clientId
-          : "c-" + Math.random().toString(36).slice(2);
-
-      let player = game.players[cid];
-      if (!player) {
-        player = {
-          clientId: cid,
-          name: playerName,
-          teamId: teamKey,
-          socketId: socket.id,
-        };
-        game.players[cid] = player;
-        if (!game.teams[teamKey].players.includes(cid)) {
-          game.teams[teamKey].players.push(cid);
-        }
-      } else {
-        player.name = playerName;
-        player.teamId = teamKey;
-        player.socketId = socket.id;
-
-        Object.values(game.teams).forEach((t) => {
-          t.players = t.players.filter((p) => p !== cid);
-        });
-        if (!game.teams[teamKey].players.includes(cid)) {
-          game.teams[teamKey].players.push(cid);
-        }
-      }
-
-      await touchGame(game);
-      await upsertPlayerInDb(code, cid, playerName, teamKey);
-
-      socket.join("game-" + code);
-
-      const safeGame = sanitizeGame(game);
-      cb &&
-        cb({
-          ok: true,
-          gameCode: code,
-          game: safeGame,
-          clientId: cid,
-        });
-
-      broadcastGame(game);
-    } catch (err) {
-      console.error("joinGame error:", err);
-      cb && cb({ ok: false, error: "Server error" });
-    }
-  });
-
-  // עזיבת משחק
-  socket.on("leaveGame", async (payload) => {
-    try {
-      const { gameCode, clientId } = payload || {};
-      const code = (gameCode || "").toUpperCase();
-      const game = games[code];
-      if (!game || !clientId) return;
-
-      const player = game.players[clientId];
-      if (!player) return;
-
-      Object.values(game.teams).forEach((t) => {
-        t.players = t.players.filter((p) => p !== clientId);
-      });
-
-      delete game.players[clientId];
-
-      await touchGame(game);
-      await deletePlayerFromDb(code, clientId);
-
-      socket.leave("game-" + code);
-      broadcastGame(game);
-    } catch (err) {
-      console.error("leaveGame error:", err);
-    }
-  });
-
-  // ----------------------
-//   Socket.IO - events
-// ----------------------
 
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  // יצירת משחק חדש
   socket.on("createGame", async (payload, cb) => {
     try {
       const {
@@ -1031,7 +850,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // הצטרפות למשחק (כולל ניסיון שחזור אחרי ריסט)
   socket.on("joinGame", async (payload, cb) => {
     try {
       const { gameCode, playerName, teamId, clientId } = payload || {};
@@ -1105,7 +923,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // עזיבת משחק
   socket.on("leaveGame", async (payload) => {
     try {
       const { gameCode, clientId } = payload || {};
@@ -1132,7 +949,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // התחלת סיבוב
   socket.on("startRound", async (payload, cb) => {
     try {
       const { gameCode, teamId, explainerId, roundSeconds } = payload || {};
@@ -1180,7 +996,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // בקשת מילה הבאה
   socket.on("getNextWord", (payload, cb) => {
     try {
       const { gameCode } = payload || {};
@@ -1198,7 +1013,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // תשובה נכונה
   socket.on("correctGuess", async (payload, cb) => {
     try {
       const { gameCode } = payload || {};
@@ -1225,7 +1039,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // דילוג על מילה – בלי שינוי ניקוד
   socket.on("skipWord", (payload, cb) => {
     try {
       const { gameCode } = payload || {};
@@ -1243,7 +1056,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // סיום סיבוב
   socket.on("endRound", async (payload, cb) => {
     try {
       const { gameCode } = payload || {};
@@ -1270,7 +1082,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // heartbeat מהלקוח – רק כדי לסמן פעילות
   socket.on("heartbeat", async (payload) => {
     try {
       const { gameCode } = payload || {};
@@ -1283,7 +1094,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // התנתקות – לא מוחקים שחקן, רק מנקים socketId כדי לאפשר reconnect
   socket.on("disconnect", () => {
     try {
       Object.values(games).forEach((game) => {
@@ -1315,7 +1125,6 @@ function cleanupOldGames() {
   });
 }
 
-// להריץ כל 60 שניות
 setInterval(cleanupOldGames, 60 * 1000);
 
 // ----------------------
