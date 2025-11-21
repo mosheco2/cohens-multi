@@ -636,13 +636,13 @@
         teamId: currentTeamId,
       };
       try {
-        localStorage.setItem("cohens_player", JSON.stringify(obj));
+        localStorage.setItem("milmania_player", JSON.stringify(obj));
       } catch (e) {}
     }
 
     function clearPlayerState() {
       try {
-        localStorage.removeItem("cohens_player");
+        localStorage.removeItem("milmania_player");
       } catch (e) {}
     }
 
@@ -663,6 +663,40 @@
       playerScoreboardEl.innerHTML = "";
       myTeamPlayersEl.innerHTML = "";
     }
+
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    // מילוי אוטומטי לפי לינק ההזמנה (code, teamId, teamName)
+    (function prefillFromInvite() {
+      const code = getQueryParam("code");
+      const teamId = getQueryParam("teamId");
+      const teamName = getQueryParam("teamName");
+
+      if (code) {
+        gameCodeInput.value = code.toUpperCase();
+      }
+
+      if (teamId && ["A","B","C","D","E"].includes(teamId)) {
+        teamSelect.value = teamId;
+      }
+
+      if (teamId && teamName) {
+        // עדכון טקסט הבחירה בקבוצה לשם שנתן המנהל
+        const opt = Array.from(teamSelect.options).find(o => o.value === teamId);
+        if (opt) {
+          opt.textContent = teamName;
+        }
+
+        const hint = document.createElement("div");
+        hint.className = "status-text";
+        hint.style.marginTop = "6px";
+        hint.textContent = `הוזמנת להצטרף לקבוצה "${teamName}" במשחק הזה.`;
+        joinSection.appendChild(hint);
+      }
+    })();
 
     joinBtn.addEventListener("click", () => {
       joinStatus.textContent = "";
@@ -837,7 +871,7 @@
     (function autoReconnect() {
       let saved = null;
       try {
-        saved = JSON.parse(localStorage.getItem("cohens_player") || "null");
+        saved = JSON.parse(localStorage.getItem("milmania_player") || "null");
       } catch (e) {
         saved = null;
       }
