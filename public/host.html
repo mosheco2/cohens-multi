@@ -173,6 +173,11 @@
       font-size: 0.8rem;
     }
 
+    .btn-wide {
+      width: 100%;
+      justify-content: center;
+    }
+
     .btn[disabled] {
       opacity: 0.55;
       cursor: default;
@@ -296,7 +301,6 @@
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
           <button class="btn btn-ghost btn-small" onclick="location.href='instructions.html'">❔ הוראות</button>
-          <!-- כאן השינוי: הפניה ל-home.html -->
           <button class="btn btn-ghost btn-small" onclick="location.href='home.html'">⬅ מסך הבית</button>
         </div>
       </div>
@@ -398,16 +402,36 @@
       <div id="hostStatus" class="status-text" style="margin-top:8px;"></div>
     </div>
 
-    <!-- הגדרות סיבוב וטיימר -->
+    <!-- הגדרות סיבוב, קוד משחק והזמנה בוואטסאפ -->
     <div class="card" id="gameCodeRow" style="display:none;">
       <h3 style="margin:0 0 6px;">קוד משחק</h3>
-      <div class="status-text" id="roundStatus"></div>
-      <div id="roundTimer">טיימר: --:--</div>
+      <div id="gameCodeDisplay" class="status-text" style="margin-bottom:6px;"></div>
+
+      <div class="status-text" style="margin-bottom:4px;">
+        שלח הזמנה לשחקנים בוואטסאפ עם קוד המשחק וקבוצה מוגדרת מראש:
+      </div>
+
+      <div class="row" style="margin-bottom:6px;">
+        <div>
+          <label for="inviteTeamSelect">קבוצה להזמנה</label>
+          <select id="inviteTeamSelect">
+            <option value="">בחר קבוצה...</option>
+          </select>
+        </div>
+        <div style="flex:0 0 190px; align-self:flex-end;">
+          <button id="whatsappInviteBtn" class="btn btn-primary btn-wide btn-small" type="button" disabled>
+            📲 שליחת הזמנה בוואטסאפ
+          </button>
+        </div>
+      </div>
 
       <hr style="border:none; border-top:1px solid rgba(180, 169, 214, 0.5); margin:10px 0;" />
 
       <h3 style="margin:0 0 6px;">שליטה בסיבוב</h3>
-      <div class="status-text" style="margin-bottom:6px;">
+      <div class="status-text" id="roundStatus" style="margin-bottom:6px;"></div>
+      <div id="roundTimer">טיימר: --:--</div>
+
+      <div class="status-text" style="margin-top:6px; margin-bottom:6px;">
         בחר קבוצה לסיבוב הבא ומסביר (אם תרצה). אם לא תבחר מסביר – המשחק יבחר שחקן ראשון בקבוצה.
       </div>
 
@@ -481,6 +505,7 @@
     const hostStatus = document.getElementById("hostStatus");
 
     const gameCodeRow = document.getElementById("gameCodeRow");
+    const gameCodeDisplay = document.getElementById("gameCodeDisplay");
     const roundStatusEl = document.getElementById("roundStatus");
     const roundTimerEl = document.getElementById("roundTimer");
 
@@ -489,6 +514,9 @@
     const explainerSelect = document.getElementById("explainerSelect");
     const startRoundBtn = document.getElementById("startRoundBtn");
     const stopRoundBtn = document.getElementById("stopRoundBtn");
+
+    const inviteTeamSelect = document.getElementById("inviteTeamSelect");
+    const whatsappInviteBtn = document.getElementById("whatsappInviteBtn");
 
     const scoreboardEl = document.getElementById("scoreboard");
     const scoreTargetEl = document.getElementById("scoreTarget");
@@ -588,8 +616,11 @@
 
     function renderGameState(game) {
       lastGameState = game;
+
       if (!game) {
-        gameCodeRow.style.display = "none";
+        if (gameCodeRow) gameCodeRow.style.display = "none";
+        if (gameCodeDisplay) gameCodeDisplay.textContent = "";
+        if (whatsappInviteBtn) whatsappInviteBtn.disabled = true;
         scoreboardEl.innerHTML = "";
         playersByTeamEl.innerHTML = "";
         scoreTargetEl.textContent = "";
@@ -598,8 +629,21 @@
         return;
       }
 
+      // נעדכן קוד משחק אם הגיע מהשרת
+      if (game.code) {
+        currentGameCode = game.code;
+      }
+
       if (gameCodeRow) {
         gameCodeRow.style.display = "block";
+      }
+
+      if (gameCodeDisplay && currentGameCode) {
+        gameCodeDisplay.textContent = "קוד המשחק: " + currentGameCode;
+      }
+
+      if (whatsappInviteBtn && currentGameCode) {
+        whatsappInviteBtn.disabled = false;
       }
 
       if (scoreTargetEl) {
@@ -686,6 +730,22 @@
         }
       }
 
+      if (inviteTeamSelect) {
+        const oldInvite = inviteTeamSelect.value;
+        inviteTeamSelect.innerHTML = '<option value="">בחר קבוצה...</option>';
+        if (game.teams) {
+          Object.entries(game.teams).forEach(([teamId, team]) => {
+            const opt = document.createElement("option");
+            opt.value = teamId;
+            opt.textContent = team.name || `קבוצה ${teamId}`;
+            inviteTeamSelect.appendChild(opt);
+          });
+        }
+        if (oldInvite && game.teams && game.teams[oldInvite]) {
+          inviteTeamSelect.value = oldInvite;
+        }
+      }
+
       refreshExplainerOptions();
     }
 
@@ -736,6 +796,10 @@
             }
             currentGameCode = response.gameCode;
             hostStatus.textContent = `המשחק נוצר! קוד המשחק: ${currentGameCode}`;
+            if (gameCodeRow) gameCodeRow.style.display = "block";
+            if (gameCodeDisplay) {
+              gameCodeDisplay.textContent = "קוד המשחק: " + currentGameCode;
+            }
           }
         );
       });
@@ -787,6 +851,52 @@
         socket.emit("endRound", { gameCode: currentGameCode }, () => {
           stopLocalRoundTimer();
         });
+      });
+    }
+
+    // בניית לינק שחקן עם קוד + קבוצה + שם קבוצה
+    function buildPlayerInviteLink(teamId, teamName) {
+      if (!currentGameCode) return null;
+      const baseUrl = window.location.origin + "/player.html";
+      const params = new URLSearchParams();
+      params.set("code", currentGameCode);
+      if (teamId) params.set("teamId", teamId);
+      if (teamName) params.set("teamName", teamName);
+      return baseUrl + "?" + params.toString();
+    }
+
+    // כפתור הזמנה בוואטסאפ עם טקסט מדליק
+    if (whatsappInviteBtn) {
+      whatsappInviteBtn.addEventListener("click", () => {
+        if (!currentGameCode) {
+          alert("אין משחק פעיל כרגע.");
+          return;
+        }
+        const teamId = inviteTeamSelect ? inviteTeamSelect.value : "";
+        if (!teamId) {
+          alert("בחר קבוצה להזמנה.");
+          return;
+        }
+
+        const team =
+          lastGameState &&
+          lastGameState.teams &&
+          lastGameState.teams[teamId];
+
+        const teamName = (team && team.name) ? team.name : ("קבוצה " + teamId);
+
+        const link = buildPlayerInviteLink(teamId, teamName);
+
+        const text =
+          "🔥 יש לנו עכשיו משחק מילמניה חי!\\n" +
+          `אתה מוזמן להצטרף לקבוצה "${teamName}".\\n` +
+          `קוד המשחק: ${currentGameCode}\\n` +
+          "להצטרפות למשחק לחץ על הקישור:\\n" +
+          link + "\\n\\n" +
+          "טיפ: כנס עם שם מצחיק ותתכונן להרבה צחוקים 😄";
+
+        const waUrl = "https://wa.me/?text=" + encodeURIComponent(text);
+        window.open(waUrl, "_blank");
       });
     }
 
