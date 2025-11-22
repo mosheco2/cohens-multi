@@ -5,7 +5,7 @@
   <title>מילמניה - ניהול משחק</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- פונט עגול וכיפי כמו בשאר המסכים -->
+  <!-- פונט עגול וכיפי -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
@@ -24,13 +24,11 @@
       padding: 0;
       background: #FFF8EA;
       color: #2B1E4A;
-      display: block;
       min-height: 100vh;
       font-size: 1rem;
       position: relative;
     }
 
-    /* "הילה" צבעונית ברקע */
     body::before,
     body::after {
       content: "";
@@ -246,6 +244,31 @@
       min-width: 0;
     }
 
+    /* טאבים למעלה למעבר מנהל/שחקן */
+    .top-tabs {
+      display: inline-flex;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(180, 169, 214, 0.5);
+      overflow: hidden;
+    }
+    .top-tabs button {
+      border: none;
+      padding: 6px 12px;
+      font-size: 0.84rem;
+      cursor: pointer;
+      background: transparent;
+      color: #6B618F;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .top-tabs button.active {
+      background: linear-gradient(135deg, #F84779, #F7C948);
+      color: #2B1E4A;
+    }
+
     @media (max-width: 640px) {
       body {
         font-size: 1.05rem;
@@ -289,7 +312,7 @@
 </head>
 <body>
   <div class="app">
-    <!-- כותרת + יצירת משחק -->
+    <!-- כותרת + טאבים + יצירת משחק -->
     <div class="card" id="hostTop">
       <div class="page-header">
         <div class="page-header-main">
@@ -299,9 +322,15 @@
             <h1 style="margin:4px 0 0; font-size:1.7rem;">מנהל המשחק</h1>
           </div>
         </div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <button class="btn btn-ghost btn-small" onclick="location.href='instructions.html'">❔ הוראות</button>
-          <button class="btn btn-ghost btn-small" onclick="location.href='home.html'">⬅ מסך הבית</button>
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+          <div class="top-tabs">
+            <button id="tabHost" class="active" type="button">👑 מצב מנהל</button>
+            <button id="tabPlayer" type="button">🎮 מצב שחקן</button>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+            <button class="btn btn-ghost btn-small" onclick="location.href='instructions.html'">❔ הוראות</button>
+            <button class="btn btn-ghost btn-small" onclick="location.href='home.html'">⬅ מסך הבית</button>
+          </div>
         </div>
       </div>
 
@@ -402,7 +431,7 @@
       <div id="hostStatus" class="status-text" style="margin-top:8px;"></div>
     </div>
 
-    <!-- הגדרות סיבוב, קוד משחק והזמנה בוואטסאפ -->
+    <!-- קוד משחק, הזמנת וואטסאפ, טיימר וסיבוב -->
     <div class="card" id="gameCodeRow" style="display:none;">
       <h3 style="margin:0 0 6px;">קוד משחק</h3>
       <div id="gameCodeDisplay" class="status-text" style="margin-bottom:6px;"></div>
@@ -463,7 +492,7 @@
       </div>
     </div>
 
-    <!-- צד ימין: ניקוד ושחקנים -->
+    <!-- ניקוד וקבוצות -->
     <div class="card">
       <h3 style="margin:0 0 6px;">ניקוד וקבוצות</h3>
       <div id="scoreTarget" class="status-text"></div>
@@ -486,7 +515,7 @@
     <div class="card" id="hostPlayerSection">
       <h3 style="margin:0 0 6px;">מצב המנהל כשחקן</h3>
       <p class="status-text" style="margin-bottom:8px;">
-        בחר את הקבוצה שבה אתה משחק, ותראה כאן את מצב הקבוצה והשחקנים שלך.
+        אחרי שפתחת משחק, תוכל להצטרף אליו כשחקן, לבחור קבוצה ולהיות גם מסביר וגם מנחש – ועדיין להישאר מנהל המשחק.
       </p>
 
       <div class="row">
@@ -498,7 +527,13 @@
         </div>
       </div>
 
-      <div id="hostPlayerTeamSummary" class="status-text" style="margin-top:4px;"></div>
+      <button id="joinAsPlayerBtn" class="btn btn-primary btn-small" type="button" style="margin-top:4px;">
+        🎮 הצטרף למשחק כשחקן מנהל
+      </button>
+
+      <div id="hostPlayerTeamSummary" class="status-text" style="margin-top:8px;">
+        עדיין לא הצטרפת למשחק כשחקן.
+      </div>
 
       <button id="scrollToTopBtn" class="btn btn-ghost btn-small" style="margin-top:12px;">
         ⬆ חזרה לניהול המשחק
@@ -515,6 +550,8 @@
     let roundTimerId = null;
     let roundTimeLeft = 0;
     let roundActive = false;
+    let hostClientId = null;       // מזהה שחקן של המנהל
+    let hostJoinedAsPlayer = false;
 
     const hostNameInput = document.getElementById("hostName");
     const numTeamsSelect = document.getElementById("numTeams");
@@ -558,6 +595,9 @@
     const scrollToTopBtn = document.getElementById("scrollToTopBtn");
     const hostPlayerSection = document.getElementById("hostPlayerSection");
     const hostTop = document.getElementById("hostTop");
+
+    const tabHost = document.getElementById("tabHost");
+    const tabPlayer = document.getElementById("tabPlayer");
 
     function formatTime(seconds) {
       const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -654,7 +694,9 @@
 
       const teamId = hostPlayerTeamSelect.value;
       if (!lastGameState || !lastGameState.teams || !teamId || !lastGameState.teams[teamId]) {
-        hostPlayerTeamSummary.textContent = "עדיין לא בחרת קבוצה כשחקן.";
+        hostPlayerTeamSummary.textContent = hostJoinedAsPlayer
+          ? "הצטרפת כשחקן, אבל הקבוצה לא קיימת כרגע."
+          : "עדיין לא הצטרפת למשחק כשחקן.";
         return;
       }
 
@@ -674,6 +716,10 @@
         html += "<br/>עדיין אין שחקנים בקבוצה הזו.";
       }
 
+      if (!hostJoinedAsPlayer) {
+        html += "<br/><br/>לחץ על הכפתור למעלה כדי להצטרף למשחק כשחקן מנהל.";
+      }
+
       hostPlayerTeamSummary.innerHTML = html;
     }
 
@@ -684,18 +730,18 @@
         if (gameCodeRow) gameCodeRow.style.display = "none";
         if (gameCodeDisplay) gameCodeDisplay.textContent = "";
         if (whatsappInviteBtn) whatsappInviteBtn.disabled = true;
+        if (endGameBtn) endGameBtn.disabled = true;
         scoreboardEl.innerHTML = "";
         playersByTeamEl.innerHTML = "";
         scoreTargetEl.textContent = "";
-        roundStatusEl.textContent = "";
+        if (roundStatusEl) roundStatusEl.textContent = "";
         if (hostPlayerTeamSummary) {
-          hostPlayerTeamSummary.textContent = "עדיין לא בחרת קבוצה כשחקן.";
+          hostPlayerTeamSummary.textContent = "עדיין לא הצטרפת למשחק כשחקן.";
         }
         stopLocalRoundTimer();
         return;
       }
 
-      // נעדכן קוד משחק אם הגיע מהשרת
       if (game.code) {
         currentGameCode = game.code;
       }
@@ -710,6 +756,10 @@
 
       if (whatsappInviteBtn && currentGameCode) {
         whatsappInviteBtn.disabled = false;
+      }
+
+      if (endGameBtn) {
+        endGameBtn.disabled = false;
       }
 
       if (scoreTargetEl) {
@@ -814,7 +864,7 @@
 
       if (hostPlayerTeamSelect) {
         const oldHostTeam = hostPlayerTeamSelect.value;
-        hostPlayerTeamSelect.innerHTML = '<option value="">עדיין לא בחרת קבוצה</option>';
+        hostPlayerTeamSelect.innerHTML = '<option value="">עדיין לא בחרתי קבוצה</option>';
         if (game.teams) {
           Object.entries(game.teams).forEach(([teamId, team]) => {
             const opt = document.createElement("option");
@@ -847,12 +897,29 @@
     if (scrollToHostPlayerBtn && hostPlayerSection) {
       scrollToHostPlayerBtn.addEventListener("click", () => {
         hostPlayerSection.scrollIntoView({ behavior: "smooth" });
+        tabHost.classList.remove("active");
+        tabPlayer.classList.add("active");
       });
     }
 
     if (scrollToTopBtn && hostTop) {
       scrollToTopBtn.addEventListener("click", () => {
         hostTop.scrollIntoView({ behavior: "smooth" });
+        tabPlayer.classList.remove("active");
+        tabHost.classList.add("active");
+      });
+    }
+
+    if (tabHost && tabPlayer) {
+      tabHost.addEventListener("click", () => {
+        hostTop.scrollIntoView({ behavior: "smooth" });
+        tabHost.classList.add("active");
+        tabPlayer.classList.remove("active");
+      });
+      tabPlayer.addEventListener("click", () => {
+        hostPlayerSection.scrollIntoView({ behavior: "smooth" });
+        tabPlayer.classList.add("active");
+        tabHost.classList.remove("active");
       });
     }
 
@@ -901,6 +968,7 @@
             if (gameCodeDisplay) {
               gameCodeDisplay.textContent = "קוד המשחק: " + currentGameCode;
             }
+            if (endGameBtn) endGameBtn.disabled = false;
           }
         );
       });
@@ -912,6 +980,8 @@
         socket.emit("endGame", { gameCode: currentGameCode }, () => {
           hostStatus.textContent = "המשחק נסגר.";
           currentGameCode = null;
+          hostJoinedAsPlayer = false;
+          hostClientId = null;
           renderGameState(null);
         });
       });
@@ -955,10 +1025,52 @@
       });
     }
 
+    // הצטרפות המנהל למשחק כשחקן
+    if (joinAsPlayerBtn) {
+      joinAsPlayerBtn.addEventListener("click", () => {
+        if (!currentGameCode) {
+          alert("אין משחק פעיל כרגע. צור משחק קודם.");
+          return;
+        }
+        const name = (hostNameInput.value || "").trim();
+        if (!name) {
+          alert("נא להזין שם מנהל (שישמש גם כשם השחקן).");
+          return;
+        }
+        const teamId = hostPlayerTeamSelect.value;
+        if (!teamId) {
+          alert("נא לבחור קבוצה לפני הצטרפות כשחקן.");
+          return;
+        }
+
+        socket.emit(
+          "joinGame",
+          {
+            gameCode: currentGameCode,
+            name,
+            teamId,
+          },
+          (resp) => {
+            if (!resp || !resp.ok) {
+              alert(resp && resp.error ? resp.error : "שגיאה בהצטרפות כשחקן.");
+              return;
+            }
+            hostClientId = resp.clientId;
+            hostJoinedAsPlayer = true;
+            renderGameState(resp.game || lastGameState);
+            hostPlayerSection.scrollIntoView({ behavior: "smooth" });
+            tabHost.classList.remove("active");
+            tabPlayer.classList.add("active");
+          }
+        );
+      });
+    }
+
     // בניית לינק שחקן עם קוד + קבוצה + שם קבוצה
     function buildPlayerInviteLink(teamId, teamName) {
       if (!currentGameCode) return null;
-      const baseUrl = window.location.origin + "/player.html";
+      const origin = window.location.origin;
+      const baseUrl = origin + "/player.html";
       const params = new URLSearchParams();
       params.set("code", currentGameCode);
       if (teamId) params.set("teamId", teamId);
@@ -1005,13 +1117,19 @@
       renderGameState(game);
     });
 
+    socket.on("gameUpdated", (game) => {
+      renderGameState(game);
+    });
+
     socket.on("gameEnded", () => {
       hostStatus.textContent = "המשחק נסגר.";
       currentGameCode = null;
+      hostJoinedAsPlayer = false;
+      hostClientId = null;
       renderGameState(null);
     });
 
-    // טעינת לוגו ובאנר למסך מנהל המשחק
+    // טעינת לוגו ובאנר למסך מנהל המשחק (עם מניעת תמונה שבורה)
     (function loadBrandingForHost() {
       fetch("/api/banners")
         .then((res) => res.json())
@@ -1023,6 +1141,9 @@
             hostLogoEl.src = logoCfg.imageUrl;
             hostLogoEl.alt = logoCfg.altText || "מילמניה";
             hostLogoEl.classList.remove("hidden");
+            hostLogoEl.addEventListener("error", () => {
+              hostLogoEl.classList.add("hidden");
+            });
           }
 
           if (!hostBannerSlot) return;
@@ -1038,6 +1159,14 @@
           const img = document.createElement("img");
           img.src = cfg.imageUrl;
           img.alt = cfg.altText || "Banner";
+          img.style.maxWidth = "100%";
+          img.style.borderRadius = "18px";
+          img.style.display = "block";
+          img.style.marginTop = "8px";
+
+          img.addEventListener("error", () => {
+            a.style.display = "none";
+          });
 
           a.appendChild(img);
           hostBannerSlot.appendChild(a);
