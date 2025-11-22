@@ -877,8 +877,16 @@
             roundTeamSelect.appendChild(opt);
           });
         }
-        if (oldValue && game.teams && game.teams[oldValue]) {
-          roundTeamSelect.value = oldValue;
+        // ✅ בחירת קבוצה אוטומטית אם אין בחירה קודמת (כדי לאפשר בחירת מסביר)
+        let selectedTeamId = oldValue;
+        if (!selectedTeamId) {
+          const teamIds = Object.keys(game.teams || {});
+          if (teamIds.length > 0) {
+            selectedTeamId = teamIds[0];
+          }
+        }
+        if (selectedTeamId && game.teams && game.teams[selectedTeamId]) {
+          roundTeamSelect.value = selectedTeamId;
         }
       }
 
@@ -909,8 +917,14 @@
             hostPlayerTeamSelect.appendChild(opt);
           });
         }
-        if (oldHostTeam && game.teams && game.teams[oldHostTeam]) {
-          hostPlayerTeamSelect.value = oldHostTeam;
+        // בחירה אוטומטית גם כאן אם אין בחירה קודמת
+        let selectedHostTeam = oldHostTeam;
+        if (!selectedHostTeam) {
+          const teamIds = Object.keys(game.teams || {});
+          if (teamIds.length > 0) selectedHostTeam = teamIds[0];
+        }
+        if (selectedHostTeam && game.teams && game.teams[selectedHostTeam]) {
+          hostPlayerTeamSelect.value = selectedHostTeam;
         }
       }
 
@@ -982,6 +996,11 @@
             // מילוי אוטומטי של שם השחקן במסך שחקן
             if (hostPlayerNameInput && !hostPlayerNameInput.value) {
               hostPlayerNameInput.value = hostName;
+            }
+
+            // ✅ רינדור מיידי של מצב המשחק (כולל קבוצות לבחירת קבוצה/מסביר)
+            if (response.game) {
+              renderGameState(response.game);
             }
           }
         );
