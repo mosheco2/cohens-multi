@@ -591,9 +591,6 @@
 
     let currentGameCode = null;
     let lastGameState = null;
-    let roundTimerId = null;
-    let roundTimeLeft = 0;
-    let roundActive = false;
 
     const hostNameInput = document.getElementById("hostName");
     const numTeamsSelect = document.getElementById("numTeams");
@@ -641,52 +638,10 @@
     const hostPlayerFrame = document.getElementById("hostPlayerFrame");
 
     function formatTime(seconds) {
-      const m = Math.floor(seconds / 60).toString().padStart(2, "0");
-      const s = (seconds % 60).toString().padStart(2, "0");
-      return m + ":" + s;
-    }
-
-    function updateRoundTimerUI() {
-      if (!roundTimerEl) return;
-      if (!roundActive) {
-        roundTimerEl.textContent = "טיימר: --:--";
-      } else {
-        roundTimerEl.textContent = "טיימר: " + formatTime(roundTimeLeft);
-      }
-    }
-
-    function startLocalRoundTimer(duration) {
-      clearInterval(roundTimerId);
-      roundActive = true;
-      roundTimeLeft = duration;
-      if (startRoundBtn) startRoundBtn.disabled = true;
-      if (stopRoundBtn) stopRoundBtn.disabled = false;
-      updateRoundTimerUI();
-      roundTimerId = setInterval(() => {
-        roundTimeLeft--;
-        if (roundTimeLeft <= 0) {
-          roundTimeLeft = 0;
-          updateRoundTimerUI();
-          clearInterval(roundTimerId);
-          roundActive = false;
-          if (startRoundBtn) startRoundBtn.disabled = false;
-          if (stopRoundBtn) stopRoundBtn.disabled = true;
-          if (currentGameCode) {
-            socket.emit("endRound", { gameCode: currentGameCode }, () => {});
-          }
-        } else {
-          updateRoundTimerUI();
-        }
-      }, 1000);
-    }
-
-    function stopLocalRoundTimer() {
-      clearInterval(roundTimerId);
-      roundActive = false;
-      roundTimeLeft = 0;
-      if (startRoundBtn) startRoundBtn.disabled = false;
-      if (stopRoundBtn) stopRoundBtn.disabled = true;
-      updateRoundTimerUI();
+      const s = Math.max(0, Math.floor(seconds || 0));
+      const m = Math.floor(s / 60).toString().padStart(2, "0");
+      const ss = (s % 60).toString().padStart(2, "0");
+      return m + ":" + ss;
     }
 
     function collectCategories() {
@@ -762,6 +717,34 @@
       });
     }
 
+    function updateTimerFromGame(game) {
+      if (!roundTimerEl) return;
+
+      if (!game || !game.currentRound) {
+        roundTimerEl.textContent = "טיימר: --:--";
+        if (startRoundBtn) startRoundBtn.disabled = !currentGameCode;
+        if (stopRoundBtn) stopRoundBtn.disabled = true;
+        return;
+      }
+
+      const r = game.currentRound;
+      const isActive = (typeof r.isActive === "boolean") ? r.isActive : !!r.active;
+      const secondsLeft = (typeof r.secondsLeft === "number")
+        ? r.secondsLeft
+        : (r.roundSeconds || 0);
+
+      if (!isActive) {
+        roundTimerEl.textContent = "טיימר: --:--";
+        if (startRoundBtn) startRoundBtn.disabled = !currentGameCode;
+        if (stopRoundBtn) stopRoundBtn.disabled = true;
+        return;
+      }
+
+      roundTimerEl.textContent = "טיימר: " + formatTime(secondsLeft);
+      if (startRoundBtn) startRoundBtn.disabled = true;
+      if (stopRoundBtn) stopRoundBtn.disabled = false;
+    }
+
     function renderGameState(game) {
       lastGameState = game;
 
@@ -774,7 +757,7 @@
         playersByTeamEl.innerHTML = "";
         scoreTargetEl.textContent = "";
         if (roundStatusEl) roundStatusEl.textContent = "";
-        stopLocalRoundTimer();
+        updateTimerFromGame(null);
 
         if (hostPlayerTeamSelect) {
           hostPlayerTeamSelect.innerHTML = '<option value="">בחירת קבוצה...</option>';
@@ -870,14 +853,14 @@
       }
 
       if (roundStatusEl) {
-        if (game.currentRound && game.currentRound.teamId) {
-          const t = game.teams[game.currentRound.teamId];
-          const teamName = t ? (t.name || `קבוצה ${game.currentRound.teamId}`) : "";
+        const r = game.currentRound;
+        if (r && r.teamId) {
+          const t = game.teams && game.teams[r.teamId];
+          const teamName = t ? (t.name || `קבוצה ${r.teamId}`) : "";
+          const explainerName = r.explainerName || "";
           roundStatusEl.textContent =
             `סיבוב לקבוצה: ${teamName}` +
-            (game.currentRound.explainerName
-              ? ` · מסביר: ${game.currentRound.explainerName}`
-              : "");
+            (explainerName ? ` · מסביר: ${explainerName}` : "");
         } else {
           roundStatusEl.textContent = "אין סיבוב פעיל כרגע.";
         }
@@ -930,6 +913,12 @@
           hostPlayerTeamSelect.value = oldHostTeam;
         }
       }
+
+      // סנכרון טיימר מהשרת
+      updateTimerFromGame(game);
+
+      // עדכון רשימת המסביר לפי הקבוצה שנבחרה (אם נבחרה)
+      refreshExplainerOptions();
     }
 
     if (roundTeamSelect) {
@@ -985,6 +974,11 @@
             }
             if (endGameBtn) endGameBtn.disabled = false;
 
+            // התאמת משך הסיבוב העליון לאינליין
+            if (roundSecondsInline) {
+              roundSecondsInline.value = roundSeconds.toString();
+            }
+
             // מילוי אוטומטי של שם השחקן במסך שחקן
             if (hostPlayerNameInput && !hostPlayerNameInput.value) {
               hostPlayerNameInput.value = hostName;
@@ -1032,7 +1026,8 @@
                 resp && resp.error ? resp.error : "שגיאה בהתחלת הסיבוב.";
               return;
             }
-            startLocalRoundTimer(roundSecondsVal);
+            hostStatus.textContent = "הסיבוב התחיל. הטיימר והמצב יתעדכנו לפי השרת.";
+            // הכפתורים והטיימר יתעדכנו באירוע gameUpdated שמגיע מהשרת
           }
         );
       });
@@ -1042,7 +1037,8 @@
       stopRoundBtn.addEventListener("click", () => {
         if (!currentGameCode) return;
         socket.emit("endRound", { gameCode: currentGameCode }, () => {
-          stopLocalRoundTimer();
+          hostStatus.textContent = "הסיבוב הסתיים.";
+          // שאר העדכונים (ניקוד, טיימר, מצב) יגיעו מ-gameUpdated
         });
       });
     }
