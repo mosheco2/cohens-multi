@@ -2,627 +2,385 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <title>מילמניה · מסך מציג 📺</title>
+  <title>מילמניה - Wordmania</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- פונט תואם לכל המערכת -->
+  <!-- פונט עגול וכיפי -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      font-size: 16px;
-    }
     * {
       box-sizing: border-box;
       font-family: "Varela Round", system-ui, -apple-system, BlinkMacSystemFont,
         "Segoe UI", sans-serif;
     }
+
     body {
       margin: 0;
-      padding: 0;
-      background: radial-gradient(circle at top, #FFF0F5 0, #FFF8EA 45%, #EAFBFF 100%);
-      color: #1E1638;
+      background: #FFF8EA;
+      color: #2B1E4A;
       min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 16px;
+      position: relative;
+      overflow-x: hidden;
     }
 
-    .app {
-      max-width: 1120px;
-      margin: 0 auto;
-      padding: 20px 16px 40px;
+    /* כתמי צבע ברקע הכללי */
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      z-index: -1;
+    }
+    body::before {
+      top: -120px;
+      left: -60px;
+      background: radial-gradient(circle at center,
+        rgba(248, 180, 75, 0.45),
+        transparent 60%);
+    }
+    body::after {
+      bottom: -140px;
+      right: -40px;
+      background: radial-gradient(circle at center,
+        rgba(43, 30, 74, 0.25),
+        transparent 60%);
     }
 
-    .card {
-      background: rgba(255, 255, 255, 0.96);
-      border-radius: 26px;
-      padding: 18px 18px 20px;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
-      border: 1px solid rgba(43, 30, 74, 0.08);
-      margin-bottom: 16px;
+    .page {
+      width: 100%;
+      max-width: 820px;
     }
 
-    h1, h2, h3 {
-      margin-top: 0;
+    /* ====== HERO עליון מעוצב ====== */
+    .hero {
+      position: relative;
+      background: radial-gradient(circle at top left,
+                  rgba(248, 71, 121, 0.23),
+                  transparent 55%),
+                  radial-gradient(circle at top right,
+                  rgba(21, 196, 193, 0.25),
+                  transparent 55%);
+      border-radius: 32px;
+      padding: 18px 18px 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.10);
+      overflow: hidden;
     }
 
-    label {
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom,
+                  rgba(255, 255, 255, 0.82),
+                  rgba(255, 255, 255, 0.94));
+      border-radius: inherit;
+      z-index: 0;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .brand-logo-wrap img {
+      height: 120px;   /* לוגו גדול יותר */
+      width: auto;
       display: block;
-      margin-bottom: 4px;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    /* השארנו רק את הסלוגן בלי המילה "מילמניה" */
+    .brand-tagline {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #2B1E4A;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .brand-subtag {
       font-size: 0.9rem;
       color: #6B618F;
     }
 
-    input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(43, 30, 74, 0.22);
-      background: #FFFDF7;
-      color: #2B1E4A;
-      font-size: 1rem;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: #F84779;
-      box-shadow: 0 0 0 1px rgba(248, 71, 121, 0.55);
-    }
-
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .row > div {
-      flex: 1 1 220px;
-    }
-
-    .btn {
-      border-radius: 999px;
-      padding: 10px 18px;
-      border: none;
-      cursor: pointer;
-      font-size: 0.98rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
-      white-space: nowrap;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #F84779, #F6A21E);
-      color: #FFFFFF;
-      box-shadow: 0 12px 26px rgba(248, 71, 121, 0.35);
-    }
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 14px 32px rgba(248, 71, 121, 0.5);
-    }
-    .btn-primary:active {
-      transform: translateY(0);
-      box-shadow: 0 7px 20px rgba(248, 71, 121, 0.4);
-    }
-    .btn-ghost {
-      background: rgba(255, 255, 255, 0.7);
-      border-radius: 999px;
-      border: 1px solid rgba(43, 30, 74, 0.18);
-      color: #2B1E4A;
-      padding: 7px 12px;
-      font-size: 0.86rem;
-    }
-    .btn-ghost:hover {
-      background: #FFFFFF;
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
-    }
-    .btn-small {
-      padding: 6px 10px;
-      font-size: 0.82rem;
-    }
-
-    .status-text {
-      font-size: 0.9rem;
-      color: #7C7598;
+    /* כרטיס טקסט קטן מתחת ללוגו בתוך ההירו */
+    .hero-card {
+      margin-top: 6px;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 24px;
+      padding: 14px 16px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
     }
 
     .chip {
       display: inline-flex;
       align-items: center;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(180, 169, 214, 0.7);
-      font-size: 0.8rem;
-      color: #58457F;
       gap: 6px;
-      background: radial-gradient(circle at top left,
-        rgba(248, 71, 121, 0.18),
-        rgba(255, 255, 255, 0.96));
-      margin-bottom: 4px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      color: #FFFFFF;
+      background: linear-gradient(135deg, #F84779, #F6A21E);
+      box-shadow: 0 8px 20px rgba(248, 71, 121, 0.35);
+      margin-bottom: 6px;
     }
 
-    .page-header {
+    .chip span {
+      font-size: 1.1rem;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: #6B618F;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    /* שאר הכרטיסים */
+    .card {
+      background: #FFFFFF;
+      border-radius: 32px;
+      padding: 22px 20px;
+      border: 2px solid rgba(43, 30, 74, 0.05);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px 18px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 700;
+      width: 100%;
+      margin-top: 8px;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+      text-decoration: none;
+    }
+
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: none;
+      filter: brightness(0.96);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #F6A21E, #F7C948);
+      color: #2B1E4A;
+      box-shadow: 0 14px 32px rgba(246, 162, 30, 0.45);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #15C4C1, #22C5E8);
+      color: #FFFFFF;
+      box-shadow: 0 14px 32px rgba(21, 196, 193, 0.45);
+    }
+
+    .btn-ghost {
+      background: #FFFFFF;
+      border: 1px solid rgba(43, 30, 74, 0.22);
+      color: #2B1E4A;
+      padding: 7px 14px;
+      font-size: 0.9rem;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-ghost:hover {
+      background: #FFF3D9;
+    }
+
+    .mode-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #2B1E4A;
+    }
+
+    .mode-text {
+      font-size: 0.9rem;
+      color: #6B618F;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .mode-card {
+      background: linear-gradient(135deg,
+        rgba(248, 71, 121, 0.08),
+        rgba(21, 196, 193, 0.10));
+      border-radius: 24px;
+      padding: 14px 14px 16px;
+      border: 1px solid rgba(43, 30, 74, 0.08);
+      margin-bottom: 12px;
+    }
+
+    .mode-card:nth-child(2) {
+      background: linear-gradient(135deg,
+        rgba(21, 196, 193, 0.12),
+        rgba(247, 201, 72, 0.08));
+    }
+
+    .small-text {
+      font-size: 0.9rem;
+      color: #7C7598;
+    }
+
+    .banner-wrapper {
+      border-radius: 26px;
+      padding: 5px;
+      background: linear-gradient(135deg,
+        rgba(248, 71, 121, 0.10),
+        rgba(21, 196, 193, 0.18));
+      border: 1px solid rgba(43, 30, 74, 0.16);
+    }
+
+    .banner-wrapper img {
+      width: 100%;
+      display: block;
+      border-radius: 20px;
+    }
+
+    .bottom-row {
+      margin-top: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
     }
-    .page-header-main {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .logo-small {
-      height: 54px;
-      width: auto;
-      border-radius: 16px;
-      object-fit: contain;
-      background: #FFFFFF;
-      padding: 4px 8px;
-      border: 1px solid rgba(180, 169, 214, 0.65);
-      box-shadow:
-        0 0 0 3px #FFF8EA,
-        0 10px 26px rgba(0,0,0,0.12);
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    /* אזור המילה והטיימר למסך גדול */
-    .presenter-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 3fr) minmax(0, 1.5fr);
-      gap: 18px;
-      align-items: stretch;
-    }
-
-    .word-panel {
-      background: linear-gradient(135deg, #241B4B, #3A265F);
-      border-radius: 24px;
-      padding: 18px 18px 24px;
-      color: #FDF9FF;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      min-height: 260px;
-    }
-
-    .word-label {
-      font-size: 0.9rem;
-      color: #C8BDF4;
-      margin-bottom: 6px;
-    }
-
-    #currentWord {
-      font-size: clamp(2rem, 6vw, 3.5rem);
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-align: center;
-      margin: 8px 0 4px;
-      text-transform: none;
-      word-break: break-word;
-    }
-
-    #currentCategory {
-      font-size: 0.95rem;
-      text-align: center;
-      color: #FCE58F;
-      margin-bottom: 4px;
-    }
-
-    .team-explainer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-top: 10px;
-      font-size: 0.95rem;
-    }
-
-    .team-pill {
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(252, 211, 77, 0.16);
-      border: 1px solid rgba(252, 211, 77, 0.55);
-      color: #FDE68A;
-      font-size: 0.9rem;
-    }
-
-    .explainer-pill {
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(248, 250, 252, 0.1);
-      border: 1px solid rgba(226, 232, 240, 0.5);
-      color: #E5E7EB;
-      font-size: 0.9rem;
-    }
-
-    .timer-panel {
-      background: radial-gradient(circle at top, #FDF2F8 0, #F5F3FF 45%, #ECFEFF 100%);
-      border-radius: 24px;
-      padding: 18px 18px 24px;
-      border: 1px solid rgba(199, 210, 254, 0.8);
-      box-shadow: 0 12px 30px rgba(129, 140, 248, 0.25);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      min-height: 260px;
-    }
-
-    .timer-label {
-      font-size: 0.9rem;
-      color: #4C1D95;
-      margin-bottom: 4px;
-    }
-
-    #roundTimerPresenter {
-      font-size: clamp(2.4rem, 6.4vw, 3.8rem);
-      font-weight: 800;
-      letter-spacing: 0.18em;
-      color: #1F2937;
-      text-align: center;
-      margin: 12px 0 0;
-    }
-
-    #roundStateText {
-      margin-top: 10px;
-      font-size: 0.96rem;
-      color: #4B5563;
-      text-align: center;
-    }
-
-    #presenterBottomInfo {
-      margin-top: 12px;
-      font-size: 0.9rem;
-      color: #6B7280;
-      text-align: center;
-    }
-
-    #teamsSummary {
-      margin-top: 6px;
-      font-size: 0.9rem;
-    }
-
-    #presenter-banner-slot {
-      margin-top: 10px;
-    }
-
-    @media (max-width: 900px) {
-      .presenter-layout {
-        grid-template-columns: minmax(0, 1fr);
-      }
-    }
 
     @media (max-width: 640px) {
-      body {
-        font-size: 1.05rem;
+      .hero {
+        padding: 14px 12px 18px;
       }
-      .app {
-        padding: 16px 10px 32px;
+      .brand-header {
+        flex-direction: row-reverse;
+        align-items: center;
       }
-      .card {
-        padding: 18px 14px 20px;
-        border-radius: 20px;
+      .brand-logo-wrap img {
+        height: 100px;
       }
-      h1 {
-        font-size: 1.6rem;
+      .brand-tagline {
+        font-size: 1rem;
+      }
+      .brand-subtag {
+        font-size: 0.88rem;
+      }
+      .bottom-row {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+      .btn-ghost {
+        width: 100%;
+        justify-content: center;
       }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <!-- כותרת -->
+  <div class="page">
+
+    <!-- HERO עליון: לוגו גדול + סלוגן + טקסט קצר -->
+    <section class="hero">
+      <div class="hero-inner">
+        <header class="brand-header">
+          <div class="brand-text">
+            <div class="brand-tagline">משחק המילים המשפחתי שמדליק את כולם</div>
+            <div class="brand-subtag">מסבירים, מנחשים וצוחקים – בכל גיל ובכל קבוצה</div>
+          </div>
+          <div class="brand-logo-wrap">
+            <!-- קובץ הלוגו השקוף החדש -->
+            <img src="logo.png" alt="לוגו מילמניה - Wordmania" />
+          </div>
+        </header>
+
+        <div class="hero-card">
+          <div class="chip">
+            <span>Wordmania</span> · מילמניה 🎲
+          </div>
+          <p class="subtitle">
+            מסבירים מילים, צוחקים ונכנסים לקרב בין קבוצות – מי הכי חדה?
+            בחרו תפקיד, התחברו לחדר, ותנו למילים לעבוד 😄
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- כרטיס מצבי משחק -->
     <div class="card">
-      <div class="page-header">
-        <div class="page-header-main">
-          <img id="presenter-logo" class="logo-small hidden" alt="מילמניה לוגו" />
-          <div>
-            <div class="chip">מילמניה · מסך מציג 📺</div>
-            <h1 style="margin:4px 0 0; font-size:1.8rem;">חדר המציג</h1>
-          </div>
+      <div class="mode-card">
+        <div class="mode-title">אני מנהל – פתיחת משחק 👑</div>
+        <div class="mode-text">
+          יצירת חדר מילמניה חדש, בחירת קבוצות, הגדרת ניקוד יעד וזמן לסיבוב,
+          צפייה בכל השחקנים והתחלת המשחק.
         </div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-          <button class="btn btn-ghost btn-small" onclick="location.href='instructions.html'">❔ הוראות</button>
-          <button class="btn btn-ghost btn-small" onclick="location.href='home.html'">⬅ מסך הבית</button>
-        </div>
+        <button class="btn btn-primary" onclick="location.href='host.html'">
+          להיכנס כמנהל
+        </button>
       </div>
-      <p class="status-text" style="margin-top:8px;">
-        מחברים את המסך הגדול לחדר המשחק. כאן יופיעו המילה לסיבוב, הטיימר, הקבוצה והמסביר.
-      </p>
+
+      <div class="mode-card">
+        <div class="mode-title">אני שחקן – הצטרפות למשחק 🎮</div>
+        <div class="mode-text">
+          מצטרף לחדר קיים עם קוד שהמנהל נותן, בוחר שם וקבוצה,
+          ורץ להסביר מילים מהטלפון.
+        </div>
+        <button class="btn btn-success" onclick="location.href='player.html'">
+          להיכנס כשחקן
+        </button>
+      </div>
+
+      <div class="bottom-row">
+        <button class="btn-ghost" onclick="location.href='instructions.html'">
+          ❔ הוראות המשחק
+        </button>
+        <span class="small-text">
+          המנהל פותח חדר חדש → השחקנים נכנסים כ"שחקן" ומקלידים את קוד המשחק מהמסך של המנהל.
+        </span>
+      </div>
     </div>
 
-    <!-- התחברות כחדר מציג -->
-    <div class="card" id="connectCard">
-      <h3 style="margin:0 0 8px;">חיבור לחדר משחק</h3>
-      <div class="row">
-        <div>
-          <label for="presenterGameCode">קוד משחק</label>
-          <input id="presenterGameCode" type="text" placeholder="לדוגמה: AB12" />
-        </div>
-        <div style="flex:0 0 170px; align-self:flex-end;">
-          <button id="connectPresenterBtn" class="btn btn-primary" style="width:100%;">
-            התחברות כחדר מציג
-          </button>
-        </div>
+    <!-- כרטיס באנר / שותף -->
+    <div class="card">
+      <p class="small-text" style="margin-bottom:4px;">שותף המשחק להיום:</p>
+      <div class="banner-wrapper">
+        <a href="#" target="_blank" rel="noopener">
+          <img src="madanei-karmela-banner.png.png" alt="באנר שותף" />
+        </a>
       </div>
-      <div id="connectStatus" class="status-text" style="margin-top:4px;"></div>
-    </div>
-
-    <!-- תצוגת מציג -->
-    <div class="card hidden" id="presenterCard">
-      <div class="presenter-layout">
-        <!-- מילה -->
-        <div class="word-panel">
-          <div>
-            <div class="word-label">המילה לסיבוב</div>
-            <div id="currentWord">ממתין להתחלת סיבוב...</div>
-            <div id="currentCategory"></div>
-          </div>
-          <div class="team-explainer">
-            <div id="presenterTeamPill" class="team-pill hidden"></div>
-            <div id="presenterExplainerPill" class="explainer-pill hidden"></div>
-          </div>
-        </div>
-
-        <!-- טיימר ומצב סיבוב -->
-        <div class="timer-panel">
-          <div>
-            <div class="timer-label">טיימר סיבוב</div>
-            <div id="roundTimerPresenter">--:--</div>
-          </div>
-          <div id="roundStateText">
-            אין סיבוב פעיל כרגע.
-          </div>
-          <div id="presenterBottomInfo">
-            התחבר לחדר בקוד המתאים. ברגע שמנהל המשחק יתחיל סיבוב – הכל יתעדכן אוטומטית.
-          </div>
-        </div>
-      </div>
-
-      <hr style="border:none; border-top:1px solid rgba(180, 169, 214, 0.45); margin:12px 0;" />
-
-      <h3 style="margin:0 0 4px; font-size:0.98rem;">מצב המשחק (תקציר)</h3>
-      <div id="teamsSummary" class="status-text"></div>
-
-      <div id="presenter-banner-slot"></div>
     </div>
   </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-
-    const presenterLogoEl = document.getElementById("presenter-logo");
-    const presenterBannerSlot = document.getElementById("presenter-banner-slot");
-
-    const presenterGameCodeInput = document.getElementById("presenterGameCode");
-    const connectPresenterBtn = document.getElementById("connectPresenterBtn");
-    const connectStatusEl = document.getElementById("connectStatus");
-    const connectCard = document.getElementById("connectCard");
-    const presenterCard = document.getElementById("presenterCard");
-
-    const currentWordEl = document.getElementById("currentWord");
-    const currentCategoryEl = document.getElementById("currentCategory");
-    const presenterTeamPill = document.getElementById("presenterTeamPill");
-    const presenterExplainerPill = document.getElementById("presenterExplainerPill");
-
-    const roundTimerPresenterEl = document.getElementById("roundTimerPresenter");
-    const roundStateTextEl = document.getElementById("roundStateText");
-    const presenterBottomInfoEl = document.getElementById("presenterBottomInfo");
-    const teamsSummaryEl = document.getElementById("teamsSummary");
-
-    let presenterGameCode = null;
-    let lastGameState = null;
-
-    function formatTime(seconds) {
-      const s = Math.max(0, Math.floor(seconds));
-      const m = Math.floor(s / 60).toString().padStart(2, "0");
-      const ss = (s % 60).toString().padStart(2, "0");
-      return `${m}:${ss}`;
-    }
-
-    function applyBranding() {
-      fetch("/api/banners")
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data) return;
-
-          const logoCfg = data.logo;
-          if (logoCfg && logoCfg.imageUrl && presenterLogoEl) {
-            presenterLogoEl.src = logoCfg.imageUrl;
-            presenterLogoEl.alt = logoCfg.altText || "מילמניה";
-            presenterLogoEl.classList.remove("hidden");
-            presenterLogoEl.addEventListener("error", () => {
-              presenterLogoEl.classList.add("hidden");
-            });
-          }
-
-          if (!presenterBannerSlot) return;
-          const cfg = data.presenter || data.display || null;
-          if (!cfg || !cfg.imageUrl || !cfg.linkUrl) return;
-
-          const a = document.createElement("a");
-          a.href = cfg.linkUrl;
-          a.target = "_blank";
-          a.rel = "noopener";
-
-          const img = document.createElement("img");
-          img.src = cfg.imageUrl;
-          img.alt = cfg.altText || "Banner";
-          img.style.maxWidth = "100%";
-          img.style.borderRadius = "18px";
-          img.style.display = "block";
-          img.style.marginTop = "8px";
-
-          img.addEventListener("error", () => {
-            a.style.display = "none";
-          });
-
-          a.appendChild(img);
-          presenterBannerSlot.appendChild(a);
-        })
-        .catch(() => {});
-    }
-
-    applyBranding();
-
-    function renderPresenter(game) {
-      lastGameState = game;
-
-      if (!game || !presenterGameCode || game.code !== presenterGameCode) {
-        roundStateTextEl.textContent = "לא נמצא משחק פעיל עם הקוד הזה.";
-        roundTimerPresenterEl.textContent = "--:--";
-        currentWordEl.textContent = "ממתין להתחלת סיבוב...";
-        currentCategoryEl.textContent = "";
-        presenterTeamPill.classList.add("hidden");
-        presenterExplainerPill.classList.add("hidden");
-        teamsSummaryEl.textContent = "";
-        return;
-      }
-
-      // תקציר קבוצות וניקוד
-      if (game.teams) {
-        const lines = Object.entries(game.teams).map(([teamId, team]) => {
-          const name = team.name || `קבוצה ${teamId}`;
-          const score = team.score || 0;
-          return `${name}: ${score} נקודות`;
-        });
-        teamsSummaryEl.innerHTML = lines.join("<br/>");
-      } else {
-        teamsSummaryEl.textContent = "";
-      }
-
-      const round = game.currentRound || game.round || {};
-      const isActive = !!round.isActive;
-      const secondsLeft = typeof round.secondsLeft === "number"
-        ? round.secondsLeft
-        : null;
-
-      const word =
-        round.word ||
-        game.currentWord ||
-        game.word ||
-        "";
-
-      const category =
-        round.category ||
-        (game.currentWordCategory || game.category || "");
-
-      const teamName =
-        (round.teamId && game.teams && game.teams[round.teamId] &&
-          (game.teams[round.teamId].name || `קבוצה ${round.teamId}`)) ||
-        round.teamName ||
-        "";
-
-      const explainerName = round.explainerName || "";
-
-      if (word) {
-        currentWordEl.textContent = word;
-      } else if (isActive) {
-        currentWordEl.textContent = "מילה בטעינה...";
-      } else {
-        currentWordEl.textContent = "ממתין להתחלת סיבוב...";
-      }
-
-      if (category) {
-        currentCategoryEl.textContent = `קטגוריה: ${category}`;
-      } else {
-        currentCategoryEl.textContent = "";
-      }
-
-      if (teamName) {
-        presenterTeamPill.textContent = `קבוצה: ${teamName}`;
-        presenterTeamPill.classList.remove("hidden");
-      } else {
-        presenterTeamPill.classList.add("hidden");
-      }
-
-      if (explainerName) {
-        presenterExplainerPill.textContent = `מסביר/ה: ${explainerName}`;
-        presenterExplainerPill.classList.remove("hidden");
-      } else {
-        presenterExplainerPill.classList.add("hidden");
-      }
-
-      if (isActive) {
-        roundStateTextEl.innerHTML =
-          "סיבוב פעיל! " +
-          (teamName ? `זה תור הקבוצה <strong>${teamName}</strong>. ` : "") +
-          (explainerName ? `מסביר/ה: <strong>${explainerName}</strong>.` : "");
-        presenterBottomInfoEl.textContent =
-          "ברגע שהמילה מתחלפת – כולם רואים כאן את העדכון בזמן אמת.";
-      } else {
-        roundStateTextEl.textContent = "אין סיבוב פעיל כרגע.";
-        presenterBottomInfoEl.textContent =
-          "המילה הבאה תופיע ברגע שמנהל המשחק יתחיל סיבוב חדש.";
-      }
-
-      if (secondsLeft !== null && secondsLeft >= 0) {
-        roundTimerPresenterEl.textContent = formatTime(secondsLeft);
-      } else if (isActive) {
-        roundTimerPresenterEl.textContent = "··:··";
-      } else {
-        roundTimerPresenterEl.textContent = "--:--";
-      }
-    }
-
-    if (connectPresenterBtn) {
-      connectPresenterBtn.addEventListener("click", () => {
-        const rawCode = (presenterGameCodeInput.value || "").trim().toUpperCase();
-        if (!rawCode || rawCode.length < 3) {
-          connectStatusEl.textContent = "נא להזין קוד משחק תקין.";
-          return;
-        }
-
-        presenterGameCode = rawCode;
-        connectStatusEl.textContent = "בודק את מצב המשחק...";
-        connectPresenterBtn.disabled = true;
-
-        socket.emit("getGameState", { gameCode: presenterGameCode }, (resp) => {
-          connectPresenterBtn.disabled = false;
-
-          if (!resp || !resp.ok || !resp.game) {
-            connectStatusEl.textContent =
-              "לא נמצא משחק פעיל עם הקוד הזה. בדוק עם מנהל המשחק.";
-            return;
-          }
-
-          connectStatusEl.textContent = `מחובר לחדר ${presenterGameCode} כמציג.`;
-          connectCard.classList.add("hidden");
-          presenterCard.classList.remove("hidden");
-
-          renderPresenter(resp.game);
-        });
-      });
-    }
-
-    socket.on("gameState", (game) => {
-      if (!presenterGameCode || !game || game.code !== presenterGameCode) return;
-      renderPresenter(game);
-    });
-
-    socket.on("gameUpdated", (game) => {
-      if (!presenterGameCode || !game || game.code !== presenterGameCode) return;
-      renderPresenter(game);
-    });
-
-    socket.on("gameEnded", (data) => {
-      if (data && data.code && presenterGameCode && data.code !== presenterGameCode) return;
-      roundStateTextEl.textContent = "המשחק הסתיים. תודה ששיחקתם! 🎉";
-      roundTimerPresenterEl.textContent = "--:--";
-      presenterBottomInfoEl.textContent =
-        "ניתן לחבר את המסך למשחק חדש על ידי קוד חדש.";
-      currentWordEl.textContent = "המשחק הסתיים.";
-      currentCategoryEl.textContent = "";
-    });
-  </script>
 </body>
 </html>
