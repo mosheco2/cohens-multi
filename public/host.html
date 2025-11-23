@@ -5,15 +5,12 @@
   <title>מילמניה - ניהול משחק</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- פונט עגול וכיפי -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      font-size: 16px;
-    }
+    :root { font-size: 16px; }
     * {
       box-sizing: border-box;
       font-family: "Varela Round", system-ui, -apple-system, BlinkMacSystemFont,
@@ -28,7 +25,6 @@
       font-size: 1rem;
       position: relative;
     }
-
     body::before,
     body::after {
       content: "";
@@ -59,7 +55,6 @@
       padding: 20px 14px 40px;
       margin: 0 auto;
     }
-
     .card {
       background: #FFFFFF;
       border-radius: 26px;
@@ -69,9 +64,7 @@
       margin-bottom: 16px;
     }
 
-    h1, h2, h3 {
-      margin-top: 0;
-    }
+    h1, h2, h3 { margin-top: 0; }
 
     label {
       display: block;
@@ -89,14 +82,8 @@
       color: #2B1E4A;
       font-size: 0.98rem;
     }
-
-    input::placeholder,
-    select::placeholder {
-      color: #B0A6CC;
-    }
-
-    input:focus,
-    select:focus {
+    input::placeholder, select::placeholder { color: #B0A6CC; }
+    input:focus, select:focus {
       outline: none;
       border-color: #F84779;
       box-shadow: 0 0 0 1px rgba(248, 71, 121, 0.55);
@@ -108,10 +95,7 @@
       flex-wrap: wrap;
       margin-bottom: 8px;
     }
-
-    .row > div {
-      flex: 1 1 200px;
-    }
+    .row > div { flex: 1 1 200px; }
 
     .btn {
       display: inline-flex;
@@ -126,7 +110,6 @@
       transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease;
       white-space: nowrap;
     }
-
     .btn-primary {
       background: linear-gradient(135deg, #F84779, #F7C948);
       color: #2B1E4A;
@@ -136,7 +119,6 @@
       transform: translateY(-1px);
       box-shadow: 0 14px 35px rgba(248, 71, 121, 0.5);
     }
-
     .btn-success {
       background: linear-gradient(135deg, #15C4C1, #2DD4BF);
       color: #083344;
@@ -146,7 +128,6 @@
       transform: translateY(-1px);
       box-shadow: 0 14px 32px rgba(21, 196, 193, 0.5);
     }
-
     .btn-danger {
       background: linear-gradient(135deg, #EF4444, #F97373);
       color: #FFF7F7;
@@ -156,26 +137,14 @@
       transform: translateY(-1px);
       box-shadow: 0 14px 32px rgba(239, 68, 68, 0.5);
     }
-
     .btn-ghost {
       background: transparent;
       border: 1px solid rgba(107, 97, 143, 0.55);
       color: #6B618F;
     }
-    .btn-ghost:hover {
-      background: rgba(248, 249, 255, 0.9);
-    }
-
-    .btn-small {
-      padding: 6px 10px;
-      font-size: 0.8rem;
-    }
-
-    .btn-wide {
-      width: 100%;
-      justify-content: center;
-    }
-
+    .btn-ghost:hover { background: rgba(248, 249, 255, 0.9); }
+    .btn-small { padding: 6px 10px; font-size: 0.8rem; }
+    .btn-wide { width: 100%; justify-content: center; }
     .btn[disabled] {
       opacity: 0.55;
       cursor: default;
@@ -197,11 +166,7 @@
         rgba(255, 255, 255, 0.96));
       margin-bottom: 4px;
     }
-
-    .status-text {
-      font-size: 0.9rem;
-      color: #7C7598;
-    }
+    .status-text { font-size: 0.9rem; color: #7C7598; }
 
     .logo-small {
       height: 54px;
@@ -211,16 +176,11 @@
       background: #FFFFFF;
       padding: 4px 8px;
       border: 1px solid rgba(180, 169, 214, 0.65);
-      box-shadow:
-        0 0 0 3px #FFF8EA,
-        0 10px 26px rgba(0,0,0,0.12);
+      box-shadow: 0 0 0 3px #FFF8EA, 0 10px 26px rgba(0,0,0,0.12);
     }
 
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
 
-    /* טיימר */
     #roundTimer {
       margin-top: 4px;
       font-size: 1.6rem;
@@ -229,7 +189,6 @@
       color: #F84779;
     }
 
-    /* כותרת עמוד */
     .page-header {
       display: flex;
       justify-content: space-between;
@@ -244,7 +203,6 @@
       min-width: 0;
     }
 
-    /* טאבים למעלה למעבר מנהל/שחקן */
     .top-tabs {
       display: inline-flex;
       border-radius: 999px;
@@ -269,7 +227,6 @@
       color: #2B1E4A;
     }
 
-    /* תג שחקן + כפתור הסרה */
     .player-pill {
       display: inline-flex;
       align-items: center;
@@ -291,58 +248,31 @@
       padding: 0 2px;
       line-height: 1;
     }
-    .remove-player-btn:hover {
-      color: #b91c1c;
-    }
+    .remove-player-btn:hover { color: #b91c1c; }
 
-    .team-row {
-      font-size: 0.95rem;
-    }
+    .team-row { font-size: 0.95rem; }
 
     @media (max-width: 640px) {
-      body {
-        font-size: 1.05rem;
-      }
-      .app {
-        padding: 16px 10px 32px;
-      }
-      .card {
-        padding: 18px 14px 20px;
-        border-radius: 20px;
-      }
-      h1 {
-        font-size: 1.6rem;
-      }
-      h3 {
-        font-size: 1.05rem;
-      }
-      label {
-        font-size: 0.9rem;
-      }
-      input, select {
-        font-size: 1rem;
-      }
-      .btn {
-        font-size: 1rem;
-        padding: 10px 16px;
-      }
+      body { font-size: 1.05rem; }
+      .app { padding: 16px 10px 32px; }
+      .card { padding: 18px 14px 20px; border-radius: 20px; }
+      h1 { font-size: 1.6rem; }
+      h3 { font-size: 1.05rem; }
+      label { font-size: 0.9rem; }
+      input, select { font-size: 1rem; }
+      .btn { font-size: 1rem; padding: 10px 16px; }
       #roundTimer {
         font-size: 1.9rem;
         text-align: center;
         margin-top: 8px;
       }
-      .team-row {
-        font-size: 0.98rem;
-      }
-      .team-players {
-        font-size: 0.85rem;
-      }
+      .team-row { font-size: 0.98rem; }
+      .team-players { font-size: 0.85rem; }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <!-- מצבי מסך: מנהל / שחקן -->
     <div class="card" id="hostTop">
       <div class="page-header">
         <div class="page-header-main">
@@ -365,12 +295,12 @@
       </div>
 
       <p class="status-text" style="margin-top:8px;">
-        בלשונית "מצב מנהל" אתה שולט במשחק. בלשונית "מצב שחקן (אני)" ייפתח לך מסך שחקן
-        בחלון נפרד – בלי מסך בתוך מסך – ותוכל לחזור לכאן בכל רגע.
+        בלשונית "מצב מנהל" אתה שולט במשחק. בלשונית "מצב שחקן (אני)" תפתח לעצמך חלון שחקן
+        נפרד – ותוכל לחזור לכאן בכל רגע.
       </p>
     </div>
 
-    <!-- מצב מנהל: יצירת משחק, טיימר, ניקוד -->
+    <!-- מצב מנהל -->
     <div id="hostMode">
       <div class="card">
         <div class="row">
@@ -466,7 +396,6 @@
         <div id="hostStatus" class="status-text" style="margin-top:8px;"></div>
       </div>
 
-      <!-- קוד משחק, הזמנת וואטסאפ, טיימר וסיבוב -->
       <div class="card" id="gameCodeRow" style="display:none;">
         <h3 style="margin:0 0 6px;">קוד משחק</h3>
         <div id="gameCodeDisplay" class="status-text" style="margin-bottom:6px;"></div>
@@ -527,7 +456,6 @@
         </div>
       </div>
 
-      <!-- ניקוד וקבוצות -->
       <div class="card">
         <h3 style="margin:0 0 6px;">ניקוד וקבוצות</h3>
         <div id="scoreTarget" class="status-text"></div>
@@ -542,7 +470,7 @@
       </div>
     </div>
 
-    <!-- מצב שחקן (באותו דף – אבל בחלון נפרד בפועל) -->
+    <!-- מצב שחקן עבור המנהל (פותח חלון חדש) -->
     <div id="playerMode" class="hidden">
       <div class="card">
         <h3 style="margin:0 0 6px;">אני כשחקן</h3>
@@ -569,8 +497,8 @@
         </button>
 
         <p class="status-text" style="margin-top:8px;">
-          במסך החדש תתנהג כמו כל שחקן רגיל – לראות ניקוד, סיבובים ומילים (כשנחבר את זה).
-          כאן בדף הניהול תוכל להמשיך לשלוט במשחק ולעבור חזרה ללשונית "מצב מנהל".
+          במסך החדש תתנהג כמו כל שחקן רגיל. כאן בדף הניהול תוכל להמשיך לשלוט במשחק
+          ולעבור חזרה ללשונית "מצב מנהל".
         </p>
       </div>
     </div>
@@ -579,6 +507,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
+    const LS_HOST_GAME_KEY = "mil_hostGameCode";
 
     let currentGameCode = null;
     let lastGameState = null;
@@ -645,17 +574,12 @@
     if (selectAllCatsCheckbox) {
       selectAllCatsCheckbox.addEventListener("change", () => {
         const checked = selectAllCatsCheckbox.checked;
-        catCheckboxes.forEach((cb) => {
-          cb.checked = checked;
-        });
+        catCheckboxes.forEach((cb) => { cb.checked = checked; });
       });
-
       catCheckboxes.forEach((cb) => {
         cb.addEventListener("change", () => {
           let allChecked = true;
-          catCheckboxes.forEach((c2) => {
-            if (!c2.checked) allChecked = false;
-          });
+          catCheckboxes.forEach((c2) => { if (!c2.checked) allChecked = false; });
           selectAllCatsCheckbox.checked = allChecked;
         });
       });
@@ -718,7 +642,7 @@
       }
 
       const r = game.currentRound;
-      const isActive = (typeof r.isActive === "boolean") ? r.isActive : !!r.active;
+      const isActive = (typeof r.active === "boolean") ? r.active : !!r.isActive;
       const secondsLeft = (typeof r.secondsLeft === "number")
         ? r.secondsLeft
         : (r.roundSeconds || 0);
@@ -807,7 +731,6 @@
         const playersMap = game.players || game.playersByClientId || {};
         Object.entries(game.teams).forEach(([teamId, team]) => {
           const wrapper = document.createElement("div");
-          wrapper.className = "team-players-block";
           wrapper.style.marginBottom = "8px";
 
           const title = document.createElement("div");
@@ -966,6 +889,9 @@
               return;
             }
             currentGameCode = response.gameCode;
+
+            try { localStorage.setItem(LS_HOST_GAME_KEY, currentGameCode); } catch(e) {}
+
             hostStatus.textContent = `המשחק נוצר! קוד המשחק: ${currentGameCode}`;
             if (gameCodeRow) gameCodeRow.style.display = "block";
             if (gameCodeDisplay) {
@@ -995,6 +921,7 @@
         socket.emit("endGame", { gameCode: currentGameCode }, () => {
           hostStatus.textContent = "המשחק נסגר.";
           currentGameCode = null;
+          try { localStorage.removeItem(LS_HOST_GAME_KEY); } catch(e) {}
           renderGameState(null);
         });
       });
@@ -1038,7 +965,6 @@
       });
     }
 
-    // טאבים – מעבר בין מצב מנהל למצב שחקן
     if (tabHost && tabPlayer && hostMode && playerMode) {
       tabHost.addEventListener("click", () => {
         tabHost.classList.add("active");
@@ -1055,7 +981,6 @@
       });
     }
 
-    // פתיחת מסך השחקן בחלון חדש
     if (openPlayerViewBtn) {
       openPlayerViewBtn.addEventListener("click", () => {
         if (!currentGameCode) {
@@ -1085,7 +1010,6 @@
       });
     }
 
-    // בניית לינק שחקן עם קוד + קבוצה + שם קבוצה
     function buildPlayerInviteLink(teamId, teamName) {
       if (!currentGameCode) return null;
       const origin = window.location.origin;
@@ -1097,7 +1021,6 @@
       return baseUrl + "?" + params.toString();
     }
 
-    // כפתור הזמנה בוואטסאפ
     if (whatsappInviteBtn) {
       whatsappInviteBtn.addEventListener("click", () => {
         if (!currentGameCode) {
@@ -1143,10 +1066,10 @@
     socket.on("gameEnded", () => {
       hostStatus.textContent = "המשחק נסגר.";
       currentGameCode = null;
+      try { localStorage.removeItem(LS_HOST_GAME_KEY); } catch(e) {}
       renderGameState(null);
     });
 
-    // ⭐ פופ־אפ סוף שעון – סעיפים 1 + 4
     socket.on("roundTimeUp", (data) => {
       if (!data) return;
       const score = typeof data.roundScore === "number" ? data.roundScore : 0;
@@ -1163,7 +1086,6 @@
       alert("⏱ נגמר הזמן!\n\n" + msgLine + `\n\n(מספר תשובות נכונות בסיבוב: ${score})`);
     });
 
-    // טעינת לוגו ובאנר למסך מנהל המשחק
     (function loadBrandingForHost() {
       fetch("/api/banners")
         .then((res) => res.json())
@@ -1185,7 +1107,6 @@
           if (!cfg || !cfg.imageUrl || !cfg.linkUrl) return;
 
           const a = document.createElement("a");
-          a.className = "ad-banner";
           a.href = cfg.linkUrl;
           a.target = "_blank";
           a.rel = "noopener";
@@ -1207,6 +1128,35 @@
         })
         .catch(() => {});
     })();
+
+    // שחזור חיבור של המנהל אחרי רפרש
+    (function restoreHostFromStorage() {
+      try {
+        const storedCode = localStorage.getItem(LS_HOST_GAME_KEY);
+        if (!storedCode) return;
+
+        currentGameCode = storedCode;
+        socket.emit("hostReconnect", { gameCode: storedCode }, (resp) => {
+          if (resp && resp.ok && resp.game) {
+            hostStatus.textContent = "שוחזר חיבור למשחק " + storedCode;
+            renderGameState(resp.game);
+          } else {
+            localStorage.removeItem(LS_HOST_GAME_KEY);
+          }
+        });
+      } catch (e) {}
+    })();
+
+    // כשחוזרים לטאב – מושכים מצב עדכני מהשרת
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && currentGameCode) {
+        socket.emit("getGameState", { gameCode: currentGameCode }, (resp) => {
+          if (resp && resp.ok && resp.game) {
+            renderGameState(resp.game);
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>
