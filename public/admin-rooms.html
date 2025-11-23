@@ -77,21 +77,9 @@
     .btn-primary:hover {
       box-shadow: 0 14px 35px rgba(56,189,248,0.5);
     }
-    .btn-danger {
-      border: none;
-      background: linear-gradient(135deg, #f97373, #ef4444);
-      color: #020617;
-      box-shadow: 0 10px 25px rgba(248,113,113,0.4);
-    }
-    .btn-danger:hover {
-      box-shadow: 0 14px 35px rgba(248,113,113,0.6);
-    }
     .btn-small {
       padding: 6px 10px;
       font-size: 0.8rem;
-    }
-    .btn + .btn {
-      margin-right: 6px;
     }
     .logo-bar {
       display: flex;
@@ -172,26 +160,12 @@
       font-size: 0.85rem;
       color: #cbd5f5;
     }
-    .players-list div {
-      margin-bottom: 2px;
-    }
-    .players-list .team-tag {
-      display: inline-block;
-      padding: 1px 7px;
-      border-radius: 999px;
-      background: rgba(34,197,94,0.08);
-      border: 1px solid rgba(34,197,94,0.5);
-      color: #bbf7d0;
-      font-size: 0.75rem;
-      margin-left: 6px;
-    }
     .empty-state {
       text-align: center;
       padding: 14px 8px 6px;
       font-size: 0.95rem;
       color: #9ca3af;
     }
-
     .ad-banner {
       display: block;
       margin-top: 10px;
@@ -206,7 +180,6 @@
       display: block;
       border-radius: 14px;
     }
-
     @media (max-width: 640px) {
       .app {
         padding: 16px 10px 28px;
@@ -234,7 +207,6 @@
         </div>
         <div>
           <div class="logo-bar">
-            <!-- לוגו קבוע מתיקיית public -->
             <img src="/logo.png" class="logo-big" alt="כהנ'ס - Alias Party" />
           </div>
           <div style="margin-top:6px; text-align:left;">
@@ -268,6 +240,16 @@
     const summaryText = document.getElementById("summaryText");
     const refreshBtn = document.getElementById("refreshBtn");
 
+    function getAdminCode() {
+      try {
+        const params = new URLSearchParams(window.location.search || "");
+        const fromQuery = params.get("code");
+        if (fromQuery && fromQuery.trim()) return fromQuery.trim();
+      } catch (e) {}
+      // ברירת מחדל – כמו בשרת (ADMIN_CODE)
+      return "ONEBTN";
+    }
+
     function formatRoomOpenTime(openedAt) {
       if (!openedAt) return "";
       let openedMs;
@@ -295,40 +277,24 @@
       return diffSec + " שנ'";
     }
 
-    async function closeRoom(roomCode) {
-      if (!roomCode) return;
-      const ok = confirm("לסגור את החדר עם הקוד " + roomCode + "?");
-      if (!ok) return;
-
-      try {
-        await fetch("/api/admin/rooms/" + encodeURIComponent(roomCode) + "/close", {
-          method: "POST"
-        });
-        // אחרי סגירה – רענון הרשימה
-        fetchRooms();
-      } catch (err) {
-        console.error("Failed to close room:", err);
-        alert("לא הצלחתי לסגור את החדר. נסה שוב.");
-      }
-    }
-
     async function fetchRooms() {
       try {
-        const res = await fetch("/api/admin/rooms");
+        const adminCode = getAdminCode();
+        const res = await fetch("/admin/summary?code=" + encodeURIComponent(adminCode));
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
 
-        const rooms = (data && data.rooms) || [];
-        const totalRooms = data && typeof data.totalRooms === "number"
-          ? data.totalRooms
-          : rooms.length;
-        const totalPlayers = data && typeof data.totalPlayers === "number"
-          ? data.totalPlayers
-          : rooms.reduce((s, r) => s + (r.playersCount || 0), 0);
+        const rooms = (data && data.activeGames) || [];
+        const totalRooms = rooms.length;
+        const totalPlayers = rooms.reduce(
+          (sum, g) => sum + (g.playerCount || 0),
+          0
+        );
 
         if (!rooms.length) {
           summaryText.textContent = "אין כרגע חדרים פתוחים.";
-          roomsContainer.innerHTML = '<div class="empty-state">ברגע שמשחק חדש ייפתח – הוא יופיע כאן.</div>';
+          roomsContainer.innerHTML =
+            '<div class="empty-state">ברגע שמשחק חדש ייפתח – הוא יופיע כאן.</div>';
           return;
         }
 
@@ -340,37 +306,16 @@
         roomsContainer.innerHTML = "";
 
         rooms.forEach((room) => {
-          const playersCount = room.playersCount || 0;
-          const players = room.players || [];
-          const managerName = room.managerName ? (" · מנהל: " + room.managerName) : "";
+          const playersCount = room.playerCount || 0;
+          const teamCount = room.teamCount || 0;
+          const categories = Array.isArray(room.categories) ? room.categories : [];
+          const catsText = categories.length
+            ? categories.join(", ")
+            : "כל הקטגוריות";
 
-          // גזירת קבוצות ושמות שחקנים מכל קבוצה
-          const teamsMap = new Map();
-          players.forEach((p) => {
-            const teamLabel = p.teamName || p.teamId || "ללא קבוצה";
-            const playerName = p.name || "שחקן ללא שם";
-            if (!teamsMap.has(teamLabel)) {
-              teamsMap.set(teamLabel, []);
-            }
-            teamsMap.get(teamLabel).push(playerName);
-          });
-
-          let playersHtml;
-          if (playersCount) {
-            playersHtml = Array.from(teamsMap.entries())
-              .map(([team, names]) => {
-                return `<div><span class="team-tag">${team}</span>${names.join(", ")}</div>`;
-              })
-              .join("");
-          } else {
-            playersHtml = '<div style="color:#9ca3af;">אין עדיין שחקנים מחוברים לחדר הזה.</div>';
-          }
-
-          const openTimeText = formatRoomOpenTime(
-            room.openedAt || room.createdAt || room.createdAtMs
-          );
+          const openTimeText = formatRoomOpenTime(room.createdAt);
           const openTimeBadge = openTimeText
-            ? `<span class="badge badge-time">פתוח: ${openTimeText}</span>`
+            ? '<span class="badge badge-time">פתוח: ' + openTimeText + "</span>"
             : "";
 
           const div = document.createElement("div");
@@ -380,39 +325,36 @@
             <div class="room-row-1">
               <div>
                 <div class="room-title">
-                  ${room.name || ("חדר " + (room.code || ""))}
+                  ${room.code ? "חדר " + room.code : "חדר ללא קוד"}
                 </div>
                 <div class="room-subtext">
-                  קוד משחק: <span class="status-strong">${room.code || "-"}</span>${managerName}
+                  קוד משחק: <span class="status-strong">${room.code || "-"}</span>
+                  ${room.hostName ? " · מנהל: " + room.hostName : ""}
                 </div>
               </div>
               <div style="text-align:left;">
                 <span class="badge badge-green">שחקנים: ${playersCount}</span>
+                <span class="badge">קבוצות: ${teamCount}</span>
                 ${openTimeBadge}
-                <button class="btn btn-danger btn-small close-room-btn" data-room-code="${room.code || ""}">
-                  סגור חדר ✖
-                </button>
               </div>
             </div>
             <div class="players-list">
-              ${playersHtml}
+              <div style="color:#9ca3af;">
+                (בשלב זה מוצג רק סיכום כללי. מסך מפורט לשחקנים בכל חדר נפתח בשלב הבא.)
+              </div>
+              <div style="margin-top:4px; font-size:0.8rem; color:#94a3b8;">
+                קטגוריות: ${catsText}
+              </div>
             </div>
           `;
-
-          const btn = div.querySelector(".close-room-btn");
-          if (btn) {
-            btn.addEventListener("click", function () {
-              const code = this.dataset.roomCode;
-              closeRoom(code);
-            });
-          }
 
           roomsContainer.appendChild(div);
         });
       } catch (err) {
         console.error("Failed to fetch rooms:", err);
         summaryText.textContent = "שגיאה בטעינת החדרים. נסה לרענן.";
-        roomsContainer.innerHTML = '<div class="empty-state">לא הצלחתי למשוך נתונים מהשרת.</div>';
+        roomsContainer.innerHTML =
+          '<div class="empty-state">לא הצלחתי למשוך נתונים מהשרת.</div>';
       }
     }
 
