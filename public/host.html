@@ -470,7 +470,7 @@
       </div>
     </div>
 
-    <!-- מצב שחקן עבור המנהל – באותו דף (JS לוגיקת שחקן תיכתב במשימה נפרדת) -->
+    <!-- מצב שחקן עבור המנהל – באותו דף עם אותו socket -->
     <div id="playerMode" class="hidden">
       <div class="card">
         <h3 style="margin:0 0 6px;">אני כשחקן</h3>
@@ -492,13 +492,14 @@
           </div>
         </div>
 
-        <!-- בשלב JS #1 הכפתור עדיין לא מבצע joinGame – רק UI. -->
         <button id="openPlayerViewBtn" class="btn btn-primary" type="button" style="margin-top:6px;">
-          שמור והצטרף כשחקן (בקרוב)
+          שמור והצטרף כשחקן
         </button>
 
+        <div id="playerJoinStatus" class="status-text" style="margin-top:8px;"></div>
+
         <p class="status-text" style="margin-top:8px;">
-          אחרי שנכתוב את לוגיקת השחקן, מסך זה יציג את מסך השחקן המלא, כמו אצל כל שחקן אחר,
+          בשלב הבא נוסיף כאן את מסך השחקן המלא (המילים, הטיימר והכפתורים), בדיוק כמו אצל שחקן רגיל –
           אבל בתוך אותו דף.
         </p>
       </div>
@@ -512,6 +513,9 @@
 
     let currentGameCode = null;
     let lastGameState = null;
+
+    let isHostAlsoPlayer = false;
+    let hostPlayerProfile = null;
 
     const hostNameInput = document.getElementById("hostName");
     const numTeamsSelect = document.getElementById("numTeams");
@@ -556,6 +560,7 @@
     const hostPlayerNameInput = document.getElementById("hostPlayerName");
     const hostPlayerTeamSelect = document.getElementById("hostPlayerTeamSelect");
     const openPlayerViewBtn = document.getElementById("openPlayerViewBtn");
+    const playerJoinStatus = document.getElementById("playerJoinStatus");
 
     function formatTime(seconds) {
       const s = Math.max(0, Math.floor(seconds || 0));
@@ -826,7 +831,7 @@
         }
       }
 
-      // מילוי רשימת הקבוצות גם לטובת מצב "שחקן (אני)" – החיבור עצמו ייכתב במשימת JS #2
+      // מילוי רשימת הקבוצות גם לטובת מצב "שחקן (אני)"
       if (hostPlayerTeamSelect) {
         const oldHostTeam = hostPlayerTeamSelect.value;
         hostPlayerTeamSelect.innerHTML = '<option value="">בחירת קבוצה...</option>';
@@ -999,14 +1004,81 @@
       });
     }
 
-    // בשלב JS #1 אין לוגיקה לכפתור הצטרפות כשחקן – זה יגיע במשימה הבאה
-    // if (openPlayerViewBtn) { ... }
+    // הצטרפות המנהל כשחקן באותו socket
+    if (openPlayerViewBtn) {
+      openPlayerViewBtn.addEventListener("click", () => {
+        if (!currentGameCode) {
+          alert("אין משחק פעיל כרגע. קודם צור משחק.");
+          return;
+        }
+
+        const name =
+          (hostPlayerNameInput && hostPlayerNameInput.value.trim()) ||
+          (hostNameInput && hostNameInput.value.trim());
+
+        if (!name) {
+          alert("נא להזין שם לשחקן.");
+          return;
+        }
+
+        const teamId = hostPlayerTeamSelect ? hostPlayerTeamSelect.value : "";
+        if (!teamId) {
+          alert("נא לבחור קבוצה.");
+          return;
+        }
+
+        if (isHostAlsoPlayer) {
+          // כבר הצטרפנו – רק לעדכן שם/קבוצה (אופציונלי)
+          socket.emit(
+            "updatePlayerProfile",
+            { gameCode: currentGameCode, name, teamId },
+            () => {}
+          );
+        }
+
+        socket.emit(
+          "joinGame",
+          { gameCode: currentGameCode, name, teamId, fromHost: true },
+          (resp) => {
+            if (!resp || resp.ok === false) {
+              const err = resp && resp.error ? resp.error : "שגיאה בהצטרפות למשחק.";
+              alert(err);
+              if (playerJoinStatus) playerJoinStatus.textContent = err;
+              return;
+            }
+
+            isHostAlsoPlayer = true;
+            hostPlayerProfile = resp.player || { name, teamId };
+
+            let teamName = teamId;
+            if (lastGameState && lastGameState.teams && lastGameState.teams[teamId]) {
+              teamName = lastGameState.teams[teamId].name || teamId;
+            }
+
+            if (playerJoinStatus) {
+              playerJoinStatus.textContent =
+                `מעולה! הצטרפת למשחק בקבוצה "${teamName}" בשם "${name}". ` +
+                `תוכל לעבור חופשי בין "מצב מנהל" ל"מצב שחקן (אני)" בלי לאבד את החיבור.`;
+            }
+
+            // מעבר אוטומטי ללשונית השחקן
+            if (tabPlayer && tabHost && hostMode && playerMode) {
+              tabPlayer.classList.add("active");
+              tabHost.classList.remove("active");
+              hostMode.classList.add("hidden");
+              playerMode.classList.remove("hidden");
+            }
+          }
+        );
+      });
+    }
 
     function buildPlayerInviteLink(teamId, teamName) {
       if (!currentGameCode) return null;
       const origin = window.location.origin;
       const baseUrl = origin + "/player.html";
       const params = new URLSearchParams();
+      params.set("autoJoin", "1");
       params.set("code", currentGameCode);
       if (teamId) params.set("teamId", teamId);
       if (teamName) params.set("teamName", teamName);
