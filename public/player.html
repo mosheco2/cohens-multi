@@ -368,14 +368,19 @@
     let myClientId = null;
     let myTeamId = null;
 
-    // קריאת פרמטרים מה-URL (הזמנה מווצאפ)
+    // קריאת פרמטרים מה-URL (הזמנה מווצאפ / מצב שחקן של מנהל)
     const urlParams = new URLSearchParams(window.location.search);
     const invitedCode = (urlParams.get("code") || "").toUpperCase();
     const invitedTeamId = urlParams.get("teamId") || "";
     const invitedTeamName = urlParams.get("teamName") || "";
+    const urlPlayerName = urlParams.get("name") || "";
+    const autoJoin = urlParams.get("autoJoin") === "1";
 
     if (invitedCode) {
       gameCodeInput.value = invitedCode;
+    }
+    if (urlPlayerName) {
+      playerNameInput.value = urlPlayerName;
     }
 
     if (invitedCode && invitedTeamId) {
@@ -396,11 +401,11 @@
       fetch("/api/banners")
         .then((res) => res.json())
         .then((data) => {
-          if (data && data.logoUrl) {
+          if (data && data.logoUrl && playerLogoEl) {
             playerLogoEl.src = data.logoUrl;
             playerLogoEl.classList.remove("hidden");
           }
-          if (data && data.playerBannerHtml) {
+          if (data && data.playerBannerHtml && playerBannerSlot) {
             playerBannerSlot.innerHTML = data.playerBannerHtml;
           }
         })
@@ -538,17 +543,17 @@
       }
     }
 
-    // הצטרפות למשחק (עם חסימה לשמות שונים מאותו מכשיר לאותו קוד)
-    joinBtn.addEventListener("click", () => {
-      const rawCode = gameCodeInput.value.trim().toUpperCase();
-      const playerName = playerNameInput.value.trim();
+    // פונקציה משותפת לכל ניסיון הצטרפות
+    function attemptJoin(gameCodeOverride, playerNameOverride, teamIdOverride) {
+      const rawCode = (gameCodeOverride || gameCodeInput.value || "").trim().toUpperCase();
+      const playerName = (playerNameOverride || playerNameInput.value || "").trim();
 
       if (!rawCode || rawCode.length < 3) {
         joinStatus.textContent = "נא להקליד קוד משחק תקין.";
         return;
       }
       if (!playerName || playerName.length < 2) {
-        joinStatus.textContent = "נא לבחור שם לשחקן (לפ至少 2 תווים).";
+        joinStatus.textContent = "נא לבחור שם לשחקן (לפחות 2 תווים).";
         return;
       }
 
@@ -578,7 +583,7 @@
       const payload = {
         gameCode,
         name: playerName,
-        teamId: invitedTeamId || teamSelect.value || null,
+        teamId: teamIdOverride || invitedTeamId || teamSelect.value || null,
       };
 
       joinStatus.textContent = "מצטרף למשחק...";
@@ -625,6 +630,11 @@
           });
         }
       });
+    }
+
+    // הצטרפות ידנית בלחיצה על הכפתור
+    joinBtn.addEventListener("click", () => {
+      attemptJoin(null, null, null);
     });
 
     // האזנה לעדכוני משחק מהשרת
@@ -637,8 +647,22 @@
 
     socket.on("gameEnded", (data) => {
       if (data && data.code && currentGameCode && data.code !== currentGameCode) return;
-
       roundStatusPlayerEl.textContent = "המשחק הסתיים. תודה ששיחקתם! 🎉";
+    });
+
+    // ⭐ הצטרפות אוטומטית – מצב שחקן של המנהל בתוך host.html
+    window.addEventListener("load", () => {
+      if (!autoJoin) return;
+
+      const autoCode = invitedCode || gameCodeInput.value.trim().toUpperCase();
+      const autoName = urlPlayerName || playerNameInput.value.trim();
+
+      if (!autoCode || !autoName) {
+        // אין מספיק נתונים להצטרפות אוטומטית – נשאיר למשתמש להצטרף ידנית
+        return;
+      }
+
+      attemptJoin(autoCode, autoName, invitedTeamId || null);
     });
   </script>
 </body>
