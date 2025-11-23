@@ -295,8 +295,8 @@
       </div>
 
       <p class="status-text" style="margin-top:8px;">
-        בלשונית "מצב מנהל" אתה שולט במשחק. בלשונית "מצב שחקן (אני)" תפתח לעצמך חלון שחקן
-        נפרד – ותוכל לחזור לכאן בכל רגע.
+        בלשונית "מצב מנהל" אתה שולט במשחק. בלשונית "מצב שחקן (אני)" תצטרף למשחק כשחקן רגיל
+        באותו דף, ותוכל לעבור בין המסכים בלחיצה על הלשוניות.
       </p>
     </div>
 
@@ -470,13 +470,13 @@
       </div>
     </div>
 
-    <!-- מצב שחקן עבור המנהל (חלון חדש) -->
+    <!-- מצב שחקן עבור המנהל – באותו דף (JS לוגיקת שחקן תיכתב במשימה נפרדת) -->
     <div id="playerMode" class="hidden">
       <div class="card">
         <h3 style="margin:0 0 6px;">אני כשחקן</h3>
         <p class="status-text" style="margin-bottom:8px;">
-          כאן תגדיר את השם והקבוצה שלך כשחקן. כשתלחץ על הכפתור, ייפתח חלון חדש עם מסך השחקן,
-          ותצטרף אוטומטית למשחק ולקבוצה שבחרת.
+          כאן תגדיר את השם והקבוצה שלך כשחקן. כשתלחץ על הכפתור, תצטרף למשחק כשחקן רגיל
+          עם אותו חיבור, ותוכל לעבור בין מסך השחקן למסך הניהול בלחיצה על הלשוניות.
         </p>
 
         <div class="row">
@@ -492,13 +492,14 @@
           </div>
         </div>
 
+        <!-- בשלב JS #1 הכפתור עדיין לא מבצע joinGame – רק UI. -->
         <button id="openPlayerViewBtn" class="btn btn-primary" type="button" style="margin-top:6px;">
-          פתח מסך שחקן בחלון חדש
+          שמור והצטרף כשחקן (בקרוב)
         </button>
 
         <p class="status-text" style="margin-top:8px;">
-          במסך החדש תתנהג כמו כל שחקן רגיל. כאן בדף הניהול תוכל להמשיך לשלוט במשחק
-          ולעבור חזרה ללשונית "מצב מנהל".
+          אחרי שנכתוב את לוגיקת השחקן, מסך זה יציג את מסך השחקן המלא, כמו אצל כל שחקן אחר,
+          אבל בתוך אותו דף.
         </p>
       </div>
     </div>
@@ -571,6 +572,7 @@
       return selected;
     }
 
+    // בחירת "בחר הכל" לקטגוריות
     if (selectAllCatsCheckbox) {
       selectAllCatsCheckbox.addEventListener("change", () => {
         const checked = selectAllCatsCheckbox.checked;
@@ -824,6 +826,7 @@
         }
       }
 
+      // מילוי רשימת הקבוצות גם לטובת מצב "שחקן (אני)" – החיבור עצמו ייכתב במשימת JS #2
       if (hostPlayerTeamSelect) {
         const oldHostTeam = hostPlayerTeamSelect.value;
         hostPlayerTeamSelect.innerHTML = '<option value="">בחירת קבוצה...</option>';
@@ -855,6 +858,7 @@
       });
     }
 
+    // יצירת משחק חדש
     if (createGameBtn) {
       createGameBtn.addEventListener("click", () => {
         const hostName = (hostNameInput.value || "").trim();
@@ -921,6 +925,7 @@
       });
     }
 
+    // סגירת משחק
     if (endGameBtn) {
       endGameBtn.addEventListener("click", () => {
         if (!currentGameCode) return;
@@ -933,6 +938,7 @@
       });
     }
 
+    // התחלת סיבוב
     if (startRoundBtn) {
       startRoundBtn.addEventListener("click", () => {
         if (!currentGameCode) return;
@@ -962,6 +968,7 @@
       });
     }
 
+    // סיום סיבוב
     if (stopRoundBtn) {
       stopRoundBtn.addEventListener("click", () => {
         if (!currentGameCode) return;
@@ -975,6 +982,7 @@
       });
     }
 
+    // מעבר בין טאב מנהל לטאב שחקן (אני)
     if (tabHost && tabPlayer && hostMode && playerMode) {
       tabHost.addEventListener("click", () => {
         tabHost.classList.add("active");
@@ -991,35 +999,8 @@
       });
     }
 
-    if (openPlayerViewBtn) {
-      openPlayerViewBtn.addEventListener("click", () => {
-        if (!currentGameCode) {
-          alert("אין משחק פעיל כרגע. קודם צור משחק.");
-          return;
-        }
-
-        const name =
-          (hostPlayerNameInput && hostPlayerNameInput.value.trim()) ||
-          (hostNameInput && hostNameInput.value.trim());
-
-        if (!name) {
-          alert("נא להזין שם לשחקן.");
-          return;
-        }
-
-        const teamId = hostPlayerTeamSelect ? hostPlayerTeamSelect.value : "";
-
-        const params = new URLSearchParams();
-        params.set("autoJoin", "1");
-        params.set("code", currentGameCode);
-        params.set("name", name);
-        if (teamId) params.set("teamId", teamId);
-        params.set("hostMode", "1"); // כדי לדעת במסך השחקן שזה המנהל
-
-        const url = "/player.html?" + params.toString();
-        window.open(url, "_blank");
-      });
-    }
+    // בשלב JS #1 אין לוגיקה לכפתור הצטרפות כשחקן – זה יגיע במשימה הבאה
+    // if (openPlayerViewBtn) { ... }
 
     function buildPlayerInviteLink(teamId, teamName) {
       if (!currentGameCode) return null;
@@ -1032,6 +1013,7 @@
       return baseUrl + "?" + params.toString();
     }
 
+    // הזמנה לוואטסאפ
     if (whatsappInviteBtn) {
       whatsappInviteBtn.addEventListener("click", () => {
         if (!currentGameCode) {
@@ -1066,6 +1048,7 @@
       });
     }
 
+    // עדכוני מצב מהשרת
     socket.on("gameState", (game) => {
       renderGameState(game);
     });
@@ -1097,6 +1080,7 @@
       alert("⏱ נגמר הזמן!\n\n" + msgLine + `\n\n(מספר תשובות נכונות בסיבוב: ${score})`);
     });
 
+    // לוגו ובאנר ממערכת הבאנרים
     (function loadBrandingForHost() {
       fetch("/api/banners")
         .then((res) => res.json())
@@ -1140,6 +1124,7 @@
         .catch(() => {});
     })();
 
+    // שחזור חיבור של מנהל למשחק קיים
     (function restoreHostFromStorage() {
       try {
         const storedCode = localStorage.getItem(LS_HOST_GAME_KEY);
@@ -1157,6 +1142,7 @@
       } catch (e) {}
     })();
 
+    // רענון מצב משחק כשחוזרים לטאב
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible" && currentGameCode) {
         socket.emit("getGameState", { gameCode: currentGameCode }, (resp) => {
