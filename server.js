@@ -55,12 +55,131 @@ app.use(express.json());
  *       roundScore,
  *       secondsLeft,
  *       endsAt
- *     }
+ *     },
+ *     usedWords: Set<"category|text">
  *   }
  * }
  */
 const games = {};
 const roundTimers = {};
+
+// ----------------------
+//   Word bank (basic demo)
+// ----------------------
+
+// אפשר להחליף/להרחיב בהמשך – זה רק בסיס עבודה
+const WORD_BANK = {
+  general: [
+    "בית", "מכונית", "טלפון", "עץ", "חולצה",
+    "חלון", "מעלית", "אוטובוס", "מחשב", "ספה",
+  ],
+  family: [
+    "אמא", "אבא", "אחות", "אח", "סבתא",
+    "סב", "בן דוד", "בת דודה", "אחיין", "גיס",
+  ],
+  food: [
+    "פיצה", "המבורגר", "מלפפון", "שוקולד", "גלידה",
+    "לחמניה", "טחינה", "שווארמה", "חומוס", "סלט",
+  ],
+  work: [
+    "מחשב נייד", "ישיבה", "פרזנטציה", "אימייל", "חופשה",
+    "בוס", "משכורת", "חוזה", "עובד", "פרויקט",
+  ],
+  hard: [
+    "אינפלציה", "פילוסופיה", "טורנדו", "כימיה", "אסטרונאוט",
+    "פרלמנט", "אופטימיזציה", "ארכיאולוגיה", "מיקרוסקופ", "אלגוריתם",
+  ],
+  sports: [
+    "כדורגל", "כדורסל", "טניס", "שחייה", "ריצה",
+    "אופניים", "כדורעף", "יוגה", "מרתון", "כדור בסיס",
+  ],
+  technology: [
+    "וואטסאפ", "אפליקציה", "ענן", "בינה מלאכותית", "סיסמה",
+    "רובוט", "מצלמה", "טלויזיה חכמה", "דפדפן", "מטען",
+  ],
+  travel: [
+    "מטוס", "מלון", "מזוודה", "חוף ים", "דרכון",
+    "רכבת", "סיור", "מפה", "טיול", "מגדל אייפל",
+  ],
+  school: [
+    "מחברת", "מורה", "שיעורי בית", "הפסקה", "עט",
+    "כיתה", "מבחן", "עיפרון", "לוח", "תיק",
+  ],
+  entertainment: [
+    "קולנוע", "סדרה", "שחקן", "קריוקי", "קונסולה",
+    "משחק וידאו", "פופקורן", "במה", "בדיחה", "קהל",
+  ],
+  music: [
+    "גיטרה", "פסנתר", "תופים", "שיר", "זמר",
+    "קונצרט", "מיקרופון", "דיג׳יי", "אקורד", "אוזניות",
+  ],
+  nature: [
+    "הר", "ים", "נהר", "ענן", "גשם",
+    "שמש", "פרח", "יער", "חול", "רוח",
+  ],
+  holidays: [
+    "חנוכה", "פסח", "סוכה", "תחפושת", "מתנה",
+    "סעודה", "קישוטים", "חופשה", "סיפור", "פסטיגל",
+  ],
+  animals: [
+    "כלב", "חתול", "פיל", "ציפור", "דג",
+    "ג׳ירפה", "אריה", "נמר", "כבשה", "תרנגולת",
+  ],
+  objects: [
+    "כיסא", "שולחן", "מנורה", "דלת", "שעון",
+    "ספר", "מפתח", "בקבוק", "ארנק", "משקפיים",
+  ],
+};
+
+function getCategoriesForGame(game) {
+  const all = Object.keys(WORD_BANK);
+  if (!all.length) return [];
+  if (!game || !Array.isArray(game.categories) || !game.categories.length) {
+    return all;
+  }
+  const filtered = game.categories.filter((c) => all.includes(c));
+  return filtered.length ? filtered : all;
+}
+
+function getNextWordForGame(game) {
+  const cats = getCategoriesForGame(game);
+  if (!cats.length) return null;
+
+  if (!game.usedWords) {
+    game.usedWords = new Set();
+  }
+
+  let candidates = [];
+  cats.forEach((cat) => {
+    const arr = WORD_BANK[cat] || [];
+    arr.forEach((w) => {
+      const key = `${cat}|${w}`;
+      if (!game.usedWords.has(key)) {
+        candidates.push({ category: cat, word: w, key });
+      }
+    });
+  });
+
+  // אם השתמשנו בהכל – מתחילים מחדש
+  if (!candidates.length) {
+    game.usedWords.clear();
+    cats.forEach((cat) => {
+      const arr = WORD_BANK[cat] || [];
+      arr.forEach((w) => {
+        const key = `${cat}|${w}`;
+        candidates.push({ category: cat, word: w, key });
+      });
+    });
+  }
+
+  if (!candidates.length) return null;
+
+  const idx = Math.floor(Math.random() * candidates.length);
+  const chosen = candidates[idx];
+  game.usedWords.add(chosen.key);
+  game.lastActivity = new Date();
+  return { category: chosen.category, word: chosen.word };
+}
 
 // ----------------------
 //   Helpers
@@ -129,7 +248,7 @@ function clearRoundTimer(code) {
 
 function cleanupOldGames() {
   const now = Date.now();
-  const MAX_AGE = 6 * 60 * 60 * 1000; // 6h
+  const MAX_AGE = 6 * 60 * 60 * 1000; // 6 שעות
   Object.keys(games).forEach((code) => {
     const g = games[code];
     if (!g.lastActivity) return;
@@ -145,25 +264,40 @@ function cleanupOldGames() {
 setInterval(cleanupOldGames, 15 * 60 * 1000);
 
 // ----------------------
-//   Simple banners API
+//   Banners API (מותאם גם ל-host וגם ל-player)
 // ----------------------
 
 app.get("/api/banners", (req, res) => {
+  const logoUrl = "/milmania-logo.png";
+
+  const hostBanner = {
+    imageUrl: "/banner-host.png",
+    linkUrl: "https://onebtn.com",
+    altText: "ONEBTN",
+  };
+
+  const playerBanner = {
+    imageUrl: "/banner-player.png",
+    linkUrl: "https://onebtn.com",
+    altText: "ONEBTN",
+  };
+
   res.json({
+    // פורמט עבור host.html
     logo: {
-      imageUrl: "/milmania-logo.png",
+      imageUrl: logoUrl,
       altText: "מילמניה",
     },
-    host: {
-      imageUrl: "/banner-host.png",
-      linkUrl: "https://onebtn.com",
-      altText: "ONEBTN",
-    },
-    player: {
-      imageUrl: "/banner-player.png",
-      linkUrl: "https://onebtn.com",
-      altText: "ONEBTN",
-    },
+    host: hostBanner,
+    player: playerBanner,
+
+    // פורמט פשוט עבור player.html (logoUrl + HTML)
+    logoUrl,
+    playerBannerHtml: `
+      <a href="${playerBanner.linkUrl}" target="_blank" rel="noopener">
+        <img src="${playerBanner.imageUrl}" alt="${playerBanner.altText}" style="max-width:100%; border-radius:18px; display:block; margin-top:8px;" />
+      </a>
+    `,
   });
 });
 
@@ -197,7 +331,7 @@ io.on("connection", (socket) => {
 
       const now = new Date();
 
-      // build teams dynamically (fix #1)
+      // build teams dynamically (תקלה 1 – שמות אמיתיים)
       const numTeams = Math.max(2, Math.min(5, parseInt(rawNumTeams || 2, 10) || 2));
       const teamIds = ["A", "B", "C", "D", "E"];
       const teams = {};
@@ -227,6 +361,7 @@ io.on("connection", (socket) => {
         teams,
         players: {},
         currentRound: null,
+        usedWords: new Set(),
       };
 
       games[code] = game;
@@ -258,7 +393,7 @@ io.on("connection", (socket) => {
         return callback && callback({ ok: false, error: "המשחק לא נמצא." });
       }
 
-      // fix #2: player joins the Socket.IO room too
+      // תקלה 2 – שחקן מצטרף גם לחדר המשחק
       socket.join("game-" + code);
 
       const playerName = (name || "").trim();
@@ -320,6 +455,33 @@ io.on("connection", (socket) => {
     } catch (err) {
       console.error("Error in getGameState:", err);
       callback && callback({ ok: false, error: "שגיאה בקבלת מצב משחק." });
+    }
+  });
+
+  // 🔹 מילים – מילה הבאה
+  socket.on("getNextWord", (data, callback) => {
+    try {
+      const { gameCode } = data || {};
+      const code = (gameCode || "").toUpperCase().trim();
+      const game = games[code];
+      if (!game) {
+        return callback && callback({ ok: false, error: "המשחק לא נמצא." });
+      }
+
+      const result = getNextWordForGame(game);
+      if (!result) {
+        return callback && callback({ ok: false, error: "אין מילים זמינות כרגע." });
+      }
+
+      callback &&
+        callback({
+          ok: true,
+          word: result.word,
+          category: result.category,
+        });
+    } catch (err) {
+      console.error("Error in getNextWord:", err);
+      callback && callback({ ok: false, error: "שגיאה בקבלת מילה." });
     }
   });
 
