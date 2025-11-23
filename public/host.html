@@ -365,7 +365,7 @@
       </div>
 
       <p class="status-text" style="margin-top:8px;">
-        בלשונית "מצב מנהל" אתה שולט במשחק. בלשונית "מצב שחקן (אני)" תיפתח לך תצוגת שחקן
+        בלשונית "מצב מנהל" אתה שולט במשחק. בלשונית "מצב שחקן (אני)" ייפתח לך מסך שחקן
         בחלון נפרד – בלי מסך בתוך מסך – ותוכל לחזור לכאן בכל רגע.
       </p>
     </div>
@@ -867,7 +867,6 @@
             roundTeamSelect.appendChild(opt);
           });
         }
-        // בחירת קבוצה אוטומטית אם אין בחירה קודמת
         let selectedTeamId = oldValue;
         if (!selectedTeamId) {
           const teamIds = Object.keys(game.teams || {});
@@ -907,7 +906,6 @@
             hostPlayerTeamSelect.appendChild(opt);
           });
         }
-        // בחירה אוטומטית
         let selectedHostTeam = oldHostTeam;
         if (!selectedHostTeam) {
           const teamIds = Object.keys(game.teams || {});
@@ -918,10 +916,7 @@
         }
       }
 
-      // סנכרון טיימר מהשרת
       updateTimerFromGame(game);
-
-      // עדכון רשימת המסביר לפי הקבוצה שנבחרה
       refreshExplainerOptions();
     }
 
@@ -978,12 +973,10 @@
             }
             if (endGameBtn) endGameBtn.disabled = false;
 
-            // התאמת משך הסיבוב העליון לאינליין
             if (roundSecondsInline) {
               roundSecondsInline.value = roundSeconds.toString();
             }
 
-            // מילוי אוטומטי של שם השחקן במסך שחקן
             if (hostPlayerNameInput && !hostPlayerNameInput.value) {
               hostPlayerNameInput.value = hostName;
             }
@@ -1151,6 +1144,23 @@
       hostStatus.textContent = "המשחק נסגר.";
       currentGameCode = null;
       renderGameState(null);
+    });
+
+    // ⭐ פופ־אפ סוף שעון – סעיפים 1 + 4
+    socket.on("roundTimeUp", (data) => {
+      if (!data) return;
+      const score = typeof data.roundScore === "number" ? data.roundScore : 0;
+
+      let msgLine;
+      if (score <= 5) {
+        msgLine = "אתם צוות חלש, כדאי שתתאמנו יותר";
+      } else if (score <= 10) {
+        msgLine = "אתם צוות נחמד, בטוח שאתם יכולים יותר";
+      } else {
+        msgLine = "אתם צוות על, השארתם להם אבק...";
+      }
+
+      alert("⏱ נגמר הזמן!\n\n" + msgLine + `\n\n(מספר תשובות נכונות בסיבוב: ${score})`);
     });
 
     // טעינת לוגו ובאנר למסך מנהל המשחק
