@@ -110,14 +110,65 @@ initDb();
  *   },
  *   currentRound: {
  *     teamId,
- *     explainingPlayer: { clientId, name },
+ *     explainerId,
+ *     explainerName,
  *     secondsLeft,
- *     isActive
+ *     active,
+ *     isActive,
+ *     roundScore,
+ *     startedAt
  *   }
  * }
  */
 const games = {};
 const roundTimers = {};
+
+// ----------------------
+//   Word bank (למציג)
+// ----------------------
+
+const WORD_BANK = [
+  { text: "חתול", category: "animals" },
+  { text: "כלב", category: "animals" },
+  { text: "פיל", category: "animals" },
+  { text: "שולחן", category: "objects" },
+  { text: "מחשב", category: "technology" },
+  { text: "טלפון", category: "technology" },
+  { text: "פיצה", category: "food" },
+  { text: "המבורגר", category: "food" },
+  { text: "משפחה", category: "family" },
+  { text: "חופשה", category: "travel" },
+  { text: "ים", category: "travel" },
+  { text: "כדורגל", category: "sports" },
+  { text: "כדורסל", category: "sports" },
+  { text: "סדרה בטלוויזיה", category: "entertainment" },
+  { text: "סרט", category: "entertainment" },
+  { text: "שיר", category: "music" },
+  { text: "גיטרה", category: "music" },
+  { text: "יער", category: "nature" },
+  { text: "מדבר", category: "nature" },
+  { text: "חג פסח", category: "holidays" },
+  { text: "ראש השנה", category: "holidays" },
+  { text: "מורה", category: "school" },
+  { text: "תלמיד", category: "school" },
+  { text: "בוס", category: "work" },
+  { text: "משרד", category: "work" },
+];
+
+function getRandomWord(categories) {
+  let pool = WORD_BANK;
+
+  if (Array.isArray(categories) && categories.length > 0) {
+    const catSet = new Set(categories);
+    const filtered = WORD_BANK.filter((w) => catSet.has(w.category));
+    if (filtered.length > 0) {
+      pool = filtered;
+    }
+  }
+
+  const idx = Math.floor(Math.random() * pool.length);
+  return pool[idx];
+}
 
 // ----------------------
 //   Utils
@@ -134,7 +185,6 @@ function generateGameCode() {
 
 /**
  * מה שנשלח ל־host.html ול־player.html
- * חשוב: פה אנחנו מתאימים למבנה שה־frontend מצפה לו.
  */
 function sanitizeGame(game) {
   if (!game) return null;
@@ -145,7 +195,6 @@ function sanitizeGame(game) {
       id: t.id || teamId,
       name: t.name,
       score: t.score || 0,
-      // מערך clientId-ים
       players: Array.isArray(t.players) ? [...t.players] : [],
     };
   });
@@ -170,24 +219,9 @@ function sanitizeGame(game) {
     lastActivity: game.lastActivity,
     logoUrl: game.logoUrl || null,
     banners: game.banners || {},
-
-    // אלו השדות שה־frontend משתמש בהם
     teams,
     playersByClientId,
-
-    currentRound: game.currentRound
-      ? {
-          teamId: game.currentRound.teamId,
-          explainingPlayer: game.currentRound.explainingPlayer
-            ? {
-                clientId: game.currentRound.explainingPlayer.clientId,
-                name: game.currentRound.explainingPlayer.name,
-              }
-            : null,
-          secondsLeft: game.currentRound.secondsLeft,
-          isActive: !!game.currentRound.isActive,
-        }
-      : null,
+    currentRound: game.currentRound || null,
   };
 }
 
@@ -204,7 +238,7 @@ function clearRoundTimer(gameCode) {
 }
 
 /**
- * סיום סיבוב (ידני או ע"י טיימר)
+ * סיום סיבוב (ידני / טיימר / ניתוק מציג)
  * options.reason: "manual" | "timer" | "player_disconnected"
  */
 async function finishRound(gameCode, options = { reason: "manual" }) {
@@ -213,33 +247,73 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
   if (!game || !game.currentRound) return;
 
   const round = game.currentRound;
-
+  round.active = false;
+  round.isActive = false;
   clearRoundTimer(code);
-  game.currentRound = null;
-  game.updatedAt = new Date();
-  game.lastActivity = new Date();
 
-  // עדכון משחק מלא
+  const teamId = round.teamId;
+  const roundScore =
+    typeof round.roundScore === "number" && round.roundScore > 0
+      ? round.roundScore
+      : 0;
+
+  // צבירת ניקוד לקבוצה
+  if (teamId && game.teams[teamId]) {
+    game.teams[teamId].score =
+      (game.teams[teamId].score || 0) + roundScore;
+  }
+
+  game.lastActivity = new Date();
+  game.updatedAt = new Date();
+
+  // עדכון DB של ניקוד קבוצה (לא חובה אבל נחמד)
+  if (dbReady && pool && teamId && game.teams[teamId]) {
+    try {
+      await pool.query(
+        `
+        UPDATE game_teams
+        SET score = $1
+        WHERE game_code = $2 AND team_id = $3
+      `,
+      [game.teams[teamId].score, code, teamId]);
+    } catch (err) {
+      console.error("Error updating team score at round end:", err);
+    }
+  }
+
+  const totalScore =
+    teamId && game.teams[teamId] ? game.teams[teamId].score : 0;
+
+  console.log(
+    `⏹️ Round ended in game ${code}, team ${teamId}, roundScore=${roundScore}, reason=${options.reason}`
+  );
+
+  // עדכון משחק מלא למסכים
   broadcastGame(game);
 
-  // אירוע כללי (למי שמאזין)
+  // אירוע כללי לסיום סיבוב (למקרה שתשתמש בעתיד)
   io.to("game-" + code).emit("roundFinished", {
-    game: sanitizeGame(game),
+    teamId,
+    roundScore,
+    totalScore,
     reason: options.reason || "manual",
   });
 
-  // תאימות להוסט / פלייר ישנים – מחכים ל-roundTimeUp
+  // תאימות לפופ־אפ של סוף זמן – host + player משתמשים ב־roundTimeUp
   if (options.reason === "timer") {
+    const teamName =
+      teamId && game.teams[teamId] ? game.teams[teamId].name : null;
+
     io.to("game-" + code).emit("roundTimeUp", {
-      gameCode: code,
+      code,
+      roundScore,
+      teamId,
+      teamName,
     });
   }
 
-  console.log(
-    `⏹️ Round finished for game ${code}, team ${round.teamId}, reason: ${
-      options.reason || "manual"
-    }`
-  );
+  // איפוס
+  game.currentRound = null;
 }
 
 // ----------------------
@@ -272,20 +346,13 @@ io.on("connection", (socket) => {
       const teams = {};
       const now = new Date();
 
-      // קבלת שמות קבוצות מ־A עד E
       ["A", "B", "C", "D", "E"].forEach((id) => {
         const name = (teamNames[id] || "").trim();
         if (name) {
-          teams[id] = {
-            id,
-            name,
-            score: 0,
-            players: [],
-          };
+          teams[id] = { id, name, score: 0, players: [] };
         }
       });
 
-      // ברירת מחדל לשתי קבוצות אם לא הוגדר כלום
       if (Object.keys(teams).length === 0) {
         teams["A"] = { id: "A", name: "קבוצה A", score: 0, players: [] };
         teams["B"] = { id: "B", name: "קבוצה B", score: 0, players: [] };
@@ -318,15 +385,13 @@ io.on("connection", (socket) => {
             INSERT INTO games (code, host_name, target_score, default_round_seconds, categories)
             VALUES ($1, $2, $3, $4, $5)
           `,
-            [
-              game.code,
-              game.hostName,
-              game.targetScore,
-              game.defaultRoundSeconds,
-              game.categories,
-            ]
-          );
-
+          [
+            game.code,
+            game.hostName,
+            game.targetScore,
+            game.defaultRoundSeconds,
+            game.categories,
+          ]);
           const teamEntries = Object.values(game.teams);
           for (const t of teamEntries) {
             await pool.query(
@@ -334,8 +399,7 @@ io.on("connection", (socket) => {
               INSERT INTO game_teams (game_code, team_id, team_name, score)
               VALUES ($1, $2, $3, $4)
             `,
-              [game.code, t.id, t.name, t.score]
-            );
+            [game.code, t.id, t.name, t.score]);
           }
         } catch (err) {
           console.error("Error persisting game:", err);
@@ -374,8 +438,12 @@ io.on("connection", (socket) => {
 
       let chosenTeamId = (teamId || "").trim();
       if (!chosenTeamId || !game.teams[chosenTeamId]) {
-        const teamIds = Object.keys(game.teams);
-        chosenTeamId = teamIds[0]; // תאימות – אם לא בחרו מפורשות, לוקחים את הראשונה
+        const teamIds = Object.keys(game.teams || {});
+        if (!teamIds.length) {
+          return callback &&
+            callback({ ok: false, error: "אין קבוצות פעילות במשחק." });
+        }
+        chosenTeamId = teamIds[0];
       }
 
       const clientId = socket.id;
@@ -403,8 +471,7 @@ io.on("connection", (socket) => {
             INSERT INTO game_players (game_code, client_id, name, team_id)
             VALUES ($1, $2, $3, $4)
           `,
-            [code, clientId, playerName, chosenTeamId]
-          );
+          [code, clientId, playerName, chosenTeamId]);
         } catch (err) {
           console.error("Error persisting game player:", err);
         }
@@ -466,8 +533,7 @@ io.on("connection", (socket) => {
             DELETE FROM game_players
             WHERE game_code = $1 AND client_id = $2
           `,
-            [code, clientId]
-          );
+          [code, clientId]);
         } catch (err) {
           console.error("Error deleting game player:", err);
         }
@@ -476,8 +542,8 @@ io.on("connection", (socket) => {
       // אם זה המסביר – מסיימים את הסיבוב
       if (
         game.currentRound &&
-        game.currentRound.explainingPlayer &&
-        game.currentRound.explainingPlayer.clientId === clientId
+        game.currentRound.explainerId &&
+        game.currentRound.explainerId === clientId
       ) {
         await finishRound(code, { reason: "player_disconnected" });
       } else {
@@ -493,7 +559,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // עדכון ניקוד קבוצה (לא סיבוב ספציפי, אלא צבירה כללית)
+  // עדכון ניקוד קבוצה (כללי – לא ניקוד סיבוב)
   socket.on("updateScore", async (data, callback) => {
     try {
       const { gameCode, teamId, delta } = data || {};
@@ -520,8 +586,7 @@ io.on("connection", (socket) => {
             SET score = $1
             WHERE game_code = $2 AND team_id = $3
           `,
-            [game.teams[teamId].score, code, teamId]
-          );
+          [game.teams[teamId].score, code, teamId]);
         } catch (err) {
           console.error("Error updating team score:", err);
         }
@@ -553,7 +618,7 @@ io.on("connection", (socket) => {
           return callback &&
             callback({ ok: false, error: "אין קבוצות פעילות במשחק." });
         }
-        chosenTeamId = teamIds[0]; // תאימות – אם לא נבחרה קבוצה בטופס
+        chosenTeamId = teamIds[0];
       }
 
       clearRoundTimer(code);
@@ -567,7 +632,7 @@ io.on("connection", (socket) => {
           callback({ ok: false, error: "אין שחקנים בקבוצה שנבחרה." });
       }
 
-      // בחירת המסביר:
+      // בחירת מסביר
       let explainingPlayer = null;
       if (explainerClientId) {
         explainingPlayer = playersInTeam.find(
@@ -582,28 +647,30 @@ io.on("connection", (socket) => {
       const totalSeconds =
         parseInt(durationSeconds, 10) || game.defaultRoundSeconds || 60;
 
+      const now = new Date();
+
       game.currentRound = {
         teamId: chosenTeamId,
-        explainingPlayer: {
-          clientId: explainingPlayer.clientId,
-          name: explainingPlayer.name,
-        },
+        explainerId: explainingPlayer.clientId,
+        explainerName: explainingPlayer.name,
         secondsLeft: totalSeconds,
+        active: true,
         isActive: true,
+        roundScore: 0,
+        startedAt: now.toISOString(),
       };
 
-      game.updatedAt = new Date();
-      game.lastActivity = new Date();
+      game.updatedAt = now;
+      game.lastActivity = now;
 
-      // אירוע ספציפי למי שמאזין (לא חובה אצלך)
       io.to("game-" + code).emit("roundStarted", {
         game: sanitizeGame(game),
       });
 
-      // שידור מצב משחק מלא – כדי שהטיימר יתעדכן בהוסט
+      // שדר מצב משחק – כדי שהטיימר + סטטוס יתעדכנו במסכים
       broadcastGame(game);
 
-      // טיימר – בכל שנייה נעדכן גם roundTick וגם gameUpdated
+      // טיימר סיבוב
       roundTimers[code] = setInterval(() => {
         const g = games[code];
         if (!g || !g.currentRound) {
@@ -613,15 +680,12 @@ io.on("connection", (socket) => {
 
         g.currentRound.secondsLeft -= 1;
         if (g.currentRound.secondsLeft <= 0) {
-          // סיום אוטומטי – יפעיל גם roundTimeUp לצורך תאימות
           finishRound(code, { reason: "timer" });
         } else {
-          // אירוע tick למי שרוצה
           io.to("game-" + code).emit("roundTick", {
             gameCode: code,
             secondsLeft: g.currentRound.secondsLeft,
           });
-          // ושידור gameUpdated – כדי שהטיימר בהוסט/שחקן יתעדכן
           broadcastGame(g);
         }
       }, 1000);
@@ -637,7 +701,60 @@ io.on("connection", (socket) => {
     }
   });
 
-  // סיום סיבוב ידני (כפתור "סיום סיבוב" ב-host)
+  // ניקוד סיבוב – כפתורי ✅ / ⏭ (host + player)
+  socket.on("changeRoundScore", (data, callback) => {
+    try {
+      const { gameCode, delta } = data || {};
+      const code = (gameCode || "").toUpperCase().trim();
+      const game = games[code];
+      if (!game || !game.currentRound || !game.currentRound.active) {
+        return callback && callback({ ok: false, error: "אין סיבוב פעיל." });
+      }
+
+      const d = parseInt(delta, 10) || 0;
+      if (typeof game.currentRound.roundScore !== "number") {
+        game.currentRound.roundScore = 0;
+      }
+      game.currentRound.roundScore += d;
+      if (game.currentRound.roundScore < 0) {
+        game.currentRound.roundScore = 0;
+      }
+      game.lastActivity = new Date();
+
+      callback &&
+        callback({ ok: true, roundScore: game.currentRound.roundScore });
+
+      broadcastGame(game);
+    } catch (err) {
+      console.error("Error in changeRoundScore:", err);
+      callback && callback({ ok: false, error: "שגיאה בעדכון ניקוד." });
+    }
+  });
+
+  // מילה חדשה למציג
+  socket.on("getNextWord", (data, callback) => {
+    try {
+      const { gameCode } = data || {};
+      const code = (gameCode || "").toUpperCase().trim();
+      const game = games[code];
+      if (!game || !game.currentRound || !game.currentRound.active) {
+        return callback && callback({ ok: false, error: "אין סיבוב פעיל." });
+      }
+
+      const word = getRandomWord(game.categories || []);
+      callback &&
+        callback({
+          ok: true,
+          word: word.text,
+          category: word.category,
+        });
+    } catch (err) {
+      console.error("Error in getNextWord:", err);
+      callback && callback({ ok: false, error: "שגיאה בקבלת מילה." });
+    }
+  });
+
+  // סיום סיבוב ידני (כפתור "סיום סיבוב")
   socket.on("endRound", async (data, callback) => {
     try {
       const { gameCode } = data || {};
@@ -649,7 +766,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // סיום משחק ע"י המנהל מתוך המשחק
+  // סיום משחק ע"י המנהל
   socket.on("endGame", async (data, callback) => {
     try {
       const { gameCode } = data || {};
@@ -690,7 +807,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // מצב משחק מלא (לשחזור אחרי רענון)
+  // מצב משחק מלא
   socket.on("getGameState", (data, callback) => {
     try {
       const code = ((data && data.gameCode) || "").toUpperCase().trim();
@@ -710,7 +827,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ניתוק Socket – רק מסיר שחקנים, לא סוגר משחק אם זה המנהל
+  // ניתוק Socket – מסיר שחקן, לא סוגר משחק
   socket.on("disconnect", async () => {
     try {
       console.log("Client disconnected:", socket.id);
@@ -719,10 +836,9 @@ io.on("connection", (socket) => {
         const game = games[code];
         if (!game) continue;
 
-        // חשוב: לא סוגרים משחק רק כי ה-host התנתק.
-        // כאן אנחנו מטפלים רק בשחקנים הרשומים במפה.
-        if (!game.playersByClientId) continue;
-        const player = game.playersByClientId[socket.id];
+        const player = game.playersByClientId
+          ? game.playersByClientId[socket.id]
+          : null;
         if (!player) continue;
 
         const clientId = socket.id;
@@ -750,18 +866,17 @@ io.on("connection", (socket) => {
               DELETE FROM game_players
               WHERE game_code = $1 AND client_id = $2
             `,
-              [code, clientId]
-            );
+            [code, clientId]);
           } catch (err) {
             console.error("Error deleting game player on disconnect:", err);
           }
         }
 
-        // אם זה היה המסביר הנוכחי – מסיימים סיבוב
+        // אם זה היה המסביר – סיום סיבוב
         if (
           game.currentRound &&
-          game.currentRound.explainingPlayer &&
-          game.currentRound.explainingPlayer.clientId === clientId
+          game.currentRound.explainerId &&
+          game.currentRound.explainerId === clientId
         ) {
           await finishRound(code, { reason: "player_disconnected" });
         } else {
@@ -780,7 +895,7 @@ io.on("connection", (socket) => {
 
 const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 
-// סיכום חדרים (למסך ניהול חדרים החדש)
+// סיכום חדרים
 app.get("/admin/summary", async (req, res) => {
   try {
     const code = req.query.code || "";
@@ -847,7 +962,7 @@ app.get("/admin/summary", async (req, res) => {
   }
 });
 
-// API ישן לניהול חדרים (אם יש HTML ישן שמשתמש בו)
+// API ישן לניהול חדרים
 app.get("/api/admin/rooms", (req, res) => {
   try {
     const rooms = Object.values(games).map((g) => ({
@@ -964,18 +1079,16 @@ app.post(
             DELETE FROM game_players
             WHERE game_code = $1 AND client_id = $2
           `,
-            [code, clientId]
-          );
+          [code, clientId]);
         } catch (err) {
           console.error("Error deleting player from DB via admin:", err);
         }
       }
 
-      // אם זה המסביר – מסיימים את הסיבוב
       if (
         game.currentRound &&
-        game.currentRound.explainingPlayer &&
-        game.currentRound.explainingPlayer.clientId === clientId
+        game.currentRound.explainerId &&
+        game.currentRound.explainerId === clientId
       ) {
         await finishRound(code, { reason: "player_disconnected" });
       } else {
@@ -993,7 +1106,7 @@ app.post(
   }
 );
 
-// באנרים – מחזיר כרגע אובייקט ריק כדי לא לשבור קריאות קיימות
+// באנרים – מחזיר כרגע אובייקט ריק
 app.get("/api/banners", (req, res) => {
   res.json({});
 });
