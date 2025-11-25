@@ -314,6 +314,9 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
       totalScore: totalScore || 0,
     });
 }
+
+game.currentRound = null;
+}
 // ----------------------
 //   Socket.io
 // ----------------------
