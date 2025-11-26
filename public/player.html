@@ -357,6 +357,32 @@
         </div>
       </div>
 
+      <!-- פאנל ניהול למנהל שהוא גם שחקן -->
+<div id="hostControlsAsPlayer" class="hidden"
+     style="margin-top:18px; padding-top:12px; border-top:1px solid rgba(180,169,214,0.4);">
+
+  <h3 style="margin:0 0 10px; text-align:center;">ניהול סיבוב (מנהל)</h3>
+
+  <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
+
+    <button id="hcSelectTeam" class="btn btn-primary btn-small" type="button">
+      בחר קבוצה מסבירה
+    </button>
+
+    <button id="hcSelectExplainer" class="btn btn-primary btn-small" type="button">
+      בחר מסביר
+    </button>
+
+    <button id="hcStartRound" class="btn btn-success btn-small" type="button">
+      התחל סיבוב
+    </button>
+
+    <button id="hcEndRound" class="btn btn-danger btn-small" type="button">
+      סיים סיבוב
+    </button>
+
+  </div>
+</div>
       <div id="player-banner-slot" style="margin-top:10px;"></div>
     </div>
   </div>
@@ -464,7 +490,8 @@
         window.location.href = "host.html";
       });
     }
-
+document.getElementById("hostControlsAsPlayer").classList.remove("hidden");
+    
     function updatePresenterUI() {
       if (!iAmCurrentExplainer || !lastGameState || !lastGameState.currentRound) {
         presenterSection.classList.add("hidden");
@@ -781,7 +808,11 @@
         msgLine = "אתם צוות על, השארתם להם אבק...";
       }
 
-      alert("⏱ נגמר הזמן!\n\n" + msgLine + `\n\n(מספר תשובות נכונות בסיבוב: ${score})`);
+const tName = data.teamName || "הקבוצה";
+
+alert(
+  `⏱ נגמר הזמן!\n\n${tName} סיימה את הסיבוב!\n\n${msgLine}\n\n(ניקוד בסיבוב: ${score})`
+);
       playerBigTimerEl.textContent = "טיימר: --:--";
       iAmCurrentExplainer = false;
       presenterSection.classList.add("hidden");
