@@ -1,4 +1,4 @@
-// server.js - תיקון הגדרות SMTP למניעת Timeout
+// server.js - מילמניה: גרסה עם תיקון SSL ושליחת מייל ברקע
 
 const express = require("express");
 const http = require("http");
@@ -17,29 +17,29 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 
 // ----------------------
-//   הגדרות אימייל (מתוקן)
+//   הגדרות אימייל (ניסיון פורט 465 - SSL)
 // ----------------------
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // חובה להיות false עבור פורט 587
+  port: 465,       // שינוי לפורט מאובטח
+  secure: true,    // חובה להיות true עבור פורט 465
   auth: {
     user: process.env.EMAIL_USER, 
     pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false // עוזר למנוע בעיות תעודת אבטחה בשרתים מסוימים
   }
 });
 
 async function sendNewGameEmail(gameInfo) {
+  // בדיקה מקדימה אם יש הגדרות מייל
   if (!process.env.EMAIL_USER) {
-      console.log("⚠️ Email skipped: No EMAIL_USER defined.");
+      console.log("ℹ️ Skipped email: No EMAIL_USER defined.");
       return; 
   }
 
+  console.log(`📧 Background: Attempting to send email for game ${gameInfo.code}...`);
+
   try {
-    console.log(`📧 Attempting to send email for game ${gameInfo.code} via port 587...`);
+    // הגדרת Timeout של 10 שניות כדי לא להיתקע לנצח
     await transporter.sendMail({
       from: '"Millmania Bot" <no-reply@millmania.com>',
       to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER, 
@@ -55,7 +55,8 @@ async function sendNewGameEmail(gameInfo) {
     });
     console.log(`✅ Email sent successfully for game ${gameInfo.code}`);
   } catch (error) {
-    console.error("❌ Email error:", error.message);
+    // אנחנו רק מדפיסים שגיאה, לא מפילים את השרת
+    console.error("❌ Email failed (Game continues):", error.message);
   }
 }
 
@@ -223,7 +224,6 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
   game.lastActivity = new Date();
   game.updatedAt = new Date();
 
-  // DB update
   if (dbReady && pool && teamId && game.teams[teamId]) {
     try {
       await pool.query(`UPDATE game_teams SET score = $1 WHERE game_code = $2 AND team_id = $3`, 
@@ -289,7 +289,7 @@ io.on("connection", (socket) => {
         } catch (e) { console.error("DB Create Error:", e); }
       }
 
-      // שליחת מייל
+      // שליחת מייל ברקע (בלי await כדי לא לתקוע את המשחק)
       sendNewGameEmail(game);
 
       callback({ ok: true, gameCode: code, game: sanitizeGame(game) });
@@ -538,7 +538,6 @@ app.get("/admin/reports", async (req, res) => {
     try {
         let query = "";
         let params = [];
-        
         const fromDate = from || '2020-01-01';
         const toDate = to || '2030-01-01';
 
