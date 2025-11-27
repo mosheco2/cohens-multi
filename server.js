@@ -1,4 +1,4 @@
-// server.js - גרסה כוללת דוחות ודיבאג מיילים
+// server.js - תיקון הגדרות SMTP למניעת Timeout
 
 const express = require("express");
 const http = require("http");
@@ -17,25 +17,29 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 
 // ----------------------
-//   הגדרות אימייל
+//   הגדרות אימייל (מתוקן)
 // ----------------------
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // חובה להיות false עבור פורט 587
   auth: {
     user: process.env.EMAIL_USER, 
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false // עוזר למנוע בעיות תעודת אבטחה בשרתים מסוימים
   }
 });
 
 async function sendNewGameEmail(gameInfo) {
-  console.log("📧 Starting email process..."); // לוג לבדיקה
-  
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.log("⚠️ Email Env Vars are MISSING. Check Render settings.");
+  if (!process.env.EMAIL_USER) {
+      console.log("⚠️ Email skipped: No EMAIL_USER defined.");
       return; 
   }
 
   try {
+    console.log(`📧 Attempting to send email for game ${gameInfo.code} via port 587...`);
     await transporter.sendMail({
       from: '"Millmania Bot" <no-reply@millmania.com>',
       to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER, 
@@ -51,7 +55,7 @@ async function sendNewGameEmail(gameInfo) {
     });
     console.log(`✅ Email sent successfully for game ${gameInfo.code}`);
   } catch (error) {
-    console.error("❌ Email sending FAILED:", error.message);
+    console.error("❌ Email error:", error.message);
   }
 }
 
@@ -72,7 +76,7 @@ let dbReady = false;
 async function initDb() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    console.log("⚠️ No DATABASE_URL. Reports will not work.");
+    console.log("⚠️ No DATABASE_URL provided. Running in memory mode.");
     return;
   }
 
@@ -82,16 +86,46 @@ async function initDb() {
       ssl: process.env.PGSSL === "false" ? false : { rejectUnauthorized: false },
     });
 
-    await pool.query(`CREATE TABLE IF NOT EXISTS games (code TEXT PRIMARY KEY, host_name TEXT, target_score INTEGER, default_round_seconds INTEGER, categories TEXT[], created_at TIMESTAMPTZ DEFAULT NOW());`);
-    await pool.query(`CREATE TABLE IF NOT EXISTS game_teams (id SERIAL PRIMARY KEY, game_code TEXT, team_id TEXT, team_name TEXT, score INTEGER DEFAULT 0);`);
-    await pool.query(`CREATE TABLE IF NOT EXISTS game_players (id SERIAL PRIMARY KEY, game_code TEXT, client_id TEXT, name TEXT, team_id TEXT, ip_address TEXT);`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS games (
+        code TEXT PRIMARY KEY,
+        host_name TEXT NOT NULL,
+        target_score INTEGER,
+        default_round_seconds INTEGER,
+        categories TEXT[],
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS game_teams (
+        id SERIAL PRIMARY KEY,
+        game_code TEXT,
+        team_id TEXT,
+        team_name TEXT,
+        score INTEGER DEFAULT 0
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS game_players (
+        id SERIAL PRIMARY KEY,
+        game_code TEXT,
+        client_id TEXT,
+        name TEXT,
+        team_id TEXT,
+        ip_address TEXT
+      );
+    `);
     
-    try { await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS ip_address TEXT;`); } catch (e) {}
+    try {
+        await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS ip_address TEXT;`);
+    } catch (e) {}
 
     dbReady = true;
     console.log("✅ Postgres ready.");
   } catch (err) {
-    console.error("❌ DB Init Error:", err.message);
+    console.error("❌ Failed to init Postgres:", err.message);
   }
 }
 
@@ -189,9 +223,11 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
   game.lastActivity = new Date();
   game.updatedAt = new Date();
 
+  // DB update
   if (dbReady && pool && teamId && game.teams[teamId]) {
     try {
-      await pool.query(`UPDATE game_teams SET score = $1 WHERE game_code = $2 AND team_id = $3`, [game.teams[teamId].score, code, teamId]);
+      await pool.query(`UPDATE game_teams SET score = $1 WHERE game_code = $2 AND team_id = $3`, 
+      [game.teams[teamId].score, code, teamId]);
     } catch (err) {}
   }
 
@@ -208,10 +244,12 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
 }
 
 // ----------------------
-//   Socket.io
+//   Socket.io Handlers
 // ----------------------
 
 io.on("connection", (socket) => {
+  console.log("Client connected:", socket.id);
+
   socket.on("createGame", async (data, callback) => {
     try {
       const { hostName, targetScore=40, defaultRoundSeconds=60, categories=[], teamNames={} } = data || {};
@@ -251,7 +289,9 @@ io.on("connection", (socket) => {
         } catch (e) { console.error("DB Create Error:", e); }
       }
 
+      // שליחת מייל
       sendNewGameEmail(game);
+
       callback({ ok: true, gameCode: code, game: sanitizeGame(game) });
 
     } catch (err) {
@@ -265,7 +305,7 @@ io.on("connection", (socket) => {
       const { gameCode, name, teamId } = data || {};
       const code = (gameCode || "").toUpperCase().trim();
       const game = games[code];
-      if (!game) return callback({ ok: false, error: "המשחק לא נמצא." });
+      if (!game) return callback({ ok: false, error: "המשחק לא נמצא (אולי נסגר)." });
 
       const playerName = (name || "").trim();
       if (!playerName) return callback({ ok: false, error: "שם חסר." });
@@ -311,6 +351,7 @@ io.on("connection", (socket) => {
       const code = (data?.gameCode || "").toUpperCase().trim();
       const game = games[code];
       if(!game) return callback({ok:false, error:"Not found"});
+      
       if(game.hostName) game.hostSocketId = socket.id;
       socket.join("game-" + code);
       callback({ ok: true, game: sanitizeGame(game) });
@@ -488,7 +529,7 @@ app.get("/admin/stats", async (req, res) => {
   res.json({ activeGames, dbStats });
 });
 
-// API חדש לדוחות
+// API דוחות (חדש)
 app.get("/admin/reports", async (req, res) => {
     const { code, type, from, to } = req.query;
     if (code !== ADMIN_CODE) return res.status(403).json({ error: "Forbidden" });
@@ -498,12 +539,10 @@ app.get("/admin/reports", async (req, res) => {
         let query = "";
         let params = [];
         
-        // תאריכים (ברירת מחדל: כל הזמן)
         const fromDate = from || '2020-01-01';
         const toDate = to || '2030-01-01';
 
         if (type === 'ips') {
-            // דוח כתובות IP
             query = `
                 SELECT ip_address, COUNT(*) as games_count, MAX(created_at) as last_seen 
                 FROM game_players 
@@ -513,7 +552,6 @@ app.get("/admin/reports", async (req, res) => {
             `;
             params = [fromDate, toDate];
         } else if (type === 'games') {
-            // דוח היסטוריית משחקים
             query = `
                 SELECT code, host_name, created_at 
                 FROM games 
