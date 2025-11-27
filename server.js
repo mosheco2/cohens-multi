@@ -19,7 +19,7 @@ const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 // ----------------------
 //   הגדרות אימייל
 // ----------------------
-// יש להגדיר משתני סביבה או להזין פרטים ידנית כאן
+// יש להגדיר משתני סביבה בשרת (Render) או להזין פרטים ידנית כאן אם זה לשימוש אישי
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -116,7 +116,7 @@ async function initDb() {
       );
     `);
     
-    // וידוא עמודת IP לטבלאות קיימות
+    // וידוא עמודת IP לטבלאות קיימות (למקרה שהטבלה נוצרה בגרסאות קודמות)
     try {
         await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS ip_address TEXT;`);
     } catch (e) {}
@@ -798,7 +798,7 @@ io.on("connection", (socket) => {
 });
 
 // ----------------------
-//   Admin API
+//   Admin API (חדש!)
 // ----------------------
 
 app.get("/admin/stats", async (req, res) => {
@@ -811,3 +811,97 @@ app.get("/admin/stats", async (req, res) => {
     try {
       // משחקים לפי יום (30 ימים אחרונים)
       const gamesRes = await pool.query(`
+        SELECT TO_CHAR(created_at, 'DD/MM') as date, COUNT(*) as count
+        FROM games
+        WHERE created_at > NOW() - INTERVAL '30 days'
+        GROUP BY date, TO_CHAR(created_at, 'YYYY-MM-DD')
+        ORDER BY TO_CHAR(created_at, 'YYYY-MM-DD') ASC
+      `);
+      dbStats.gamesByDay = gamesRes.rows;
+
+      // יוניקים לפי IP
+      const ipRes = await pool.query(`SELECT COUNT(DISTINCT ip_address) as count FROM game_players`);
+      dbStats.totalUniqueIps = ipRes.rows[0].count;
+
+    } catch (e) { console.error("DB Stats error", e); }
+  }
+
+  // משחקים פעילים בזכרון
+  const activeGames = Object.values(games).map(g => {
+      const pList = Object.values(g.playersByClientId || {});
+      return {
+        code: g.code,
+        hostName: g.hostName,
+        playerCount: pList.length,
+        teamCount: Object.keys(g.teams || {}).length,
+        createdAt: g.createdAt,
+        players: pList
+      };
+  });
+
+  res.json({ activeGames, dbStats });
+});
+
+// סגירת משחק (Admin API)
+app.post("/admin/game/:gameCode/close", async (req, res) => {
+  const adminCode = req.query.code || "";
+  if (adminCode !== ADMIN_CODE) return res.status(403).json({ ok: false });
+
+  const code = (req.params.gameCode || "").toUpperCase().trim();
+  if (!games[code]) return res.status(404).json({ ok: false });
+
+  clearRoundTimer(code);
+  delete games[code];
+
+  if (dbReady && pool) {
+      try {
+        await pool.query(`DELETE FROM game_players WHERE game_code=$1`, [code]);
+        await pool.query(`DELETE FROM game_teams WHERE game_code=$1`, [code]);
+        await pool.query(`DELETE FROM games WHERE code=$1`, [code]);
+      } catch(e){}
+  }
+  io.to("game-"+code).emit("gameEnded", {code});
+  res.json({ok:true});
+});
+
+// ניתוק שחקן (Admin API)
+app.post("/admin/game/:gameCode/player/:clientId/disconnect", async (req, res) => {
+  const adminCode = req.query.code || "";
+  if (adminCode !== ADMIN_CODE) return res.status(403).json({ ok: false });
+
+  const code = (req.params.gameCode || "").toUpperCase().trim();
+  const clientId = req.params.clientId;
+  const game = games[code];
+
+  if(!game || !game.playersByClientId[clientId]) return res.status(404).json({ok:false});
+
+  const p = game.playersByClientId[clientId];
+  const teamId = p.teamId;
+  delete game.playersByClientId[clientId];
+  
+  if(teamId && game.teams[teamId]) {
+      game.teams[teamId].players = game.teams[teamId].players.filter(id=>id!==clientId);
+  }
+
+  if(dbReady && pool) {
+      try { await pool.query(`DELETE FROM game_players WHERE game_code=$1 AND client_id=$2`, [code, clientId]); } catch(e){}
+  }
+
+  if(game.currentRound && game.currentRound.explainerId === clientId) {
+      finishRound(code, {reason:"player_disconnected"});
+  } else {
+      broadcastGame(game);
+  }
+  
+  res.json({ok:true});
+});
+
+app.get("/api/banners", (req, res) => { res.json({}); });
+
+// ----------------------
+//   Start server
+// ----------------------
+
+server.listen(PORT, () => {
+  console.log(`🚀 Server listening on port ${PORT}`);
+});
