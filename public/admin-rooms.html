@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>כהנ'ס - ניהול</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #020617; color: #fff; margin:0; padding:20px; }
+    .card { background: #0f172a; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #1e293b; }
+    h1, h2 { margin-top: 0; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
+    .stat-box { background: #1e293b; padding: 20px; border-radius: 12px; text-align: center; }
+    .stat-num { font-size: 2.5rem; font-weight: bold; color: #38bdf8; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: right; padding: 12px; border-bottom: 1px solid #334155; }
+    th { color: #94a3b8; }
+    .btn { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>📊 דשבורד ניהול</h1>
+  
+  <div class="stats-grid">
+    <div class="stat-box">
+        <div class="stat-num" id="activeGamesCount">0</div>
+        <div>משחקים פעילים</div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-num" id="uniqueIpsCount">0</div>
+        <div>משתמשים ייחודיים (IP)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>פעילות חודשית</h2>
+    <div style="height: 300px;"><canvas id="gamesChart"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h2>חדרים פעילים כרגע</h2>
+    <div id="roomsList">טוען...</div>
+  </div>
+
+  <script>
+    const ADMIN_CODE = "ONEBTN"; 
+    let myChart = null;
+
+    async function loadData() {
+      try {
+        const res = await fetch(`/admin/stats?code=${ADMIN_CODE}`);
+        const data = await res.json();
+
+        // עדכון מונים
+        document.getElementById('activeGamesCount').innerText = data.activeGames.length;
+        document.getElementById('uniqueIpsCount').innerText = data.dbStats.totalUniqueIps || 0;
+
+        // עדכון גרף
+        const ctx = document.getElementById('gamesChart').getContext('2d');
+        const labels = data.dbStats.gamesByDay.map(d => d.date);
+        const counts = data.dbStats.gamesByDay.map(d => d.count);
+
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{ label: 'משחקים', data: counts, backgroundColor: '#38bdf8' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // עדכון טבלה
+        const list = document.getElementById('roomsList');
+        if (data.activeGames.length === 0) {
+            list.innerHTML = "אין חדרים פעילים.";
+        } else {
+            let html = "<table><thead><tr><th>קוד</th><th>מנהל</th><th>שחקנים</th><th>פעולה</th></tr></thead><tbody>";
+            data.activeGames.forEach(g => {
+                html += `<tr>
+                    <td>${g.code}</td>
+                    <td>${g.hostName}</td>
+                    <td>${g.playerCount}</td>
+                    <td><button class="btn" onclick="closeGame('${g.code}')">סגור</button></td>
+                </tr>`;
+            });
+            html += "</tbody></table>";
+            list.innerHTML = html;
+        }
+
+      } catch (e) { console.error(e); }
+    }
+
+    async function closeGame(code) {
+        if(!confirm("לסגור?")) return;
+        await fetch(`/admin/game/${code}/close?code=${ADMIN_CODE}`, {method: 'POST'});
+        loadData();
+    }
+
+    setInterval(loadData, 5000);
+    loadData();
+  </script>
+</body>
+</html>
