@@ -1,5 +1,3 @@
-// server.js - הגרסה המלאה והסופית (כולל הכל)
-
 const express = require("express");
 const http = require("http");
 const path = require("path");
@@ -17,11 +15,9 @@ const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 
 // הגדרות זמנים
 const INACTIVITY_LIMIT = 24 * 60 * 60 * 1000; // 24 שעות
-const CLEANUP_INTERVAL = 60 * 60 * 1000;      // שעה
+const CLEANUP_INTERVAL = 60 * 60 * 1000;      // בדיקה כל שעה
 
-// ----------------------
-//   שליחת מייל (Webhook)
-// ----------------------
+// --- Webhook Email ---
 async function sendNewGameEmail(gameInfo) {
   const webhookUrl = process.env.EMAIL_WEBHOOK;
   if (!webhookUrl) return; 
@@ -36,16 +32,9 @@ async function sendNewGameEmail(gameInfo) {
   }).catch(err => console.error("Webhook error:", err.message));
 }
 
-// ----------------------
-//   Static & JSON
-// ----------------------
-
+// --- Setup ---
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
-
-// ----------------------
-//   DB Init & Persistence
-// ----------------------
 
 let pool = null;
 let dbReady = false;
@@ -66,17 +55,16 @@ async function initDb() {
     await pool.query(`CREATE TABLE IF NOT EXISTS games (code TEXT PRIMARY KEY, host_name TEXT, target_score INTEGER, default_round_seconds INTEGER, categories TEXT[], created_at TIMESTAMPTZ DEFAULT NOW());`);
     await pool.query(`CREATE TABLE IF NOT EXISTS game_teams (id SERIAL PRIMARY KEY, game_code TEXT, team_id TEXT, team_name TEXT, score INTEGER DEFAULT 0);`);
     await pool.query(`CREATE TABLE IF NOT EXISTS game_players (id SERIAL PRIMARY KEY, game_code TEXT, client_id TEXT, name TEXT, team_id TEXT, ip_address TEXT);`);
-    
-    // טבלה לשמירת מצב חי (למקרה של ריסטרט לשרת)
+    // טבלה לשמירת מצב חי (Recovery)
     await pool.query(`CREATE TABLE IF NOT EXISTS active_states (game_code TEXT PRIMARY KEY, data TEXT, last_updated TIMESTAMPTZ DEFAULT NOW());`);
     
-    // שדרוג עמודות חסרות
+    // עדכון עמודות אם חסרות
     try { await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS ip_address TEXT;`); } catch (e) {}
 
     dbReady = true;
     console.log("✅ Postgres ready.");
     
-    // שחזור משחקים בעליית השרת
+    // שחזור משחקים במקרה של נפילת שרת
     await restoreActiveGames();
 
   } catch (err) {
@@ -85,14 +73,11 @@ async function initDb() {
 }
 initDb();
 
-// ----------------------
-//   State Management
-// ----------------------
-
+// --- State ---
 const games = {};
 const roundTimers = {};
 
-// פונקציית עזר למניעת קריסה אם אין קולבק
+// פונקציית עזר למניעת קריסת שרת אם הקולבק חסר
 const safeCb = (cb, data) => { if (typeof cb === 'function') cb(data); };
 
 async function saveGameState(game) {
@@ -124,7 +109,7 @@ async function restoreActiveGames() {
                 const game = JSON.parse(row.data);
                 games[game.code] = game;
                 
-                // אם השרת נפל באמצע סיבוב - ננסה לשחזר טיימר
+                // שחזור טיימר פעיל
                 if (game.currentRound && game.currentRound.active) {
                     const now = Date.now();
                     const lastUpdate = new Date(row.last_updated).getTime();
@@ -142,10 +127,6 @@ async function restoreActiveGames() {
         });
     } catch (e) { console.error("Restore Error:", e.message); }
 }
-
-// ----------------------
-//   Word bank & Helpers
-// ----------------------
 
 const WORD_BANK = [
   { text: "חתול", category: "animals" }, { text: "כלב", category: "animals" }, { text: "פיל", category: "animals" },
@@ -213,15 +194,16 @@ function startTimerInterval(code) {
         
         g.currentRound.secondsLeft--;
         
+        // שליחת טיק שעון לכולם
         if (g.currentRound.secondsLeft <= 0) {
             finishRound(code, { reason: "timer" });
         } else {
-            // שליחת אירוע שעון ללקוחות
             io.to("game-" + code).emit("roundTick", { gameCode: code, secondsLeft: g.currentRound.secondsLeft });
         }
     }, 1000);
 }
 
+// ניקיון אוטומטי של משחקים לא פעילים (רק מהזיכרון, לא מה-DB)
 setInterval(() => {
     const now = Date.now();
     Object.keys(games).forEach(code => {
@@ -274,9 +256,7 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
   game.currentRound = null;
 }
 
-// ----------------------
-//   Socket.io Handlers
-// ----------------------
+// --- Sockets ---
 
 io.on("connection", (socket) => {
   socket.on("createGame", async (data, callback) => {
@@ -351,7 +331,6 @@ io.on("connection", (socket) => {
       }
 
       const clientId = socket.id;
-      // טיפול ב-IP עם פרוקסי
       let rawIp = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
       if (rawIp && rawIp.includes(',')) rawIp = rawIp.split(',')[0].trim();
       const clientIp = rawIp;
@@ -553,56 +532,23 @@ app.get("/admin/reports", async (req, res) => {
     if (!dbReady) return res.json({ error: "No DB connection" });
 
     try {
-        let query = "";
-        let params = [];
-        const fromDate = from || '2020-01-01';
-        const toDate = to || '2030-01-01';
-
+        let query = "", params = [from || '2020-01-01', to || '2030-01-01'];
         if (type === 'ips') {
-            query = `
-                SELECT ip_address, MAX(name) as last_name, COUNT(*) as games_count, MAX(created_at) as last_seen 
-                FROM game_players 
-                WHERE created_at >= $1::date AND created_at <= ($2::date + 1)
-                GROUP BY ip_address 
-                ORDER BY last_seen DESC
-            `;
-            params = [fromDate, toDate];
+            query = `SELECT ip_address, MAX(name) as last_name, COUNT(*) as games_count, MAX(created_at) as last_seen FROM game_players WHERE created_at >= $1::date AND created_at <= ($2::date + 1) GROUP BY ip_address ORDER BY last_seen DESC`;
         } else if (type === 'games') {
-            query = `
-                SELECT code, host_name, created_at 
-                FROM games 
-                WHERE created_at >= $1::date AND created_at <= ($2::date + 1) 
-                ORDER BY created_at DESC
-            `;
-            params = [fromDate, toDate];
-        } else {
-            return res.json({ error: "Invalid type" });
+            query = `SELECT code, host_name, created_at FROM games WHERE created_at >= $1::date AND created_at <= ($2::date + 1) ORDER BY created_at DESC`;
         }
-
         const result = await pool.query(query, params);
         res.json({ data: result.rows });
-
-    } catch (e) {
-        console.error("Report Error", e);
-        res.status(500).json({ error: "DB Error" });
-    }
+    } catch (e) { res.status(500).json({ error: "DB Error" }); }
 });
 
 app.post("/admin/reset", async (req, res) => {
     if (req.query.code !== ADMIN_CODE) return res.status(403).json({ ok: false });
-    
     if (dbReady && pool) {
-        try {
-            await pool.query("TRUNCATE TABLE game_players, game_teams, games, active_states RESTART IDENTITY");
-            console.log("⚠️ DB Reset performed by Admin");
-            res.json({ ok: true });
-        } catch(e) {
-            console.error("Reset Error", e);
-            res.status(500).json({ ok: false });
-        }
-    } else {
-        res.json({ ok: false, error: "No DB" });
-    }
+        await pool.query("TRUNCATE TABLE game_players, game_teams, games, active_states RESTART IDENTITY");
+        res.json({ ok: true });
+    } else res.json({ ok: false });
 });
 
 app.post("/admin/game/:gameCode/close", (req, res) => {
@@ -625,10 +571,7 @@ app.post("/admin/game/:gameCode/player/:clientId/disconnect", (req, res) => {
         const p = g.playersByClientId[clientId];
         delete g.playersByClientId[clientId];
         if(g.teams[p.teamId]) g.teams[p.teamId].players = g.teams[p.teamId].players.filter(id=>id!==clientId);
-        
-        saveGameState(g);
-        broadcastGame(g);
-        res.json({ok:true});
+        saveGameState(g); broadcastGame(g); res.json({ok:true});
     } else res.status(404).send();
 });
 
