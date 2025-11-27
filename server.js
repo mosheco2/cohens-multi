@@ -1,11 +1,10 @@
-// server.js - ניסיון אחרון למיילים (Service Mode)
+// server.js - גרסה סופית עם מנגנון Webhook למיילים
 
 const express = require("express");
 const http = require("http");
 const path = require("path");
 const { Server } = require("socket.io");
 const { Pool } = require("pg");
-const nodemailer = require("nodemailer");
 
 const app = express();
 const server = http.createServer(app);
@@ -17,37 +16,27 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 
 // ----------------------
-//   הגדרות אימייל (Service Mode)
+//   שליחת מייל (דרך Google Webhook)
 // ----------------------
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // נותן לספרייה לנהל את החיבור והפורטים לבד
-  auth: {
-    user: process.env.EMAIL_USER, 
-    pass: process.env.EMAIL_PASS
-  }
-});
-
 async function sendNewGameEmail(gameInfo) {
-  if (!process.env.EMAIL_USER) {
-      console.log("ℹ️ Email skipped: No config.");
+  const webhookUrl = process.env.EMAIL_WEBHOOK;
+  
+  if (!webhookUrl) {
+      console.log("ℹ️ No EMAIL_WEBHOOK defined. Skipping email.");
       return; 
   }
 
-  // שליחה "שגר ושכח" - לא תוקע את המשחק
-  transporter.sendMail({
-    from: '"Millmania" <no-reply@millmania.com>',
-    to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER, 
-    subject: `🎮 חדר חדש: ${gameInfo.code}`,
-    html: `
-      <div style="direction: rtl; font-family: sans-serif;">
-        <h3>משחק חדש נפתח!</h3>
-        <p><strong>קוד:</strong> ${gameInfo.code}</p>
-        <p><strong>מנהל:</strong> ${gameInfo.hostName}</p>
-        <p><strong>זמן:</strong> ${new Date().toLocaleString("he-IL", {timeZone: "Asia/Jerusalem"})}</p>
-      </div>
-    `,
-  }).then(() => console.log(`✅ Email sent: ${gameInfo.code}`))
-    .catch(err => console.error("⚠️ Email blocked by server:", err.message));
+  // שליחה אסינכרונית לגוגל סקריפט
+  fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+          code: gameInfo.code,
+          host: gameInfo.hostName
+      })
+  })
+  .then(() => console.log(`✅ Email signal sent for ${gameInfo.code}`))
+  .catch(err => console.error("❌ Webhook error:", err.message));
 }
 
 // ----------------------
@@ -67,7 +56,7 @@ let dbReady = false;
 async function initDb() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    console.log("⚠️ No DATABASE_URL. Running in memory mode.");
+    console.log("⚠️ No DATABASE_URL provided. Running in memory mode.");
     return;
   }
 
@@ -187,7 +176,8 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
   // עדכון DB
   if (dbReady && pool && teamId && game.teams[teamId]) {
     try {
-      await pool.query(`UPDATE game_teams SET score = $1 WHERE game_code = $2 AND team_id = $3`, [game.teams[teamId].score, code, teamId]);
+      await pool.query(`UPDATE game_teams SET score = $1 WHERE game_code = $2 AND team_id = $3`, 
+      [game.teams[teamId].score, code, teamId]);
     } catch (err) {}
   }
 
@@ -208,8 +198,6 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
 // ----------------------
 
 io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
-
   socket.on("createGame", async (data, callback) => {
     try {
       const { hostName, targetScore=40, defaultRoundSeconds=60, categories=[], teamNames={} } = data || {};
@@ -249,7 +237,7 @@ io.on("connection", (socket) => {
         } catch (e) { console.error("DB Create Error:", e); }
       }
 
-      // שליחת מייל ללא המתנה (לא חוסם את המשחק)
+      // שליחת מייל דרך Webhook
       sendNewGameEmail(game);
 
       callback({ ok: true, gameCode: code, game: sanitizeGame(game) });
@@ -489,7 +477,7 @@ app.get("/admin/stats", async (req, res) => {
   res.json({ activeGames, dbStats });
 });
 
-// API דוחות (חדש)
+// API דוחות
 app.get("/admin/reports", async (req, res) => {
     const { code, type, from, to } = req.query;
     if (code !== ADMIN_CODE) return res.status(403).json({ error: "Forbidden" });
@@ -505,7 +493,7 @@ app.get("/admin/reports", async (req, res) => {
             query = `
                 SELECT ip_address, COUNT(*) as games_count, MAX(created_at) as last_seen 
                 FROM game_players 
-                WHERE created_at BETWEEN $1 AND $2 
+                WHERE created_at >= $1::date AND created_at <= ($2::date + 1)
                 GROUP BY ip_address 
                 ORDER BY last_seen DESC
             `;
@@ -514,7 +502,7 @@ app.get("/admin/reports", async (req, res) => {
             query = `
                 SELECT code, host_name, created_at 
                 FROM games 
-                WHERE created_at BETWEEN $1 AND $2 
+                WHERE created_at >= $1::date AND created_at <= ($2::date + 1) 
                 ORDER BY created_at DESC
             `;
             params = [fromDate, toDate];
