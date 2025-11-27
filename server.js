@@ -1,4 +1,4 @@
-// server.js - גרסה סופית עם מנגנון Webhook למיילים
+// server.js - גרסה עם דיווח שגיאות מורחב למיילים
 
 const express = require("express");
 const http = require("http");
@@ -16,27 +16,38 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 
 // ----------------------
-//   שליחת מייל (דרך Google Webhook)
+//   שליחת מייל (עם לוגים מפורטים)
 // ----------------------
 async function sendNewGameEmail(gameInfo) {
   const webhookUrl = process.env.EMAIL_WEBHOOK;
   
+  console.log("📨 Email Process Started...");
+
   if (!webhookUrl) {
-      console.log("ℹ️ No EMAIL_WEBHOOK defined. Skipping email.");
+      console.error("❌ CRITICAL ERROR: 'EMAIL_WEBHOOK' variable is missing in Render!");
       return; 
   }
 
-  // שליחה אסינכרונית לגוגל סקריפט
-  fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-          code: gameInfo.code,
-          host: gameInfo.hostName
-      })
-  })
-  .then(() => console.log(`✅ Email signal sent for ${gameInfo.code}`))
-  .catch(err => console.error("❌ Webhook error:", err.message));
+  try {
+      const response = await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+              code: gameInfo.code,
+              host: gameInfo.hostName
+          })
+      });
+
+      const responseText = await response.text();
+      console.log(`📡 Google Response: ${response.status} - ${responseText}`);
+
+      if (!response.ok) {
+          console.error("❌ Google rejected the request.");
+      }
+
+  } catch (err) {
+      console.error("❌ Network Error sending email:", err.message);
+  }
 }
 
 // ----------------------
@@ -198,6 +209,8 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
 // ----------------------
 
 io.on("connection", (socket) => {
+  console.log("Client connected:", socket.id);
+
   socket.on("createGame", async (data, callback) => {
     try {
       const { hostName, targetScore=40, defaultRoundSeconds=60, categories=[], teamNames={} } = data || {};
@@ -237,7 +250,7 @@ io.on("connection", (socket) => {
         } catch (e) { console.error("DB Create Error:", e); }
       }
 
-      // שליחת מייל דרך Webhook
+      // שליחת מייל
       sendNewGameEmail(game);
 
       callback({ ok: true, gameCode: code, game: sanitizeGame(game) });
@@ -253,7 +266,7 @@ io.on("connection", (socket) => {
       const { gameCode, name, teamId } = data || {};
       const code = (gameCode || "").toUpperCase().trim();
       const game = games[code];
-      if (!game) return callback({ ok: false, error: "המשחק לא נמצא." });
+      if (!game) return callback({ ok: false, error: "המשחק לא נמצא (אולי נסגר)." });
 
       const playerName = (name || "").trim();
       if (!playerName) return callback({ ok: false, error: "שם חסר." });
@@ -477,7 +490,7 @@ app.get("/admin/stats", async (req, res) => {
   res.json({ activeGames, dbStats });
 });
 
-// API דוחות
+// API דוחות (חדש)
 app.get("/admin/reports", async (req, res) => {
     const { code, type, from, to } = req.query;
     if (code !== ADMIN_CODE) return res.status(403).json({ error: "Forbidden" });
