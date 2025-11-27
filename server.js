@@ -1,4 +1,4 @@
-// server.js - גרסה עם דיווח שגיאות מורחב למיילים
+// server.js - גרסה סופית: תיקון IP, שמות שחקנים, איפוס נתונים
 
 const express = require("express");
 const http = require("http");
@@ -16,38 +16,20 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 
 // ----------------------
-//   שליחת מייל (עם לוגים מפורטים)
+//   שליחת מייל (דרך Webhook)
 // ----------------------
 async function sendNewGameEmail(gameInfo) {
   const webhookUrl = process.env.EMAIL_WEBHOOK;
-  
-  console.log("📨 Email Process Started...");
+  if (!webhookUrl) return; 
 
-  if (!webhookUrl) {
-      console.error("❌ CRITICAL ERROR: 'EMAIL_WEBHOOK' variable is missing in Render!");
-      return; 
-  }
-
-  try {
-      const response = await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-              code: gameInfo.code,
-              host: gameInfo.hostName
-          })
-      });
-
-      const responseText = await response.text();
-      console.log(`📡 Google Response: ${response.status} - ${responseText}`);
-
-      if (!response.ok) {
-          console.error("❌ Google rejected the request.");
-      }
-
-  } catch (err) {
-      console.error("❌ Network Error sending email:", err.message);
-  }
+  fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+          code: gameInfo.code,
+          host: gameInfo.hostName
+      })
+  }).catch(err => console.error("Webhook error:", err.message));
 }
 
 // ----------------------
@@ -67,7 +49,7 @@ let dbReady = false;
 async function initDb() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    console.log("⚠️ No DATABASE_URL provided. Running in memory mode.");
+    console.log("⚠️ No DATABASE_URL. Running in memory mode.");
     return;
   }
 
@@ -100,7 +82,7 @@ const games = {};
 const roundTimers = {};
 
 // ----------------------
-//   Word bank
+//   Utils & Word Bank
 // ----------------------
 
 const WORD_BANK = [
@@ -112,7 +94,7 @@ const WORD_BANK = [
   { text: "שיר", category: "music" }, { text: "גיטרה", category: "music" }, { text: "יער", category: "nature" },
   { text: "מדבר", category: "nature" }, { text: "חג פסח", category: "holidays" }, { text: "ראש השנה", category: "holidays" },
   { text: "מורה", category: "school" }, { text: "תלמיד", category: "school" }, { text: "בוס", category: "work" },
-  { text: "משרד", category: "work" },
+  { text: "משרד", category: "work" }
 ];
 
 function getRandomWord(categories) {
@@ -125,10 +107,6 @@ function getRandomWord(categories) {
   const idx = Math.floor(Math.random() * pool.length);
   return pool[idx];
 }
-
-// ----------------------
-//   Utils
-// ----------------------
 
 function generateGameCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -184,11 +162,9 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
   game.lastActivity = new Date();
   game.updatedAt = new Date();
 
-  // עדכון DB
   if (dbReady && pool && teamId && game.teams[teamId]) {
     try {
-      await pool.query(`UPDATE game_teams SET score = $1 WHERE game_code = $2 AND team_id = $3`, 
-      [game.teams[teamId].score, code, teamId]);
+      await pool.query(`UPDATE game_teams SET score = $1 WHERE game_code = $2 AND team_id = $3`, [game.teams[teamId].score, code, teamId]);
     } catch (err) {}
   }
 
@@ -209,8 +185,6 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
 // ----------------------
 
 io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
-
   socket.on("createGame", async (data, callback) => {
     try {
       const { hostName, targetScore=40, defaultRoundSeconds=60, categories=[], teamNames={} } = data || {};
@@ -250,9 +224,7 @@ io.on("connection", (socket) => {
         } catch (e) { console.error("DB Create Error:", e); }
       }
 
-      // שליחת מייל
       sendNewGameEmail(game);
-
       callback({ ok: true, gameCode: code, game: sanitizeGame(game) });
 
     } catch (err) {
@@ -266,7 +238,7 @@ io.on("connection", (socket) => {
       const { gameCode, name, teamId } = data || {};
       const code = (gameCode || "").toUpperCase().trim();
       const game = games[code];
-      if (!game) return callback({ ok: false, error: "המשחק לא נמצא (אולי נסגר)." });
+      if (!game) return callback({ ok: false, error: "המשחק לא נמצא." });
 
       const playerName = (name || "").trim();
       if (!playerName) return callback({ ok: false, error: "שם חסר." });
@@ -284,7 +256,13 @@ io.on("connection", (socket) => {
 
       const clientId = socket.id;
       const isHost = (socket.id === game.hostSocketId);
-      const clientIp = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+      
+      // <--- תיקון IP: לקיחת הכתובת הראשונה במקרה של פרוקסי
+      let rawIp = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+      if (rawIp && rawIp.includes(',')) {
+          rawIp = rawIp.split(',')[0].trim();
+      }
+      const clientIp = rawIp;
 
       game.playersByClientId[clientId] = { clientId, name: playerName, teamId: chosenTeamId, isHost, ip: clientIp };
       if(!game.teams[chosenTeamId].players.includes(clientId)) {
@@ -490,7 +468,7 @@ app.get("/admin/stats", async (req, res) => {
   res.json({ activeGames, dbStats });
 });
 
-// API דוחות (חדש)
+// API דוחות (עם שמות שחקנים)
 app.get("/admin/reports", async (req, res) => {
     const { code, type, from, to } = req.query;
     if (code !== ADMIN_CODE) return res.status(403).json({ error: "Forbidden" });
@@ -503,8 +481,9 @@ app.get("/admin/reports", async (req, res) => {
         const toDate = to || '2030-01-01';
 
         if (type === 'ips') {
+            // <--- שינוי: הוספת שליפת השם (MAX(name))
             query = `
-                SELECT ip_address, COUNT(*) as games_count, MAX(created_at) as last_seen 
+                SELECT ip_address, MAX(name) as last_name, COUNT(*) as games_count, MAX(created_at) as last_seen 
                 FROM game_players 
                 WHERE created_at >= $1::date AND created_at <= ($2::date + 1)
                 GROUP BY ip_address 
@@ -529,6 +508,25 @@ app.get("/admin/reports", async (req, res) => {
     } catch (e) {
         console.error("Report Error", e);
         res.status(500).json({ error: "DB Error" });
+    }
+});
+
+// <--- נקודת קצה חדשה: איפוס נתונים
+app.post("/admin/reset", async (req, res) => {
+    const code = req.query.code || "";
+    if (code !== ADMIN_CODE) return res.status(403).json({ ok: false });
+    
+    if (dbReady && pool) {
+        try {
+            await pool.query("TRUNCATE TABLE game_players, game_teams, games RESTART IDENTITY");
+            console.log("⚠️ DB Reset performed by Admin");
+            res.json({ ok: true });
+        } catch(e) {
+            console.error("Reset Error", e);
+            res.status(500).json({ ok: false });
+        }
+    } else {
+        res.json({ ok: false, error: "No DB" });
     }
 });
 
