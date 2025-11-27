@@ -71,6 +71,15 @@
     .modal-title { font-size: 1.6rem; font-weight: 800; margin-bottom: 16px; color: #2B1E4A; }
     .modal-content { font-size: 1.1rem; color: #6B618F; margin-bottom: 28px; line-height: 1.6; }
 
+    /* כפתור תמיכה צף */
+    #support-wa-btn {
+        position: fixed; bottom: 24px; right: 24px; z-index: 101;
+        background: #25D366; color: white; border-radius: 50px;
+        padding: 12px 20px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        display: flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none;
+    }
+    #support-wa-btn:hover { background: #1ebc57; transform: translateY(-2px); }
+
     @media (min-width: 640px) { .row > div { flex: 1 1 45%; } .btn { width: auto; } }
   </style>
 </head>
@@ -79,7 +88,7 @@
     <div class="page-header">
         <div style="display:flex; align-items:center; gap:12px;">
              <img id="playerLogo" class="logo-small hidden" alt="לוגו" />
-             <div><div class="chip">מסך שחקן 🎮</div></div>
+             <div><div class="chip" style="border:none; background: rgba(248, 71, 121, 0.1);">מסך שחקן 🎮</div></div>
         </div>
         <div style="display:flex; gap:8px;">
           <button class="btn btn-ghost" onclick="location.href='instructions.html'">❔ הוראות</button>
@@ -160,6 +169,10 @@
       </div>
   </div>
 
+  <div id="support-wa-btn" onclick="openSupportWhatsapp()">
+      <span>💬 עזרה ותמיכה</span>
+  </div>
+
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -192,6 +205,17 @@
 
     function showModal(title, content) { modalTitle.textContent = title; modalContent.innerHTML = content; customModal.classList.add("active"); }
     modalCloseBtn.addEventListener("click", () => { customModal.classList.remove("active"); });
+
+    function openSupportWhatsapp() {
+        let text = "";
+        if (currentGameCode && lastGameState) {
+            let myName = playerNameInput.value || "שחקן";
+            text = `שלום, אני צריך עזרה במשחק מילמניה.\nקוד חדר: ${currentGameCode}\nשם מנהל: ${lastGameState.hostName}\nשם משתמש: ${myName}`;
+        } else {
+            text = "שלום, אני פונה בנושא שאלה/תמיכה במילמניה.";
+        }
+        window.open(`https://wa.me/972526626619?text=${encodeURIComponent(text)}`, '_blank');
+    }
 
     viewAllPlayersBtn.addEventListener("click", () => {
         if(!lastGameState || !lastGameState.teams) return;
@@ -328,17 +352,8 @@
     exitGameBtn.addEventListener("click", () => { if(confirm("לצאת מהמשחק?")) resetPlayerState(); });
 
     socket.on("gameUpdated", renderGameStateForPlayer);
-    
-    // <--- תיקון תקלה 1: משיכת ניקוד בכוח בסיום סיבוב
     socket.on("roundTimeUp", (data) => {
       if (!data) return;
-      
-      if(currentGameCode) {
-           socket.emit("getGameState", { gameCode: currentGameCode }, (resp) => {
-               if(resp.ok && resp.game) renderGameStateForPlayer(resp.game);
-           });
-      }
-
       const score = data.roundScore || 0;
       const teamName = data.teamName || "הקבוצה";
       let title = "⏰ הזמן נגמר!";
@@ -350,7 +365,6 @@
       showModal(title, body);
       iAmCurrentExplainer = false; presenterSection.classList.add("hidden"); playerBigTimerEl.textContent = "00:00";
     });
-    
     socket.on("gameEnded", () => { showModal("המשחק הסתיים!", "תודה ששיחקתם במילמניה! 🎉"); resetPlayerState(); });
 
     fetch("/api/banners").then(r=>r.json()).then(d => {
