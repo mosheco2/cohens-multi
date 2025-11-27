@@ -1,4 +1,4 @@
-// server.js - מילמניה: הגרסה המלאה והמתוקנת
+// server.js - גרסה סופית ומתוקנת (כולל מיילים, IP וסטטיסטיקות)
 
 const express = require("express");
 const http = require("http");
@@ -16,10 +16,8 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000;
 const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 
-// ----------------------
-//   הגדרות אימייל
-// ----------------------
-// מנסה לשלוח מייל רק אם יש משתני סביבה מוגדרים
+// --- הגדרות אימייל ---
+// השרת ינסה לשלוח מייל רק אם הגדרת משתני סביבה ב-Render
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -29,25 +27,25 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendNewGameEmail(gameInfo) {
-  if (!process.env.EMAIL_USER) return; 
+  if (!process.env.EMAIL_USER) return; // דלג אם אין הגדרות
 
   try {
     await transporter.sendMail({
-      from: '"Millmania Bot" <no-reply@millmania.com>',
+      from: '"Millmania System" <no-reply@millmania.com>',
       to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER, 
       subject: `🚀 משחק חדש נפתח: ${gameInfo.code}`,
       html: `
         <div style="direction: rtl; font-family: sans-serif;">
-          <h2>משחק חדש יצא לדרך!</h2>
+          <h2>משחק חדש נפתח!</h2>
           <p><strong>קוד משחק:</strong> ${gameInfo.code}</p>
           <p><strong>מנהל:</strong> ${gameInfo.hostName}</p>
-          <p><strong>זמן:</strong> ${new Date().toLocaleString("he-IL")}</p>
+          <p><strong>זמן:</strong> ${new Date().toLocaleString("he-IL", {timeZone: "Asia/Jerusalem"})}</p>
         </div>
       `,
     });
     console.log(`📧 Email sent for game ${gameInfo.code}`);
   } catch (error) {
-    console.error("❌ Error sending email (check credentials):", error.message);
+    console.error("❌ Email error:", error.message);
   }
 }
 
@@ -68,7 +66,7 @@ let dbReady = false;
 async function initDb() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    console.log("⚠️ No DATABASE_URL provided. Running in memory mode.");
+    console.log("⚠️ No DATABASE_URL. Running in-memory only.");
     return;
   }
 
@@ -78,7 +76,7 @@ async function initDb() {
       ssl: process.env.PGSSL === "false" ? false : { rejectUnauthorized: false },
     });
 
-    // יצירת טבלאות אם לא קיימות
+    // יצירת טבלאות
     await pool.query(`
       CREATE TABLE IF NOT EXISTS games (
         code TEXT PRIMARY KEY,
@@ -111,7 +109,7 @@ async function initDb() {
       );
     `);
     
-    // וידוא עמודת IP
+    // וידוא עמודת IP לטבלאות קיימות
     try {
         await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS ip_address TEXT;`);
     } catch (e) {}
@@ -119,7 +117,7 @@ async function initDb() {
     dbReady = true;
     console.log("✅ Postgres ready.");
   } catch (err) {
-    console.error("❌ Failed to init Postgres:", err.message);
+    console.error("❌ DB Init Error:", err.message);
   }
 }
 
@@ -217,7 +215,7 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
   game.lastActivity = new Date();
   game.updatedAt = new Date();
 
-  // DB update
+  // עדכון DB
   if (dbReady && pool && teamId && game.teams[teamId]) {
     try {
       await pool.query(`UPDATE game_teams SET score = $1 WHERE game_code = $2 AND team_id = $3`, 
@@ -283,7 +281,9 @@ io.on("connection", (socket) => {
         } catch (e) { console.error("DB Create Error:", e); }
       }
 
+      // שליחת מייל (לא קריטי אם נכשל, לכן אין await שחוסם)
       sendNewGameEmail(game);
+
       callback({ ok: true, gameCode: code, game: sanitizeGame(game) });
 
     } catch (err) {
@@ -297,7 +297,7 @@ io.on("connection", (socket) => {
       const { gameCode, name, teamId } = data || {};
       const code = (gameCode || "").toUpperCase().trim();
       const game = games[code];
-      if (!game) return callback({ ok: false, error: "המשחק לא נמצא." });
+      if (!game) return callback({ ok: false, error: "המשחק לא נמצא (אולי נסגר)." });
 
       const playerName = (name || "").trim();
       if (!playerName) return callback({ ok: false, error: "שם חסר." });
@@ -315,6 +315,7 @@ io.on("connection", (socket) => {
 
       const clientId = socket.id;
       const isHost = (socket.id === game.hostSocketId);
+      // תפיסת IP
       const clientIp = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
 
       game.playersByClientId[clientId] = { clientId, name: playerName, teamId: chosenTeamId, isHost, ip: clientIp };
@@ -429,7 +430,6 @@ io.on("connection", (socket) => {
           clearRoundTimer(code);
           delete games[code];
           if(dbReady && pool) {
-              // cleanup DB logic
               pool.query(`DELETE FROM games WHERE code=$1`, [code]).catch(()=>{});
               pool.query(`DELETE FROM game_players WHERE game_code=$1`, [code]).catch(()=>{});
               pool.query(`DELETE FROM game_teams WHERE game_code=$1`, [code]).catch(()=>{});
@@ -453,7 +453,6 @@ io.on("connection", (socket) => {
           if(dbReady && pool) {
               pool.query(`DELETE FROM game_players WHERE game_code=$1 AND client_id=$2`, [game.code, pid]).catch(()=>{});
           }
-          // אם הוא המסביר
           if(game.currentRound && game.currentRound.explainerId === pid) {
               finishRound(game.code, {reason:"player_disconnected"});
           } else {
@@ -531,7 +530,9 @@ app.post("/admin/game/:gameCode/close", (req, res) => {
         clearRoundTimer(code);
         delete games[code];
         io.to("game-" + code).emit("gameEnded", { code });
-        // Clean DB...
+        if(dbReady && pool) {
+             pool.query(`DELETE FROM games WHERE code=$1`, [code]).catch(()=>{});
+        }
         res.json({ok:true});
     } else res.status(404).send();
 });
@@ -541,8 +542,6 @@ app.post("/admin/game/:gameCode/player/:clientId/disconnect", (req, res) => {
     const {gameCode, clientId} = req.params;
     const g = games[gameCode];
     if(g && g.playersByClientId[clientId]) {
-        // reuse existing logic manually or just force disconnect socket if possible
-        // For simplicity:
         const p = g.playersByClientId[clientId];
         delete g.playersByClientId[clientId];
         if(g.teams[p.teamId]) g.teams[p.teamId].players = g.teams[p.teamId].players.filter(id=>id!==clientId);
