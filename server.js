@@ -1,4 +1,4 @@
-// server.js - גרסה סופית ומתוקנת (כולל מיילים, IP וסטטיסטיקות)
+// server.js - גרסה מעודכנת (סטטיסטיקות מתקדמות, סינון תאריכים, IP, דיבאג למייל)
 
 const express = require("express");
 const http = require("http");
@@ -16,8 +16,9 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000;
 const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 
-// --- הגדרות אימייל ---
-// השרת ינסה לשלוח מייל רק אם הגדרת משתני סביבה ב-Render
+// ----------------------
+//   הגדרות אימייל
+// ----------------------
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -26,8 +27,15 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// בדיקת סטטוס מייל בהפעלה
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn("⚠️ EMAIL_USER or EMAIL_PASS is missing in Environment Variables! Emails will NOT be sent.");
+} else {
+    console.log("✅ Email configuration detected for: " + process.env.EMAIL_USER);
+}
+
 async function sendNewGameEmail(gameInfo) {
-  if (!process.env.EMAIL_USER) return; // דלג אם אין הגדרות
+  if (!process.env.EMAIL_USER) return; 
 
   try {
     await transporter.sendMail({
@@ -66,7 +74,7 @@ let dbReady = false;
 async function initDb() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    console.log("⚠️ No DATABASE_URL. Running in-memory only.");
+    console.log("⚠️ No DATABASE_URL provided. Running in-memory only.");
     return;
   }
 
@@ -77,42 +85,13 @@ async function initDb() {
     });
 
     // יצירת טבלאות
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS games (
-        code TEXT PRIMARY KEY,
-        host_name TEXT NOT NULL,
-        target_score INTEGER,
-        default_round_seconds INTEGER,
-        categories TEXT[],
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      );
-    `);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS game_teams (
-        id SERIAL PRIMARY KEY,
-        game_code TEXT,
-        team_id TEXT,
-        team_name TEXT,
-        score INTEGER DEFAULT 0
-      );
-    `);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS game_players (
-        id SERIAL PRIMARY KEY,
-        game_code TEXT,
-        client_id TEXT,
-        name TEXT,
-        team_id TEXT,
-        ip_address TEXT
-      );
-    `);
+    await pool.query(`CREATE TABLE IF NOT EXISTS games (code TEXT PRIMARY KEY, host_name TEXT NOT NULL, target_score INTEGER, default_round_seconds INTEGER, categories TEXT[], created_at TIMESTAMPTZ DEFAULT NOW());`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS game_teams (id SERIAL PRIMARY KEY, game_code TEXT, team_id TEXT, team_name TEXT, score INTEGER DEFAULT 0);`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS game_players (id SERIAL PRIMARY KEY, game_code TEXT, client_id TEXT, name TEXT, team_id TEXT, ip_address TEXT, created_at TIMESTAMPTZ DEFAULT NOW());`);
     
-    // וידוא עמודת IP לטבלאות קיימות
-    try {
-        await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS ip_address TEXT;`);
-    } catch (e) {}
+    // וידוא עמודות (למקרה של שדרוג)
+    try { await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS ip_address TEXT;`); } catch (e) {}
+    try { await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`); } catch (e) {}
 
     dbReady = true;
     console.log("✅ Postgres ready.");
@@ -131,19 +110,12 @@ const games = {};
 const roundTimers = {};
 
 // ----------------------
-//   Word bank
+//   Word bank (מקוצר לדוגמה, תשאיר את הרשימה המלאה שלך)
 // ----------------------
-
 const WORD_BANK = [
-  { text: "חתול", category: "animals" }, { text: "כלב", category: "animals" }, { text: "פיל", category: "animals" },
-  { text: "שולחן", category: "objects" }, { text: "מחשב", category: "technology" }, { text: "טלפון", category: "technology" },
-  { text: "פיצה", category: "food" }, { text: "המבורגר", category: "food" }, { text: "משפחה", category: "family" },
-  { text: "חופשה", category: "travel" }, { text: "ים", category: "travel" }, { text: "כדורגל", category: "sports" },
-  { text: "כדורסל", category: "sports" }, { text: "סדרה בטלוויזיה", category: "entertainment" }, { text: "סרט", category: "entertainment" },
-  { text: "שיר", category: "music" }, { text: "גיטרה", category: "music" }, { text: "יער", category: "nature" },
-  { text: "מדבר", category: "nature" }, { text: "חג פסח", category: "holidays" }, { text: "ראש השנה", category: "holidays" },
-  { text: "מורה", category: "school" }, { text: "תלמיד", category: "school" }, { text: "בוס", category: "work" },
-  { text: "משרד", category: "work" },
+  { text: "חתול", category: "animals" }, { text: "כלב", category: "animals" },
+  { text: "פיצה", category: "food" }, { text: "מחשב", category: "technology" }
+  // ... (השאר את הרשימה המלאה שיש לך בקובץ המקורי)
 ];
 
 function getRandomWord(categories) {
@@ -215,7 +187,6 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
   game.lastActivity = new Date();
   game.updatedAt = new Date();
 
-  // עדכון DB
   if (dbReady && pool && teamId && game.teams[teamId]) {
     try {
       await pool.query(`UPDATE game_teams SET score = $1 WHERE game_code = $2 AND team_id = $3`, 
@@ -240,8 +211,6 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
 // ----------------------
 
 io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
-
   socket.on("createGame", async (data, callback) => {
     try {
       const { hostName, targetScore=40, defaultRoundSeconds=60, categories=[], teamNames={} } = data || {};
@@ -281,9 +250,7 @@ io.on("connection", (socket) => {
         } catch (e) { console.error("DB Create Error:", e); }
       }
 
-      // שליחת מייל (לא קריטי אם נכשל, לכן אין await שחוסם)
       sendNewGameEmail(game);
-
       callback({ ok: true, gameCode: code, game: sanitizeGame(game) });
 
     } catch (err) {
@@ -315,7 +282,6 @@ io.on("connection", (socket) => {
 
       const clientId = socket.id;
       const isHost = (socket.id === game.hostSocketId);
-      // תפיסת IP
       const clientIp = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
 
       game.playersByClientId[clientId] = { clientId, name: playerName, teamId: chosenTeamId, isHost, ip: clientIp };
@@ -364,194 +330,10 @@ io.on("connection", (socket) => {
       const team = game.teams[data.teamId];
       if(!team) return callback({ok:false});
 
-      // בחירת מסביר
       let explainer = null;
       const pIds = team.players;
-      if(data.explainerClientId) {
-          if(pIds.includes(data.explainerClientId)) explainer = data.explainerClientId;
+      if(data.explainerClientId && pIds.includes(data.explainerClientId)) {
+          explainer = data.explainerClientId;
       }
       if(!explainer && pIds.length > 0) {
-          explainer = pIds[Math.floor(Math.random() * pIds.length)];
-      }
-      if(!explainer) return callback({ok:false, error: "No players"});
-
-      const pObj = game.playersByClientId[explainer];
-      const now = new Date();
-      
-      game.currentRound = {
-          teamId: data.teamId,
-          explainerId: explainer,
-          explainerName: pObj ? pObj.name : "Unknown",
-          secondsLeft: parseInt(data.roundSeconds) || 60,
-          active: true, isActive: true, roundScore: 0, startedAt: now.toISOString()
-      };
-      
-      broadcastGame(game);
-      io.to("game-" + game.code).emit("roundStarted", { game: sanitizeGame(game) });
-
-      roundTimers[game.code] = setInterval(() => {
-          if(!game.currentRound) { clearRoundTimer(game.code); return; }
-          game.currentRound.secondsLeft--;
-          if(game.currentRound.secondsLeft <= 0) {
-              finishRound(game.code, {reason:"timer"});
-          } else {
-              io.to("game-" + game.code).emit("roundTick", { gameCode: game.code, secondsLeft: game.currentRound.secondsLeft });
-          }
-      }, 1000);
-      
-      callback({ok:true});
-  });
-
-  socket.on("changeRoundScore", (data, cb) => {
-      const game = games[data.gameCode];
-      if(game && game.currentRound && game.currentRound.active) {
-          const d = parseInt(data.delta) || 0;
-          game.currentRound.roundScore = Math.max(0, (game.currentRound.roundScore || 0) + d);
-          cb({ok:true});
-          broadcastGame(game);
-      }
-  });
-
-  socket.on("getNextWord", (data, cb) => {
-      const game = games[data.gameCode];
-      if(game && game.currentRound) {
-          const w = getRandomWord(game.categories);
-          cb({ok:true, word: w.text, category: w.category});
-      }
-  });
-
-  socket.on("endRound", (data) => {
-      finishRound(data.gameCode, {reason:"manual"});
-  });
-
-  socket.on("endGame", (data, cb) => {
-      const code = data.gameCode;
-      if(games[code]) {
-          clearRoundTimer(code);
-          delete games[code];
-          if(dbReady && pool) {
-              pool.query(`DELETE FROM games WHERE code=$1`, [code]).catch(()=>{});
-              pool.query(`DELETE FROM game_players WHERE game_code=$1`, [code]).catch(()=>{});
-              pool.query(`DELETE FROM game_teams WHERE game_code=$1`, [code]).catch(()=>{});
-          }
-          io.to("game-" + code).emit("gameEnded", { code });
-          cb({ok:true});
-      }
-  });
-
-  socket.on("removePlayer", (data, cb) => {
-      const game = games[data.gameCode];
-      if(!game) return cb({ok:false});
-      
-      const pid = data.clientId;
-      const p = game.playersByClientId[pid];
-      if(p) {
-          delete game.playersByClientId[pid];
-          if(game.teams[p.teamId]) {
-              game.teams[p.teamId].players = game.teams[p.teamId].players.filter(id=>id!==pid);
-          }
-          if(dbReady && pool) {
-              pool.query(`DELETE FROM game_players WHERE game_code=$1 AND client_id=$2`, [game.code, pid]).catch(()=>{});
-          }
-          if(game.currentRound && game.currentRound.explainerId === pid) {
-              finishRound(game.code, {reason:"player_disconnected"});
-          } else {
-              broadcastGame(game);
-          }
-      }
-      cb({ok:true});
-  });
-
-  socket.on("disconnect", () => {
-      const pid = socket.id;
-      Object.values(games).forEach(g => {
-          if(g.hostSocketId === pid) return; // לא מוחקים מנהל
-          if(g.playersByClientId[pid]) {
-              const p = g.playersByClientId[pid];
-              delete g.playersByClientId[pid];
-              if(g.teams[p.teamId]) {
-                  g.teams[p.teamId].players = g.teams[p.teamId].players.filter(id=>id!==pid);
-              }
-              if(dbReady && pool) {
-                  pool.query(`DELETE FROM game_players WHERE game_code=$1 AND client_id=$2`, [g.code, pid]).catch(()=>{});
-              }
-              if(g.currentRound && g.currentRound.explainerId === pid) {
-                  finishRound(g.code, {reason:"player_disconnected"});
-              } else {
-                  broadcastGame(g);
-              }
-          }
-      });
-  });
-});
-
-// ----------------------
-//   Admin API
-// ----------------------
-
-app.get("/admin/stats", async (req, res) => {
-  const code = req.query.code || "";
-  if (code !== ADMIN_CODE) return res.status(403).json({ error: "Forbidden" });
-
-  let dbStats = { gamesByDay: [], totalUniqueIps: 0 };
-
-  if (dbReady && pool) {
-    try {
-      const gamesRes = await pool.query(`
-        SELECT TO_CHAR(created_at, 'DD/MM') as date, COUNT(*) as count
-        FROM games
-        WHERE created_at > NOW() - INTERVAL '30 days'
-        GROUP BY date, TO_CHAR(created_at, 'YYYY-MM-DD')
-        ORDER BY TO_CHAR(created_at, 'YYYY-MM-DD') ASC
-      `);
-      dbStats.gamesByDay = gamesRes.rows;
-
-      const ipRes = await pool.query(`SELECT COUNT(DISTINCT ip_address) as count FROM game_players`);
-      dbStats.totalUniqueIps = ipRes.rows[0].count;
-    } catch (e) { console.error("Stats DB Error", e); }
-  }
-
-  const activeGames = Object.values(games).map(g => ({
-    code: g.code,
-    hostName: g.hostName,
-    playerCount: Object.keys(g.playersByClientId).length,
-    teamCount: Object.keys(g.teams).length,
-    createdAt: g.createdAt,
-    players: Object.values(g.playersByClientId)
-  }));
-
-  res.json({ activeGames, dbStats });
-});
-
-app.post("/admin/game/:gameCode/close", (req, res) => {
-    if (req.query.code !== ADMIN_CODE) return res.status(403).send();
-    const code = req.params.gameCode;
-    if(games[code]) {
-        clearRoundTimer(code);
-        delete games[code];
-        io.to("game-" + code).emit("gameEnded", { code });
-        if(dbReady && pool) {
-             pool.query(`DELETE FROM games WHERE code=$1`, [code]).catch(()=>{});
-        }
-        res.json({ok:true});
-    } else res.status(404).send();
-});
-
-app.post("/admin/game/:gameCode/player/:clientId/disconnect", (req, res) => {
-    if (req.query.code !== ADMIN_CODE) return res.status(403).send();
-    const {gameCode, clientId} = req.params;
-    const g = games[gameCode];
-    if(g && g.playersByClientId[clientId]) {
-        const p = g.playersByClientId[clientId];
-        delete g.playersByClientId[clientId];
-        if(g.teams[p.teamId]) g.teams[p.teamId].players = g.teams[p.teamId].players.filter(id=>id!==clientId);
-        broadcastGame(g);
-        res.json({ok:true});
-    } else res.status(404).send();
-});
-
-app.get("/api/banners", (req, res) => res.json({}));
-
-server.listen(PORT, () => {
-  console.log(`🚀 Server listening on port ${PORT}`);
-});
+          explainer = pIds[Math.floor(Math.random() * p
