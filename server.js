@@ -1,4 +1,4 @@
-// server.js - הגרסה המלאה: תמיכה במיתוג (Branding) וקבוצות דינמיות
+// server.js - גרסה מאוחדת (יציבות + מיתוג + דוחות)
 
 const express = require("express");
 const http = require("http");
@@ -15,10 +15,10 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000;
 const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 
-const INACTIVITY_LIMIT = 24 * 60 * 60 * 1000; 
-const CLEANUP_INTERVAL = 60 * 60 * 1000;      
+const INACTIVITY_LIMIT = 24 * 60 * 60 * 1000; // 24 שעות
+const CLEANUP_INTERVAL = 60 * 60 * 1000;      // שעה
 
-// --- Webhook Email ---
+// --- Email Webhook ---
 async function sendNewGameEmail(gameInfo) {
   const webhookUrl = process.env.EMAIL_WEBHOOK;
   if (!webhookUrl) return; 
@@ -58,9 +58,9 @@ async function initDb() {
     await pool.query(`CREATE TABLE IF NOT EXISTS game_players (id SERIAL PRIMARY KEY, game_code TEXT, client_id TEXT, name TEXT, team_id TEXT, ip_address TEXT);`);
     await pool.query(`CREATE TABLE IF NOT EXISTS active_states (game_code TEXT PRIMARY KEY, data TEXT, last_updated TIMESTAMPTZ DEFAULT NOW());`);
     
-    // עדכונים ושדרוגים לטבלאות קיימות
+    // שדרוגי סכמה (עמודות חדשות)
     try { await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS ip_address TEXT;`); } catch (e) {}
-    try { await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS branding JSONB;`); } catch (e) {} // <--- עמודה חדשה למיתוג
+    try { await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS branding JSONB;`); } catch (e) {}
 
     dbReady = true;
     console.log("✅ Postgres ready.");
@@ -171,7 +171,7 @@ function sanitizeGame(game) {
     defaultRoundSeconds: game.defaultRoundSeconds, categories: game.categories || [],
     createdAt: game.createdAt, updatedAt: game.updatedAt, lastActivity: game.lastActivity,
     logoUrl: game.logoUrl || null, banners: game.banners || {},
-    branding: game.branding || null, // <--- שליחת מיתוג ללקוח
+    branding: game.branding || null, // <--- שליחת מיתוג
     teams, playersByClientId, currentRound: game.currentRound || null,
   };
 }
@@ -265,16 +265,13 @@ io.on("connection", (socket) => {
       do { code = generateGameCode(); } while (games[code]);
 
       const teams = {};
-      
-      // <--- יצירת קבוצות לפי רשימת שמות (במקום קבוע A,B)
+      // טיפול בקבוצות דינמיות
       if (Array.isArray(teamNames) && teamNames.length > 0) {
           teamNames.forEach((name, idx) => {
-              const id = (idx + 1).toString(); // ID: 1, 2, 3...
+              const id = (idx + 1).toString();
               if(name.trim()) teams[id] = { id, name: name.trim(), score: 0, players: [] };
           });
       }
-      
-      // Fallback אם לא נשלחו שמות
       if (Object.keys(teams).length < 2) {
         teams["1"] = { id: "1", name: "קבוצה 1", score: 0, players: [] };
         teams["2"] = { id: "2", name: "קבוצה 2", score: 0, players: [] };
@@ -283,8 +280,8 @@ io.on("connection", (socket) => {
       const now = new Date();
       const game = {
         code, hostSocketId: socket.id, hostName, targetScore, defaultRoundSeconds, categories,
-        createdAt: now, updatedAt: now, lastActivity: now, 
-        logoUrl: null, banners: {}, branding: branding, // <--- שמירת מיתוג
+        createdAt: now, updatedAt: now, lastActivity: now, logoUrl: null, banners: {},
+        branding: branding, // שמירת מיתוג
         teams, playersByClientId: {}, currentRound: null,
       };
 
@@ -295,13 +292,11 @@ io.on("connection", (socket) => {
         try {
           await pool.query(`INSERT INTO games (code, host_name, target_score, default_round_seconds, categories) VALUES ($1, $2, $3, $4, $5)`,
             [code, hostName, targetScore, defaultRoundSeconds, categories]);
-            
-          // אם יש מיתוג, נעדכן אותו בנפרד (כי לא שינינו את ה-INSERT למעלה כדי למנוע שבירת תאימות אם לא עדכנת סכמה)
+          
           if(branding) {
-               // נסיון לעדכן JSONB אם העמודה קיימת
                try { await pool.query(`UPDATE games SET branding = $1 WHERE code = $2`, [JSON.stringify(branding), code]); } catch(e){}
           }
-            
+
           for (const t of Object.values(teams)) {
             await pool.query(`INSERT INTO game_teams (game_code, team_id, team_name, score) VALUES ($1, $2, $3, $4)`,
               [code, t.id, t.name, 0]);
@@ -332,7 +327,6 @@ io.on("connection", (socket) => {
 
       let chosenTeamId = teamId;
       if (!chosenTeamId && data.teamName) {
-         // נסיון למצוא לפי שם קבוצה (מהלינק)
          const entry = Object.entries(game.teams).find(([k,v]) => v.name === data.teamName);
          if(entry) chosenTeamId = entry[0];
       }
