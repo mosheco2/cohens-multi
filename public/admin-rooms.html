@@ -11,67 +11,95 @@
     body { margin: 0; padding: 0; background: #020617; color: #e5e7eb; }
     .app { max-width: 1000px; width: 100%; padding: 20px; margin: 0 auto; }
     
+    /* Header */
     .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    h1 { margin: 0; font-size: 1.8rem; }
     
+    /* Cards */
     .card {
       background: #0f172a; border-radius: 16px; padding: 20px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #1e293b; margin-bottom: 20px;
     }
     
+    /* Tabs */
     .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
     .nav-btn {
-        background: #1e293b; color: #94a3b8; border: none; padding: 10px 20px;
-        border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1;
+        background: #1e293b; color: #94a3b8; border: none; padding: 12px 20px;
+        border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.2s; font-size: 1rem;
     }
+    .nav-btn:hover { background: #334155; }
     .nav-btn.active { background: #38bdf8; color: #020617; }
 
+    /* Stats Boxes */
     .stats-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
     .stat-box {
-      flex: 1; min-width: 150px; background: #1e293b; border-radius: 16px; padding: 16px;
+      flex: 1; min-width: 150px; background: #1e293b; border-radius: 16px; padding: 20px;
       text-align: center; border: 1px solid #334155; cursor: pointer; transition: all 0.2s;
     }
     .stat-box:hover { transform: translateY(-3px); border-color: #38bdf8; }
-    .stat-number { font-size: 2.5rem; font-weight: 800; color: #38bdf8; }
+    .stat-number { font-size: 2.5rem; font-weight: 800; color: #38bdf8; line-height: 1; margin-bottom: 5px; }
     .stat-label { font-size: 0.9rem; color: #94a3b8; }
 
+    /* Active Room List */
     .room-item {
         display: flex; justify-content: space-between; align-items: center;
-        background: #1e293b; padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #334155;
+        background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #334155;
     }
-    .room-timer { color: #4ade80; font-weight: bold; font-family: monospace; }
-    .btn-close { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
-    .btn-reset { background: #ef4444; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight:bold; }
-
-    .form-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap; }
-    .form-group { display: flex; flex-direction: column; gap: 4px; flex:1; }
-    label { font-size: 0.85rem; color: #94a3b8; }
-    input, select { background: #020617; border: 1px solid #334155; color: white; padding: 8px; border-radius: 6px; }
-    .btn-submit { background: #38bdf8; color: #020617; border: none; padding: 9px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { text-align: right; padding: 10px; border-bottom: 1px solid #334155; font-size: 0.9rem; }
-    th { color: #94a3b8; }
-
-    .hidden { display: none; }
+    .room-info { display: flex; flex-direction: column; gap: 4px; }
+    .room-code { font-weight: bold; font-size: 1.1rem; color: #e5e7eb; }
+    .room-meta { font-size: 0.9rem; color: #94a3b8; }
+    .room-timer { color: #4ade80; font-weight: bold; font-family: monospace; margin-left: 10px; }
     
-    /* מחולל קישורים */
-    .link-output {
-        width: 100%; background: #1e293b; border: 1px solid #334155; color: #38bdf8; 
-        padding: 10px; border-radius: 8px; font-family: monospace; margin-top: 8px;
+    /* Forms & Inputs */
+    .form-row { display: flex; gap: 15px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+    label { font-size: 0.9rem; color: #94a3b8; font-weight: 500; }
+    input, select { 
+        background: #020617; border: 1px solid #334155; color: white; 
+        padding: 10px; border-radius: 8px; font-size: 1rem; outline: none;
     }
+    input:focus, select:focus { border-color: #38bdf8; }
+    
+    /* Buttons */
+    .btn { border: none; border-radius: 8px; padding: 8px 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-submit { background: #38bdf8; color: #020617; width: 100%; padding: 12px; font-size: 1rem; }
+    .btn-submit:hover { background: #0ea5e9; }
+    .btn-close { background: #ef444420; color: #ef4444; border: 1px solid #ef4444; }
+    .btn-close:hover { background: #ef4444; color: white; }
+    .btn-reset { background: #ef4444; color: white; padding: 8px 16px; }
+    .btn-whatsapp { background: #25D366; color: white; width: 100%; margin-top: 10px; }
+
+    /* Generator Output */
+    .link-output { 
+        width: 100%; background: #1e293b; border: 1px solid #334155; color: #38bdf8; 
+        padding: 12px; border-radius: 8px; font-family: monospace; margin-top: 8px; 
+        font-size: 0.9rem; word-break: break-all;
+    }
+
+    /* Table */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; white-space: nowrap; }
+    th, td { text-align: right; padding: 12px; border-bottom: 1px solid #334155; font-size: 0.95rem; }
+    th { color: #94a3b8; font-weight: 600; background: #1e293b; }
+    tr:hover td { background: #1e293b50; }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
   <div class="app">
     <div class="header-row">
-        <h1>📊 דשבורד ניהול מילמניה</h1>
-        <button class="btn-reset" onclick="resetAllData()">⚠️ מחיקת היסטוריה</button>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <img src="/logo.png" style="height:40px;">
+            <h1>ניהול מילמניה</h1>
+        </div>
+        <button class="btn btn-reset" onclick="resetAllData()">⚠️ מחיקת היסטוריה</button>
     </div>
     
     <div class="nav-tabs">
-        <button class="nav-btn active" onclick="switchTab('dashboard')">דשבורד חי</button>
-        <button class="nav-btn" onclick="switchTab('reports')">דוחות ונתונים</button>
-        <button class="nav-btn" onclick="switchTab('generator')">מחולל מיתוג</button>
+        <button class="nav-btn active" onclick="switchTab('dashboard')">📊 דשבורד חי</button>
+        <button class="nav-btn" onclick="switchTab('reports')">📑 דוחות ונתונים</button>
+        <button class="nav-btn" onclick="switchTab('generator')">🔗 מחולל מותג</button>
     </div>
 
     <div id="tab-dashboard">
@@ -91,13 +119,15 @@
         </div>
 
         <div class="card">
-            <h3>פעילות 30 יום</h3>
+            <h3>מגמת פעילות (30 יום)</h3>
             <div style="height: 250px;"><canvas id="gamesChart"></canvas></div>
         </div>
 
         <div class="card">
             <h3>חדרים פעילים כרגע</h3>
-            <div id="activeRoomsList">טוען...</div>
+            <div id="activeRoomsList">
+                <div style="color:#94a3b8; text-align:center; padding:20px;">טוען נתונים...</div>
+            </div>
         </div>
     </div>
 
@@ -120,37 +150,49 @@
                     <label>עד תאריך</label>
                     <input type="date" id="dateTo">
                 </div>
-                <button class="btn-submit" onclick="fetchReport()">הצג נתונים</button>
+                <div class="form-group" style="justify-content: flex-end;">
+                    <button class="btn btn-submit" onclick="fetchReport()">הצג נתונים</button>
+                </div>
             </div>
         </div>
 
         <div class="card">
             <h3>תוצאות</h3>
-            <div id="reportResults" style="overflow-x:auto;">בחר פרמטרים ולחץ על הצג...</div>
+            <div id="reportResults" class="table-container">
+                <div style="color:#94a3b8; padding:10px;">בחר פרמטרים ולחץ על הצג נתונים...</div>
+            </div>
         </div>
     </div>
     
     <div id="tab-generator" class="hidden">
         <div class="card">
-            <h3>יצירת לינק ממותג ללקוח</h3>
-            <div class="form-group" style="margin-bottom:10px;">
-                <label>שם הלקוח (באנגלית/מספרים, למשל coca-cola)</label>
-                <input type="text" id="genBrandName">
-            </div>
-            <div class="form-group" style="margin-bottom:10px;">
-                <label>לינק ללוגו (URL)</label>
-                <input type="text" id="genLogoUrl" placeholder="https://...">
-            </div>
-            <div class="form-group" style="margin-bottom:10px;">
-                <label>צבע רקע (Hex, למשל #ff0000)</label>
-                <input type="color" id="genColor" value="#ffffff">
-            </div>
-            <button class="btn-submit" onclick="generateLink()">צור לינק</button>
+            <h3>יצירת לינק ממותג ללקוח (SaaS)</h3>
+            <p style="color:#94a3b8; margin-bottom:20px; font-size:0.9rem;">
+                מלא את פרטי הלקוח כדי לייצר עבורו לינק ייעודי. הלינק יפתח משחק שמותאם לצבעי המותג וללוגו שלו.
+            </p>
             
-            <div id="genResultArea" class="hidden" style="margin-top:20px;">
-                <label>לינק למנהל:</label>
-                <input type="text" class="link-output" id="finalLink" readonly>
-                <button class="btn-submit" style="margin-top:10px; background:#25D366;" onclick="sendToWhatsapp()">שלח ללקוח בוואטסאפ 📲</button>
+            <div class="form-group" style="margin-bottom:15px;">
+                <label>שם המותג (באנגלית/מספרים, לשימוש פנימי)</label>
+                <input type="text" id="genBrandName" placeholder="למשל: cocacola">
+            </div>
+            <div class="form-group" style="margin-bottom:15px;">
+                <label>לינק ללוגו (URL)</label>
+                <input type="text" id="genLogoUrl" placeholder="https://example.com/logo.png">
+            </div>
+            <div class="form-group" style="margin-bottom:20px;">
+                <label>צבע רקע (Hex Code)</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="color" id="genColor" value="#ffffff" style="width:50px; padding:0; border:none; height:40px;">
+                    <input type="text" id="genColorText" value="#ffffff" style="flex:1;" onchange="document.getElementById('genColor').value = this.value">
+                </div>
+            </div>
+            
+            <button class="btn btn-submit" onclick="generateLink()">צור לינק למנהל</button>
+            
+            <div id="genResultArea" class="hidden" style="margin-top:30px; border-top:1px solid #334155; padding-top:20px;">
+                <label style="color:#38bdf8; font-weight:bold;">הלינק המוכן לשליחה:</label>
+                <input type="text" class="link-output" id="finalLink" readonly onclick="this.select()">
+                <button class="btn btn-whatsapp" onclick="sendToWhatsapp()">שלח ללקוח בוואטסאפ 📲</button>
             </div>
         </div>
     </div>
@@ -160,8 +202,14 @@
     const ADMIN_CODE = "ONEBTN"; 
     let chartInstance = null;
 
+    // אתחול תאריכים לדוח (חודש אחורה)
     document.getElementById('dateFrom').valueAsDate = new Date(Date.now() - 30*24*60*60*1000);
     document.getElementById('dateTo').valueAsDate = new Date();
+
+    // סנכרון צבע במחולל
+    document.getElementById('genColor').addEventListener('input', (e) => {
+        document.getElementById('genColorText').value = e.target.value;
+    });
 
     function switchTab(tabName) {
         document.getElementById('tab-dashboard').classList.add('hidden');
@@ -170,10 +218,11 @@
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         
         document.getElementById('tab-'+tabName).classList.remove('hidden');
-        // Simple active toggle logic
-        if(tabName === 'dashboard') document.querySelectorAll('.nav-btn')[0].classList.add('active');
-        if(tabName === 'reports') document.querySelectorAll('.nav-btn')[1].classList.add('active');
-        if(tabName === 'generator') document.querySelectorAll('.nav-btn')[2].classList.add('active');
+        
+        // סימון טאב פעיל
+        const tabs = ['dashboard', 'reports', 'generator'];
+        const idx = tabs.indexOf(tabName);
+        if(idx >= 0) document.querySelectorAll('.nav-btn')[idx].classList.add('active');
     }
 
     function jumpToReport(type) {
@@ -183,39 +232,79 @@
     }
 
     async function resetAllData() {
-        const pass = prompt("פעולה זו תמחק את כל ההיסטוריה!\nהקלד: DELETE");
+        const pass = prompt("פעולה זו תמחק את כל היסטוריית המשחקים והשחקנים מהשרת!\nכדי לאשר, הקלד: DELETE");
         if(pass === "DELETE") {
-            await fetch(`/admin/reset?code=${ADMIN_CODE}`, { method: 'POST' });
-            location.reload();
+            try {
+                const res = await fetch(`/admin/reset?code=${ADMIN_CODE}`, { method: 'POST' });
+                const json = await res.json();
+                if(json.ok) {
+                    alert("הנתונים אופסו בהצלחה.");
+                    location.reload();
+                } else {
+                    alert("שגיאה באיפוס.");
+                }
+            } catch(e) { alert("תקלה ברשת"); }
         }
     }
 
-    // --- Dashboard ---
+    // --- Dashboard Logic ---
     async function loadDashboard() {
         try {
             const res = await fetch(`/admin/stats?code=${ADMIN_CODE}`);
             const data = await res.json();
 
+            // עדכון מספרים
             document.getElementById('uniqueIps').innerText = data.dbStats.totalUniqueIps || 0;
-            const totalGames = data.dbStats.gamesByDay.reduce((sum, d) => sum + parseInt(d.count), 0);
+            
+            const totalGames = data.dbStats.gamesByDay 
+                ? data.dbStats.gamesByDay.reduce((sum, d) => sum + parseInt(d.count), 0)
+                : 0;
             document.getElementById('gamesMonth').innerText = totalGames;
             document.getElementById('openGamesNow').innerText = data.activeGames.length;
 
-            renderChart(data.dbStats.gamesByDay);
+            // עדכון גרף
+            renderChart(data.dbStats.gamesByDay || []);
+
+            // עדכון רשימת חדרים פעילים
             renderActiveRooms(data.activeGames);
+
         } catch (e) { console.error("Dash Error", e); }
     }
 
     function renderChart(dataPoints) {
         const ctx = document.getElementById('gamesChart').getContext('2d');
+        
+        // המרת נתונים לפורמט של Chart.js
+        const labels = dataPoints.map(d => {
+            const date = new Date(d.date);
+            return `${date.getDate()}/${date.getMonth()+1}`;
+        });
+        const counts = dataPoints.map(d => d.count);
+
         if (chartInstance) chartInstance.destroy();
+        
         chartInstance = new Chart(ctx, {
-            type: 'bar',
+            type: 'line',
             data: {
-                labels: dataPoints.map(d => d.date),
-                datasets: [{ label: 'משחקים', data: dataPoints.map(d => d.count), backgroundColor: '#38bdf8' }]
+                labels: labels,
+                datasets: [{
+                    label: 'משחקים שנפתחו',
+                    data: counts,
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }]
             },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334155' } }, x: { grid: { display: false } } } }
+            options: {
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8', stepSize: 1 } }, 
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } } 
+                }
+            }
         });
     }
 
@@ -229,18 +318,22 @@
 
     function renderActiveRooms(games) {
         const container = document.getElementById('activeRoomsList');
-        if(games.length === 0) { container.innerHTML = '<div style="color:#94a3b8">אין חדרים פעילים כרגע</div>'; return; }
+        if(games.length === 0) {
+            container.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">אין חדרים פעילים כרגע</div>';
+            return;
+        }
+        
         let html = '';
         games.forEach(g => {
             html += `
             <div class="room-item">
-                <div>
-                    <div style="font-weight:bold; font-size:1.1rem;">חדר ${g.code}</div>
-                    <div style="font-size:0.9rem; color:#94a3b8;">מנהל: ${g.hostName} • שחקנים: ${g.playerCount}</div>
+                <div class="room-info">
+                    <div class="room-code">חדר ${g.code}</div>
+                    <div class="room-meta">מנהל: ${g.hostName} • שחקנים: ${g.playerCount}</div>
                 </div>
-                <div style="text-align:left;">
-                    <div class="room-timer">פתוח: ${formatDuration(g.createdAt)}</div>
-                    <button class="btn-close" onclick="closeGame('${g.code}')">סגור</button>
+                <div style="text-align:left; display:flex; align-items:center;">
+                    <span class="room-timer">⏱ ${formatDuration(g.createdAt)}</span>
+                    <button class="btn btn-close" style="margin-right:15px;" onclick="closeGame('${g.code}')">סגור חדר</button>
                 </div>
             </div>`;
         });
@@ -248,47 +341,63 @@
     }
 
     async function closeGame(code) {
-        if(!confirm('לסגור?')) return;
+        if(!confirm('לסגור את החדר?')) return;
         await fetch(`/admin/game/${code}/close?code=${ADMIN_CODE}`, {method:'POST'});
         loadDashboard();
     }
 
-    // --- Reports ---
+    // --- Reports Logic ---
     async function fetchReport() {
         const type = document.getElementById('reportType').value;
         const from = document.getElementById('dateFrom').value;
         const to = document.getElementById('dateTo').value;
+        
         const container = document.getElementById('reportResults');
-        container.innerHTML = "טוען...";
+        container.innerHTML = '<div style="padding:20px; color:#94a3b8;">טוען נתונים...</div>';
 
         try {
             const res = await fetch(`/admin/reports?code=${ADMIN_CODE}&type=${type}&from=${from}&to=${to}`);
             const json = await res.json();
             const data = json.data || [];
 
-            if(data.length === 0) { container.innerHTML = "אין נתונים."; return; }
+            if(data.length === 0) {
+                container.innerHTML = '<div style="padding:20px; color:#94a3b8;">לא נמצאו נתונים לטווח התאריכים שנבחר.</div>';
+                return;
+            }
 
             let html = '<table><thead><tr>';
-            if(type === 'ips') html += '<th>כתובת IP</th><th>שם אחרון</th><th>משחקים</th><th>נראה לאחרונה</th>';
-            if(type === 'games') html += '<th>קוד</th><th>מנהל</th><th>תאריך פתיחה</th><th>משך זמן</th>';
+            if(type === 'ips') html += '<th>כתובת IP</th><th>שם אחרון</th><th>כמות משחקים</th><th>נראה לאחרונה</th>';
+            if(type === 'games') html += '<th>קוד משחק</th><th>שם המנהל</th><th>תאריך ושעה</th><th>משך פעילות</th>';
             html += '</tr></thead><tbody>';
 
             data.forEach(row => {
                 html += '<tr>';
-                if(type === 'ips') html += `<td>${row.ip_address}</td><td>${row.last_name || '-'}</td><td>${row.games_count}</td><td>${new Date(row.last_seen).toLocaleString()}</td>`;
-                if(type === 'games') html += `<td>${row.code}</td><td>${row.host_name}</td><td>${new Date(row.created_at).toLocaleString()}</td><td>${formatDuration(row.created_at)}</td>`;
+                if(type === 'ips') {
+                    html += `<td>${row.ip_address}</td>
+                             <td style="color:#38bdf8; font-weight:bold;">${row.last_name || '-'}</td>
+                             <td>${row.games_count}</td>
+                             <td>${new Date(row.last_seen).toLocaleString('he-IL')}</td>`;
+                }
+                if(type === 'games') {
+                    html += `<td style="color:#38bdf8; font-weight:bold;">${row.code}</td>
+                             <td>${row.host_name}</td>
+                             <td>${new Date(row.created_at).toLocaleString('he-IL')}</td>
+                             <td>${formatDuration(row.created_at)}</td>`;
+                }
                 html += '</tr>';
             });
             html += '</tbody></table>';
             container.innerHTML = html;
-        } catch (e) { container.innerHTML = "שגיאה"; }
+
+        } catch (e) { console.error(e); container.innerHTML = "שגיאה בטעינת דוח"; }
     }
     
-    // --- Generator ---
+    // --- Link Generator Logic ---
     function generateLink() {
         const brand = document.getElementById('genBrandName').value;
         const logo = document.getElementById('genLogoUrl').value;
-        const color = document.getElementById('genColor').value.replace('#', '');
+        // מסירים סולמית אם המשתמש הכניס
+        let color = document.getElementById('genColorText').value.replace('#', '');
         
         const baseUrl = window.location.origin + '/host.html';
         const params = new URLSearchParams();
@@ -307,7 +416,14 @@
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
 
-    setInterval(() => { if(!document.getElementById('tab-dashboard').classList.contains('hidden')) loadDashboard(); }, 10000);
+    // עדכון אוטומטי
+    setInterval(() => {
+        if(!document.getElementById('tab-dashboard').classList.contains('hidden')) {
+            loadDashboard();
+        }
+    }, 10000);
+    
+    // טעינה ראשונית
     loadDashboard();
   </script>
 </body>
