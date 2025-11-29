@@ -15,7 +15,7 @@
     body:not(.branded)::before { top: -130px; left: -70px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.30), transparent 60%); }
     body:not(.branded)::after { bottom: -150px; right: -50px; background: radial-gradient(circle at center, rgba(21, 196, 193, 0.28), transparent 60%); }
 
-    .app { max-width: 1024px; width: 100%; padding: 20px 14px 100px; margin: 0 auto; } /* הגדלת padding תחתון עבור FABs */
+    .app { max-width: 1024px; width: 100%; padding: 20px 14px 100px; margin: 0 auto; }
     .card { background: #FFFFFF; border-radius: 26px; padding: 18px 16px 20px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.06); border: 1px solid rgba(43, 30, 74, 0.06); margin-bottom: 16px; }
     h1, h2, h3 { margin-top: 0; }
     label { display: block; margin-bottom: 3px; font-size: 0.87rem; color: #6B618F; }
@@ -70,8 +70,7 @@
     .help-box ul { margin: 0; padding: 12px 16px 16px 30px; list-style-type: disc; color: #433362; font-size: 0.95rem; }
     .help-box li { margin-bottom: 6px; }
 
-    /* תיקון: מיכל קטגוריות עם גלילה */
-    .categories-container { display: flex; flex-wrap: wrap; gap: 5px; max-height: 150px; overflow-y: auto; padding: 2px; }
+    .categories-container { display: flex; flex-wrap: wrap; gap: 5px; max-height: 200px; overflow-y: auto; padding: 4px; border: 1px solid rgba(43, 30, 74, 0.1); border-radius: 14px; }
     
     .fab-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 100; align-items: center; transition: 0.3s; }
     .fab-btn { background: linear-gradient(135deg, #2B1E4A, #433362); color: #FFD76F; padding: 12px 24px; border-radius: 50px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 15px rgba(43, 30, 74, 0.3); transition: all 0.2s ease; font-size: 0.9rem; white-space: nowrap; }
@@ -82,7 +81,9 @@
     
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; }
     .modal-overlay.active { opacity: 1; visibility: visible; }
-    .modal-box { background: #fff; width: 85%; max-width: 400px; border-radius: 28px; padding: 30px; text-align: center; }
+    .modal-box { background: #fff; width: 85%; max-width: 400px; border-radius: 28px; padding: 30px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+    .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+
     #support-wa-btn { position: fixed; bottom: 24px; right: 24px; z-index: 2000; background: #25D366; color: white; border-radius: 50px; padding: 12px 20px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; }
 
     @media (max-width: 640px) { 
@@ -179,6 +180,17 @@
                 <label class="chip"><input type="checkbox" class="cat-cb" value="animals" checked> חיות</label>
                 <label class="chip"><input type="checkbox" class="cat-cb" value="objects" checked> חפצים</label>
                 <label class="chip"><input type="checkbox" class="cat-cb" value="sports" checked> ספורט</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="professions" checked> מקצועות</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="technology" checked> טכנולוגיה</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="nature" checked> טבע</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="home" checked> בית</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="clothing" checked> בגדים</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="emotions" checked> רגשות</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="transport" checked> כלי תחבורה</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="instruments" checked> כלי נגינה</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="countries" checked> מדינות</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="colors" checked> צבעים</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="verbs" checked> פעלים</label>
             </div>
         </div>
 
@@ -248,11 +260,21 @@
       </div>
 
       <div class="card hidden" id="hostPlayerGameCard">
-        <h3 style="margin:0 0 6px;">מצב המשחק שלי</h3>
-        <div id="hostPlayerGameInfo" class="status-text" style="margin-bottom:8px;"></div>
-        <div id="hostPlayerTeamName" class="status-text" style="font-weight:bold;"></div>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <div style="flex:1; background:#F8F7FF; padding:10px; border-radius:12px;">
+                <div style="font-size:0.8rem; color:#A18CCF; font-weight:bold;">הקבוצה שלי</div>
+                <div id="hostPlayerMyTeamName" style="font-size:1rem; color:#433362; font-weight:bold;"></div>
+            </div>
+            <div style="flex:1.5; background:#F8F7FF; padding:10px; border-radius:12px;">
+                 <div style="font-size:0.8rem; color:#A18CCF; font-weight:bold;">חברים לקבוצה</div>
+                 <div id="hostPlayerMyTeamPlayers" style="font-weight:normal; font-size:0.9rem; color:#433362;"></div>
+            </div>
+        </div>
+        
+        <h3 style="margin:0 0 6px;">מצב המשחק</h3>
         <hr style="border:none; border-top:1px solid #eee; margin:10px 0;">
         <div id="hostPlayerScoreboard" class="status-text"></div>
+        <button id="viewAllPlayersBtnHost" class="btn btn-ghost" style="width:100%; margin-top:10px;">👀 הצג את כל השחקנים</button>
         <hr style="border:none; border-top:1px solid #eee; margin:10px 0;">
         <div id="hostRoundStatusPlayer" class="status-text"></div>
         <div id="hostPlayerBigTimer">--:--</div>
@@ -288,7 +310,9 @@
       <div class="modal-box">
           <h2 id="modalTitle"></h2>
           <div id="modalContent"></div>
-          <button class="btn btn-primary" onclick="document.getElementById('customModal').classList.remove('active')">סגור</button>
+          <div class="modal-actions" id="modalActions">
+              <button class="btn btn-primary" onclick="closeModal()">סגור</button>
+          </div>
       </div>
   </div>
   
@@ -304,6 +328,7 @@
     let lastGameState = null;
     let isHostAlsoPlayer = false;
     let hostPlayerClientId = null;
+    let pendingAction = null;
 
     const tabHost = document.getElementById("tabHost");
     const tabPlayer = document.getElementById("tabPlayer");
@@ -314,6 +339,7 @@
     const switchRoleFab = document.getElementById("switchRoleFab");
     const adminFloatingPanel = document.getElementById("adminFloatingPanel");
     const supportBtn = document.getElementById("support-wa-btn");
+    const customModal = document.getElementById("customModal");
 
     const urlParams = new URLSearchParams(window.location.search);
     const branding = {
@@ -350,7 +376,6 @@
     }
     updateSupportLink();
 
-    // תיקון: ניהול נראות כפתורים צפים בטאבים
     tabHost.addEventListener("click", () => {
         tabHost.classList.add("active"); tabPlayer.classList.remove("active");
         hostMode.classList.remove("hidden"); playerMode.classList.add("hidden");
@@ -411,7 +436,7 @@
     document.getElementById("createGameBtn").addEventListener("click", () => {
         const hostName = document.getElementById("hostName").value;
         const gameTitle = document.getElementById("gameTitle").value; 
-        if(!hostName) return alert("נא להזין שם מנהל");
+        if(!hostName) return showModal("שגיאה", "נא להזין שם מנהל");
         
         const num = parseInt(document.getElementById('numTeams').value);
         const teamNames = { A: document.getElementById("teamNameA").value, B: document.getElementById("teamNameB").value };
@@ -429,21 +454,28 @@
             if(res.ok) {
                 currentGameCode = res.gameCode;
                 localStorage.setItem(LS_HOST_GAME_KEY, res.gameCode);
-                try { renderGame(res.game); } catch (e) { console.error(e); alert("שגיאה בטעינת המשחק"); }
+                try { renderGame(res.game); } catch (e) { console.error(e); showModal("שגיאה", "שגיאה בטעינת המשחק"); }
                 document.getElementById("hostPlayerName").value = hostName;
                 document.querySelector('.help-box').style.display = 'none';
                 updateSupportLink();
-            } else alert(res.error);
+            } else showModal("שגיאה", res.error);
         });
     });
 
-    document.getElementById("endGameBtn").addEventListener("click", () => { if(confirm("לסגור את המשחק?")) socket.emit("endGame", { gameCode: currentGameCode }); });
+    // תיקון: החלפת confirm בפופאפ מותאם
+    document.getElementById("endGameBtn").addEventListener("click", () => {
+        showConfirmModal("סגירת משחק", "האם אתה בטוח שברצונך לסגור את המשחק לכולם?", () => {
+            socket.emit("endGame", { gameCode: currentGameCode });
+        });
+    });
+
     document.getElementById("refreshPlayersBtn").addEventListener("click", () => { if(currentGameCode) socket.emit("getGameState", { gameCode: currentGameCode }); });
 
     window.removePlayer = (clientId, playerName) => {
-        if(confirm(`להסיר את השחקן "${playerName}" מהמשחק?`)) {
+        // תיקון: החלפת confirm בפופאפ מותאם
+        showConfirmModal("הסרת שחקן", `האם להסיר את השחקן "${playerName}" מהמשחק?`, () => {
             socket.emit("removePlayer", { gameCode: currentGameCode, clientId });
-        }
+        });
     };
 
     document.getElementById("openPlayerViewBtn").addEventListener("click", () => {
@@ -483,7 +515,7 @@
         const teamId = isFloat ? document.getElementById("floatTeamSelect").value : document.getElementById("roundTeamSelect").value;
         const explainer = isFloat ? document.getElementById("floatExplainerSelect").value : document.getElementById("explainerSelect").value;
         socket.emit("startRound", { gameCode: currentGameCode, teamId, explainerClientId: explainer }, (res) => {
-            if(!res.ok) alert(res.error || "שגיאה");
+            if(!res.ok) showModal("שגיאה", res.error || "שגיאה");
             else if(isFloat) toggleFloatingPanel();
         });
     }
@@ -495,6 +527,14 @@
     document.getElementById("hostBtnCorrect").addEventListener("click", () => socket.emit("changeRoundScore", { gameCode: currentGameCode, delta: 1 }, getNextWordHost));
     document.getElementById("hostBtnSkip").addEventListener("click", () => socket.emit("changeRoundScore", { gameCode: currentGameCode, delta: -1 }, getNextWordHost));
     function getNextWordHost() { socket.emit("getNextWord", { gameCode: currentGameCode }, (res) => { if(res.ok) document.getElementById("hostPresenterWord").innerText = res.word; }); }
+
+    // תיקון: פונקציית עזר לטקסט סיום סיבוב
+    function getScoreMessage(score) {
+        if (score < 5) return "לא נורא, קורה לטובים ביותר... 😅";
+        if (score <= 10) return "סביר, אבל ציפינו ליותר. 😉";
+        if (score <= 15) return "יפה מאוד! שיחקתם אותה. 👏";
+        return "וואו! פשוט אלופים! 🏆🔥";
+    }
 
     socket.on("gameUpdated", renderGame);
     socket.on("roundScoreUpdated", (data) => {
@@ -518,7 +558,9 @@
     socket.on("roundTimeUp", (data) => {
         document.getElementById("roundTimer").textContent = "00:00";
         document.getElementById("hostPlayerBigTimer").textContent = "00:00";
-        showModal("⏰ נגמר הזמן!", `<div style="text-align:center;"><img src="m3.png" style="height:80px;"></div><h3>${data.teamName}</h3><h2>${data.roundScore} נקודות</h2>`);
+        // תיקון: שימוש בטקסט דינמי בסיום סיבוב
+        const msg = getScoreMessage(data.roundScore);
+        showModal("⏰ נגמר הזמן!", `<div style="text-align:center;"><img src="m3.png" style="height:80px;"></div><h3>${data.teamName}</h3><h2>${data.roundScore} נקודות</h2><p style="font-size:1.1rem; font-weight:bold; color:#F84779;">${msg}</p>`);
         document.getElementById("hostPresenterSection").classList.add("hidden");
     });
     socket.on("gameEnded", () => { localStorage.removeItem(LS_HOST_GAME_KEY); localStorage.removeItem(LS_HOST_PLAYER_DATA); location.reload(); });
@@ -529,12 +571,16 @@
         setTimeout(() => location.reload(), 3000);
     });
 
-    // תיקון: קבלת מילה ראשונה מיד בתחילת סיבוב אם המנהל הוא המסביר
     socket.on("roundStarted", (data) => { 
         renderGame(data.game);
         if(data.game.currentRound.explainerId === hostPlayerClientId) {
             getNextWordHost();
         }
+    });
+
+    // תיקון: האזנה לאירוע ריענון כפוי
+    socket.on("forceRefreshPlayers", () => {
+        if(currentGameCode) socket.emit("getGameState", { gameCode: currentGameCode });
     });
 
     function renderGame(game) {
@@ -569,7 +615,6 @@
             if(val && game.teams[val]) sel.value = val;
         });
         
-        // תיקון: רענון יזום של רשימת המסבירים
         document.getElementById("roundTeamSelect").dispatchEvent(new Event('change'));
         document.getElementById("floatTeamSelect").dispatchEvent(new Event('change'));
 
@@ -592,9 +637,12 @@
             document.getElementById("hostPlayerJoinCard").classList.add("hidden");
             document.getElementById("hostPlayerGameCard").classList.remove("hidden");
             const myTeam = Object.values(game.teams).find(t => t.players.includes(hostPlayerClientId));
-            if(myTeam) document.getElementById("hostPlayerTeamName").textContent = myTeam.name;
+            if(myTeam) {
+                document.getElementById("hostPlayerMyTeamName").textContent = myTeam.name;
+                // תיקון: הצגת חברי הקבוצה במצב שחקן-מנהל
+                document.getElementById("hostPlayerMyTeamPlayers").textContent = myTeam.players.map(pid => game.playersByClientId[pid]?.name).filter(Boolean).join(", ") || "ממתין...";
+            }
             
-            // תיקון: הצגת כפתורים צפים אם המנהל הוא שחקן
             fabs.classList.remove("hidden");
             switchRoleFab.textContent = tabPlayer.classList.contains("active") ? "👑 מעבר למצב מנהל" : "🎮 מעבר למצב שחקן";
         }
@@ -618,7 +666,7 @@
             document.getElementById("roundStatus").textContent = "המתנה";
             document.getElementById("roundTimer").textContent = "00:00";
             document.getElementById("hostPresenterSection").classList.add("hidden");
-            document.getElementById("hostPresenterWord").textContent = "..."; // איפוס מילה
+            document.getElementById("hostPresenterWord").textContent = "...";
             
             document.getElementById("hostRoundCurrentScore").textContent = "ניקוד בסיבוב: 0";
             document.getElementById("hostPlayerRoundCurrentScore").textContent = "ניקוד בסיבוב: 0";
@@ -639,7 +687,45 @@
         });
     }
 
-    function showModal(title, body) { document.getElementById("modalTitle").textContent = title; document.getElementById("modalContent").innerHTML = body; document.getElementById("customModal").classList.add("active"); }
+    document.getElementById("viewAllPlayersBtnHost").addEventListener("click", () => {
+          if(!lastGameState) return;
+          let html = `<div style="text-align:right; max-height:300px; overflow-y:auto;">`;
+          Object.values(lastGameState.teams).forEach(t => {
+              const pNames = t.players.map(cid => lastGameState.playersByClientId[cid]?.name).join(", ");
+              html += `<div style="margin-bottom:15px;"><div style="font-weight:bold; color:#2B1E4A;">${t.name}</div><div style="background:#f5f5f5; padding:8px; border-radius:8px; font-size:0.9rem;">${pNames || "אין שחקנים"}</div></div>`;
+          });
+          html += `</div>`;
+          showModal("רשימת שחקנים", html);
+      });
+
+    // פונקציות עזר לפופאפים
+    function showModal(title, body) { 
+        document.getElementById("modalTitle").textContent = title; 
+        document.getElementById("modalContent").innerHTML = body; 
+        document.getElementById("modalActions").innerHTML = '<button class="btn btn-primary" onclick="closeModal()">סגור</button>';
+        customModal.classList.add("active"); 
+    }
+
+    function showConfirmModal(title, body, onConfirm) {
+        document.getElementById("modalTitle").textContent = title;
+        document.getElementById("modalContent").textContent = body;
+        pendingAction = onConfirm;
+        document.getElementById("modalActions").innerHTML = `
+            <button class="btn btn-ghost" onclick="closeModal()">ביטול</button>
+            <button class="btn btn-danger" onclick="confirmAction()">אישור</button>
+        `;
+        customModal.classList.add("active");
+    }
+
+    function closeModal() {
+        customModal.classList.remove("active");
+        pendingAction = null;
+    }
+
+    function confirmAction() {
+        if (pendingAction) pendingAction();
+        closeModal();
+    }
   </script>
 </body>
 </html>
