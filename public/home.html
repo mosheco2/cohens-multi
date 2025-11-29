@@ -29,9 +29,18 @@
 
      .icon { font-size: 1.6rem; }
 
-     /* CSS לבאנר עליון */
+     /* CSS לבאנר עליון - תוקן למרכוז ומניעת חיתוך */
     .top-banner-container { width: 100%; max-width: 450px; margin: 0 auto 20px auto; text-align: center; }
-    .top-banner-container img { width: 100%; height: auto; max-height: 80px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .top-banner-container img { 
+        width: auto; 
+        height: 80px; 
+        max-width: 100%; 
+        object-fit: contain; 
+        border-radius: 16px; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+        display: block; 
+        margin: 0 auto; 
+    }
     .hidden { display: none !important; }
   </style>
 </head>
