@@ -24,6 +24,8 @@
      .btn-ghost { background: transparent; border: 1px solid #ccc; color: #666; width: auto; font-size: 0.9rem; padding: 6px 12px; margin-top:0; }
      input, select { width: 100%; padding: 14px; border-radius: 18px; border: 2px solid rgba(43, 30, 74, 0.1); background: #FFFDF7; font-size: 1.1rem; text-align:center; font-weight:600; margin-bottom: 10px; }
      input:focus { border-color: #F84779; outline: none; background: #fff; }
+     /* תיקון: סגנון לשדה קריאה בלבד (אפור וניל) */
+     input.readonly-code { background-color: #e5e7eb; color: #6b7280; border-color: #d1d5db; }
      .hidden { display: none !important; }
      #playerBigTimer { font-size: 3.5rem; text-align: center; font-weight: 900; color: #F84779; margin: 10px 0; font-variant-numeric: tabular-nums; }
      
@@ -65,7 +67,7 @@
           <div id="inviteInfo" style="background:#e0f2fe; padding:12px; border-radius:12px; color:#0369a1; margin-bottom:15px; font-weight:bold; text-align:center; display:none;"></div>
           <div id="manualLoginFields">
               <label>קוד משחק</label>
-              <input id="gameCodeInput" placeholder="AB12" style="text-transform:uppercase;">
+              <input id="gameCodeInput" placeholder="לדוגמה: AB12" style="text-transform:uppercase;">
               <div id="teamSelectContainer" class="hidden">
                   <label>בחירת קבוצה</label>
                   <select id="teamSelect"><option value="">טוען קבוצות...</option></select>
@@ -121,7 +123,7 @@
           <button class="btn btn-primary" style="margin-top:20px;" onclick="document.getElementById('customModal').classList.remove('active')">סגור</button>
       </div>
   </div>
-  <div id="support-wa-btn" onclick="window.location.href='https://wa.me/972504000024'">💬 עזרה</div>
+  <div id="support-wa-btn">💬 עזרה</div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -140,10 +142,20 @@
       const customModal = document.getElementById("customModal");
       const modalTitle = document.getElementById("modalTitle");
       const modalContent = document.getElementById("modalContent");
+      const supportBtn = document.getElementById("support-wa-btn");
 
       function showModal(title, body) { modalTitle.textContent = title; modalContent.innerHTML = body; customModal.classList.add("active"); }
-      function openSupport() { window.location.href = 'https://wa.me/972504000024'; }
       function openInstructions() { window.location.href = 'instructions.html'; }
+
+      // תיקון: פונקציה לעדכון קישור התמיכה בהתאם להקשר
+      function updateSupportLink() {
+          let text = "היי, אשמח לעזרה במשחק מילמניה.";
+          if (myGameCode) {
+              text = `היי, אני שחקן במשחק ${myGameCode} ואשמח לעזרה.`;
+          }
+          supportBtn.onclick = () => window.location.href = `https://wa.me/972504000024?text=${encodeURIComponent(text)}`;
+      }
+      updateSupportLink();
 
       joinBtn.addEventListener("click", () => {
           const code = gameCodeInput.value.trim().toUpperCase();
@@ -158,6 +170,7 @@
                   localStorage.setItem(LOCAL_PLAYER_KEY, JSON.stringify({ gameCode: code, name: name }));
                   joinSection.classList.add("hidden"); gameSection.classList.remove("hidden");
                   renderGame(res.game);
+                  updateSupportLink(); // עדכון לינק תמיכה לאחר הצטרפות
               } else { joinStatus.innerText = res.error || "שגיאה בהתחברות"; }
           });
       });
@@ -186,6 +199,13 @@
       socket.on("roundTimeUp", (data) => { timerEl.textContent = "00:00"; showModal("⏰ נגמר הזמן!", `<div style="text-align:center;"><img src="m3.png" style="height:100px;"></div><h3>${data.teamName}</h3><h2>${data.roundScore} נקודות</h2>`); presenterArea.classList.add("hidden"); isExplainer = false; });
       socket.on("gameEnded", () => { alert("המשחק נסגר ע\"י המנהל."); localStorage.removeItem(LOCAL_PLAYER_KEY); location.reload(); });
       socket.on("playerRemoved", () => { alert("הוסרת מהמשחק ע\"י המנהל."); localStorage.removeItem(LOCAL_PLAYER_KEY); location.reload(); });
+      
+      // תיקון: טיפול באירוע סגירת מאסטר
+      socket.on("adminClosedGame", () => { 
+        localStorage.removeItem(LOCAL_PLAYER_KEY);
+        showModal("המשחק נסגר", "<h3>המשחק נסגר על ידי מנהל המערכת.</h3><p>תודה שהשתתפתם!</p>");
+        setTimeout(() => location.reload(), 3000);
+    });
 
       function renderGame(game) {
           if(!game) return;
@@ -262,9 +282,10 @@
           const code = params.get("code");
           const teamName = params.get("teamName") ? decodeURIComponent(params.get("teamName")) : null;
           if(code) {
-              document.getElementById("gameCodeInput").value = code;
-              document.getElementById("gameCodeInput").readOnly = true;
-              document.getElementById("gameCodeInput").style.background = "#eee";
+              gameCodeInput.value = code;
+              gameCodeInput.readOnly = true;
+              // תיקון: הוספת קלאס לעיצוב שדה לקריאה בלבד
+              gameCodeInput.classList.add('readonly-code');
               if(teamName) { document.getElementById("inviteInfo").style.display = "block"; document.getElementById("inviteInfo").textContent = `הוזמנת לקבוצת: ${teamName}`; }
           }
           const saved = JSON.parse(localStorage.getItem(LOCAL_PLAYER_KEY));
