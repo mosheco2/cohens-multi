@@ -46,9 +46,18 @@
      .data-label { font-size: 0.8rem; color: #A18CCF; font-weight: bold; }
      .data-val { font-size: 1rem; color: #433362; font-weight: bold; }
 
-     /* CSS לבאנר עליון */
+     /* CSS לבאנר עליון - תוקן למרכוז ומניעת חיתוך */
     .top-banner-container { width: 100%; max-width: 600px; margin: 0 auto 16px auto; text-align: center; }
-    .top-banner-container img { width: 100%; height: auto; max-height: 80px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .top-banner-container img { 
+        width: auto; 
+        height: 80px; 
+        max-width: 100%; 
+        object-fit: contain; 
+        border-radius: 16px; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+        display: block; 
+        margin: 0 auto; 
+    }
   </style>
 </head>
 <body>
