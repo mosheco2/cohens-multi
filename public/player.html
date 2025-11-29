@@ -194,6 +194,7 @@
       joinBtn.addEventListener("click", () => {
           const code = gameCodeInput.value.trim().toUpperCase();
           const name = playerNameInput.value.trim();
+          // תיקון: שימוש בפופאף מעוצב לולידציה
           if(code.length < 3 || name.length < 2) return showModal("שגיאה", "נא להזין קוד משחק ושם (לפחות 2 תווים)");
           joinBtn.disabled = true; joinStatus.innerText = "מתחבר...";
           const urlTeamId = new URLSearchParams(window.location.search).get("teamId");
