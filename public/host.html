@@ -15,7 +15,7 @@
     body:not(.branded)::before { top: -130px; left: -70px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.30), transparent 60%); }
     body:not(.branded)::after { bottom: -150px; right: -50px; background: radial-gradient(circle at center, rgba(21, 196, 193, 0.28), transparent 60%); }
 
-    .app { max-width: 1024px; width: 100%; padding: 20px 14px 40px; margin: 0 auto; }
+    .app { max-width: 1024px; width: 100%; padding: 20px 14px 80px; margin: 0 auto; }
     .card { background: #FFFFFF; border-radius: 26px; padding: 18px 16px 20px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.06); border: 1px solid rgba(43, 30, 74, 0.06); margin-bottom: 16px; }
     h1, h2, h3 { margin-top: 0; }
     label { display: block; margin-bottom: 3px; font-size: 0.87rem; color: #6B618F; }
@@ -64,28 +64,29 @@
     .brand-title-host { font-size: 1.6rem; font-weight: 900; color: #2B1E4A; margin: 0 0 4px 0; line-height: 1.1; }
     .brand-slogan-host { font-size: 1rem; color: #5a507a; margin: 0; font-weight: 500; }
     
+    /* תיבת עזרה מתקפלת */
     .help-box { border: 1px solid rgba(180, 169, 214, 0.4); border-radius: 16px; margin-bottom: 16px; overflow: hidden; background: rgba(255,255,255,0.6); }
     .help-box summary { padding: 12px 16px; cursor: pointer; font-weight: 600; color: #6B618F; user-select: none; outline: none; transition: background 0.2s; }
     .help-box summary:hover { background: rgba(180, 169, 214, 0.1); }
     .help-box ul { margin: 0; padding: 12px 16px 16px 30px; list-style-type: disc; color: #433362; font-size: 0.95rem; }
     .help-box li { margin-bottom: 6px; }
 
-    #adminFab { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #2B1E4A, #433362); color: #FFD76F; padding: 14px 28px; border-radius: 50px; font-weight: 700; z-index: 100; cursor: pointer; box-shadow: 0 10px 25px rgba(43, 30, 74, 0.3); transition: all 0.2s ease; }
-    #adminFab:hover { transform: translateX(-50%) translateY(-3px); box-shadow: 0 14px 30px rgba(43, 30, 74, 0.4); }
+    /* כפתורים צפים */
+    .fab-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 100; align-items: center; }
+    .fab-btn { background: linear-gradient(135deg, #2B1E4A, #433362); color: #FFD76F; padding: 12px 24px; border-radius: 50px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 15px rgba(43, 30, 74, 0.3); transition: all 0.2s ease; font-size: 0.9rem; white-space: nowrap; }
+    .fab-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(43, 30, 74, 0.4); }
+    #switchRoleFab { background: linear-gradient(135deg, #F84779, #F7C948); color: #2B1E4A; }
+    
     #adminFloatingPanel { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 450px; background: rgba(255, 255, 255, 0.98); border-radius: 28px; padding: 24px; z-index: 99; box-shadow: 0 20px 50px rgba(0,0,0,0.2), 0 0 0 1px rgba(43,30,74,0.05); backdrop-filter: blur(10px); }
     
-    /* כפתור צף למעבר מצבים */
-    #toggleViewFab { position: fixed; bottom: 24px; right: 24px; background: #FFFFFF; color: #2B1E4A; padding: 12px 20px; border-radius: 50px; font-weight: 700; z-index: 100; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid #F84779; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease; }
-    #toggleViewFab:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
-
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; }
     .modal-overlay.active { opacity: 1; visibility: visible; }
     .modal-box { background: #fff; width: 85%; max-width: 400px; border-radius: 28px; padding: 30px; text-align: center; }
-    #support-wa-btn { position: fixed; bottom: 24px; left: 24px; z-index: 2000; background: #25D366; color: white; border-radius: 50px; padding: 12px 20px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; }
+    #support-wa-btn { position: fixed; bottom: 24px; right: 24px; z-index: 2000; background: #25D366; color: white; border-radius: 50px; padding: 12px 20px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; }
 
     @media (max-width: 640px) { 
         body { font-size: 1.05rem; } 
-        .app { padding: 16px 10px 32px; } 
+        .app { padding: 16px 10px 80px; } 
         .card { padding: 18px 14px 20px; border-radius: 20px; } 
         h1 { font-size: 1.6rem; } 
         .page-header-main { flex-direction: column; text-align: center; gap: 10px; }
@@ -94,7 +95,6 @@
         #roundTimer { font-size: 2rem; text-align: center; margin-top: 8px; } 
         #hostPresenterWord { font-size: 2.1rem; } 
         #hostPlayerBigTimer { font-size: 1.9rem; } 
-        #toggleViewFab { bottom: 80px; right: 24px; } /* הזזה במובייל כדי לא להסתיר תמיכה */
     }
   </style>
 </head>
@@ -116,7 +116,8 @@
           </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end; flex-shrink: 0;">
-          <div class="top-tabs" style="display:none;"> <button id="tabHost" class="active" type="button">👑 מצב מנהל</button>
+          <div class="top-tabs">
+            <button id="tabHost" class="active" type="button">👑 מצב מנהל</button>
             <button id="tabPlayer" type="button">🎮 מצב שחקן (אני)</button>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
@@ -130,11 +131,10 @@
     <details class="help-box">
         <summary>🤔 איך מתחילים? לחץ כאן להסבר קצר</summary>
         <ul>
-            <li><strong>הקמה:</strong> מלאו את פרטי המשחק בטופס למטה (שם מנהל, קבוצות, הגדרות).</li>
-            <li><strong>מילים מיוחדות:</strong> ניתן להוסיף רשימת מילים משלכם (למשל: הווי חברה, בדיחות פנימיות) בתיבה הייעודית. הן יופיעו ראשונות במשחק.</li>
-            <li><strong>הזמנה:</strong> לאחר יצירת המשחק, תקבלו קישורים לשיתוף בוואטסאפ עבור כל קבוצה.</li>
-            <li><strong>הצטרפות כמנהל:</strong> כדי להשתתף במשחק בעצמכם, עברו ל"מצב שחקן" והצטרפו לאחת הקבוצות.</li>
-            <li><strong>התחלה:</strong> כולם הצטרפו? בחרו קבוצה ומסביר, ולחצו על "התחל סיבוב"!</li>
+            <li><strong>הקמה:</strong> מלאו את פרטי המשחק בטופס למטה.</li>
+            <li><strong>הזמנה:</strong> שתפו את הקישורים עם השחקנים.</li>
+            <li><strong>הצטרפות עצמית:</strong> <b>חשוב!</b> כדי להשתתף, עברו ל"מצב שחקן" והצטרפו לאחת הקבוצות.</li>
+            <li><strong>התחלה:</strong> בחרו קבוצה ומסביר, ולחצו "התחל סיבוב".</li>
         </ul>
     </details>
 
@@ -176,19 +176,8 @@
                 <label class="chip"><input type="checkbox" id="catAll" value="all" checked> הכל</label>
                 <label class="chip"><input type="checkbox" class="cat-cb" value="food" checked> אוכל</label>
                 <label class="chip"><input type="checkbox" class="cat-cb" value="animals" checked> חיות</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="objects" checked> חפצים בבית</label>
+                <label class="chip"><input type="checkbox" class="cat-cb" value="objects" checked> חפצים</label>
                 <label class="chip"><input type="checkbox" class="cat-cb" value="sports" checked> ספורט</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="places_il" checked> מקומות בארץ</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="brands" checked> מותגים</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="army" checked> צבא וביטחון</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="kibbutz" checked> קיבוץ ומושב</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="hitech" checked> הייטק</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="school" checked> בית ספר</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="nature" checked> טבע וסביבה</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="culture" checked> תרבות ובידור</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="holidays" checked> חגים ומועדים</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="family" checked> משפחה</label>
-                <label class="chip"><input type="checkbox" class="cat-cb" value="transport" checked> כלי תחבורה</label>
             </div>
         </div>
 
@@ -280,9 +269,11 @@
     </div>
   </div>
 
-  <div id="toggleViewFab">🎮 מעבר למצב שחקן</div>
+  <div class="fab-container hidden" id="fabs">
+      <div class="fab-btn" id="switchRoleFab">🎮 מעבר למצב שחקן</div>
+      <div class="fab-btn" id="adminFab">👑 ניהול מהיר</div>
+  </div>
 
-  <div id="adminFab" class="hidden">👑 ניהול מהיר</div>
   <div id="adminFloatingPanel" class="hidden">
       <h3 style="margin-top:0;">ניהול מהיר</h3>
       <select id="floatTeamSelect" style="margin-bottom:10px;"></select>
@@ -300,7 +291,7 @@
       </div>
   </div>
   
-  <div id="support-wa-btn" onclick="openSupport()">💬 תמיכה</div>
+  <div id="support-wa-btn">💬 תמיכה</div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -312,15 +303,16 @@
     let lastGameState = null;
     let isHostAlsoPlayer = false;
     let hostPlayerClientId = null;
-    let isBranded = false;
 
     const tabHost = document.getElementById("tabHost");
     const tabPlayer = document.getElementById("tabPlayer");
     const hostMode = document.getElementById("hostMode");
     const playerMode = document.getElementById("playerMode");
+    const fabs = document.getElementById("fabs");
     const adminFab = document.getElementById("adminFab");
+    const switchRoleFab = document.getElementById("switchRoleFab");
     const adminFloatingPanel = document.getElementById("adminFloatingPanel");
-    const toggleViewFab = document.getElementById("toggleViewFab");
+    const supportBtn = document.getElementById("support-wa-btn");
 
     const urlParams = new URLSearchParams(window.location.search);
     const branding = {
@@ -333,7 +325,6 @@
     if(branding.color && branding.color !== 'ffffff') {
         document.body.style.setProperty('--bg-color', '#' + branding.color);
         document.body.classList.add('branded');
-        isBranded = true;
     }
     if(branding.logo) { const img = document.getElementById('host-logo'); img.src = branding.logo; img.classList.remove('hidden'); }
     if(branding.title || branding.slogan) {
@@ -343,26 +334,43 @@
         if(branding.slogan) document.getElementById('hostBrandSlogan').textContent = branding.slogan;
     }
 
-    // לוגיקת כפתור צף למעבר מצבים
-    toggleViewFab.addEventListener("click", () => {
-        if (hostMode.classList.contains("hidden")) {
-            tabHost.click();
-            toggleViewFab.innerHTML = "🎮 מעבר למצב שחקן";
-        } else {
-            tabPlayer.click();
-            toggleViewFab.innerHTML = "👑 מעבר למצב מנהל";
+    // תיקון: פונקציה לעדכון קישור התמיכה בהתאם להקשר
+    function updateSupportLink() {
+        let text = "היי, אשמח לעזרה במשחק מילמניה.";
+        if (branding.title || branding.logo) {
+            text = `היי, אני מנהל משחק ממותג (${branding.title || 'ללא שם'}) ואשמח לעזרה.`;
+        } else if (currentGameCode) {
+             text = `היי, אני מנהל את המשחק ${currentGameCode} ואשמח לעזרה.`;
         }
-    });
+
+        if (isHostAlsoPlayer) {
+             text = `היי, אני מנהל ושחקן במשחק ${currentGameCode} ואשמח לעזרה.`;
+        }
+        supportBtn.onclick = () => window.location.href = `https://wa.me/972504000024?text=${encodeURIComponent(text)}`;
+    }
+    updateSupportLink();
 
     tabHost.addEventListener("click", () => {
         tabHost.classList.add("active"); tabPlayer.classList.remove("active");
         hostMode.classList.remove("hidden"); playerMode.classList.add("hidden");
-        adminFab.classList.add("hidden"); adminFloatingPanel.classList.add("hidden");
+        fabs.classList.add("hidden"); adminFloatingPanel.classList.add("hidden");
     });
     tabPlayer.addEventListener("click", () => {
         tabPlayer.classList.add("active"); tabHost.classList.remove("active");
         hostMode.classList.add("hidden"); playerMode.classList.remove("hidden");
-        if(isHostAlsoPlayer) adminFab.classList.remove("hidden");
+        if(isHostAlsoPlayer) {
+            fabs.classList.remove("hidden");
+            switchRoleFab.textContent = "👑 מעבר למצב מנהל";
+        }
+    });
+
+    // תיקון: לוגיקת כפתור צף למעבר תפקידים
+    switchRoleFab.addEventListener("click", () => {
+        if (tabPlayer.classList.contains("active")) {
+            tabHost.click();
+        } else {
+            tabPlayer.click();
+        }
     });
     
     function toggleFloatingPanel() {
@@ -422,6 +430,7 @@
                 try { renderGame(res.game); } catch (e) { console.error(e); alert("שגיאה בטעינת המשחק"); }
                 document.getElementById("hostPlayerName").value = hostName;
                 document.querySelector('.help-box').style.display = 'none';
+                updateSupportLink();
             } else alert(res.error);
         });
     });
@@ -444,10 +453,8 @@
                 hostPlayerClientId = res.clientId;
                 localStorage.setItem(LS_HOST_PLAYER_DATA, JSON.stringify({ gameCode: currentGameCode, clientId: res.clientId }));
                 renderGame(res.game);
-                // מעבר אוטומטי למצב שחקן
-                if (hostMode.classList.contains("hidden") === false) {
-                    toggleViewFab.click();
-                }
+                tabPlayer.click();
+                updateSupportLink();
             }
         });
     });
@@ -514,13 +521,14 @@
     });
     socket.on("gameEnded", () => { localStorage.removeItem(LS_HOST_GAME_KEY); localStorage.removeItem(LS_HOST_PLAYER_DATA); location.reload(); });
     
-    // האזנה לסגירת מנהל-על
-    socket.on("adminClosedGame", () => {
-        localStorage.removeItem(LS_HOST_GAME_KEY);
+    // תיקון: טיפול באירוע סגירת מאסטר
+    socket.on("adminClosedGame", () => { 
+        localStorage.removeItem(LS_HOST_GAME_KEY); 
         localStorage.removeItem(LS_HOST_PLAYER_DATA);
-        showModal("המשחק נסגר", "המשחק נסגר על ידי מנהל המערכת.");
+        showModal("המשחק נסגר", "<h3>המשחק נסגר על ידי מנהל המערכת.</h3><p>תודה שהשתתפתם!</p>");
         setTimeout(() => location.reload(), 3000);
     });
+
 
     function renderGame(game) {
         if(!game) {
@@ -541,9 +549,10 @@
         shareList.innerHTML = "";
         Object.values(game.teams).forEach(t => {
             const link = `${window.location.origin}/player.html?code=${game.code}&teamId=${t.id}&teamName=${encodeURIComponent(t.name)}`;
-            // טקסט הזמנה מגניב
-            const waText = `יאללה בלאגן! 🤪 הצטרפו לקבוצת "${t.name}" במשחק המילים הכי שווה שיש!\nלחצו על הקישור וכנסו לעניינים:\n${link}`;
-            shareList.innerHTML += `<div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;"><span>${t.name}</span> <button onclick="window.location.href='https://wa.me/?text=${encodeURIComponent(waText)}'" class="btn-whatsapp">שליחה לווצאפ 📲</button></div>`;
+            // תיקון: טקסט הזמנה מדליק
+            const coolText = `היי קבוצת ${t.name}! 🤘\nהכנתי לנו משחק מילמניה מטורף. כנסו לקישור ותראו לכולם מאיפה משתין הדג:\n${link}\nיאללה בלאגן! 🎉`;
+            const waLink = `https://wa.me/?text=${encodeURIComponent(coolText)}`;
+            shareList.innerHTML += `<div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;"><span>${t.name}</span> <button onclick="window.location.href='${waLink}'" class="btn-whatsapp">שליחה לווצאפ 📲</button></div>`;
         });
 
         const teamSelects = [document.getElementById("roundTeamSelect"), document.getElementById("hostPlayerTeamSelect"), document.getElementById("floatTeamSelect")];
@@ -569,6 +578,7 @@
         });
         document.getElementById("scoreboard").innerHTML = scoreHtml;
         document.getElementById("playersByTeam").innerHTML = playersHtml;
+        
         document.getElementById("hostPlayerScoreboard").innerHTML = scoreHtml;
 
         if(isHostAlsoPlayer) {
@@ -576,6 +586,8 @@
             document.getElementById("hostPlayerGameCard").classList.remove("hidden");
             const myTeam = Object.values(game.teams).find(t => t.players.includes(hostPlayerClientId));
             if(myTeam) document.getElementById("hostPlayerTeamName").textContent = myTeam.name;
+            // תיקון: עדכון טקסט כפתור המעבר
+            switchRoleFab.textContent = tabPlayer.classList.contains("active") ? "👑 מעבר למצב מנהל" : "🎮 מעבר למצב שחקן";
         }
 
         if(game.currentRound && game.currentRound.isActive) {
@@ -608,15 +620,6 @@
     if(savedCode) socket.emit("hostReconnect", { gameCode: savedCode }, (res) => { if(res.ok) try { renderGame(res.game); } catch(e) { console.error(e); } });
 
     function showModal(title, body) { document.getElementById("modalTitle").textContent = title; document.getElementById("modalContent").innerHTML = body; document.getElementById("customModal").classList.add("active"); }
-    
-    // פונקציית תמיכה עם הקשר
-    function openSupport() {
-        let contextText = "היי, אשמח לעזרה.";
-        if (isBranded) contextText = "היי, אני מנהל משחק ממותג ואשמח לעזרה.";
-        else contextText = "היי, אני מנהל משחק (רגיל) ואשמח לעזרה.";
-        
-        window.location.href = `https://wa.me/972504000024?text=${encodeURIComponent(contextText)}`;
-    }
   </script>
 </body>
 </html>
