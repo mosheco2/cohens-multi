@@ -51,7 +51,6 @@ async function initDb() {
       ssl: process.env.PGSSL === "false" ? false : { rejectUnauthorized: false },
     });
 
-    // יצירת טבלאות קיימות
     await pool.query(`CREATE TABLE IF NOT EXISTS games (code TEXT PRIMARY KEY, host_name TEXT, target_score INTEGER, default_round_seconds INTEGER, categories TEXT[], created_at TIMESTAMPTZ DEFAULT NOW());`);
     try { await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS host_ip TEXT;`); } catch (e) {}
     try { await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS branding JSONB;`); } catch (e) {}
@@ -64,14 +63,20 @@ async function initDb() {
 
     await pool.query(`CREATE TABLE IF NOT EXISTS active_states (game_code TEXT PRIMARY KEY, data TEXT, last_updated TIMESTAMPTZ DEFAULT NOW());`);
     
-    // --- טבלה חדשה להגדרות אתר גלובליות (באנרים וכו') ---
+    // --- טבלה להגדרות אתר גלובליות ---
     await pool.query(`CREATE TABLE IF NOT EXISTS site_settings (
         id SERIAL PRIMARY KEY,
         top_banner_img TEXT,
-        top_banner_link TEXT
+        top_banner_link TEXT,
+        bottom_banner_img TEXT,
+        bottom_banner_link TEXT
     );`);
+    // הוספת עמודות לבאנר תחתון אם לא קיימות
+    try { await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS bottom_banner_img TEXT;`); } catch (e) {}
+    try { await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS bottom_banner_link TEXT;`); } catch (e) {}
+    
     // וידוא שקיימת שורה אחת לפחות
-    await pool.query(`INSERT INTO site_settings (id, top_banner_img, top_banner_link) VALUES (1, NULL, NULL) ON CONFLICT (id) DO NOTHING;`);
+    await pool.query(`INSERT INTO site_settings (id, top_banner_img, top_banner_link, bottom_banner_img, bottom_banner_link) VALUES (1, NULL, NULL, NULL, NULL) ON CONFLICT (id) DO NOTHING;`);
 
     dbReady = true;
     console.log("✅ Postgres ready.");
@@ -625,32 +630,38 @@ app.post("/admin/game/:gameCode/player/:clientId/disconnect", (req, res) => {
     } else res.status(404).send();
 });
 
-// --- API חדש לבאנרים ---
+// --- API לבאנרים (עליון ותחתון) ---
 app.get("/api/banners", async (req, res) => {
     let banners = {};
     if (dbReady && pool) {
         try {
-            const result = await pool.query("SELECT top_banner_img, top_banner_link FROM site_settings WHERE id = 1");
+            const result = await pool.query("SELECT top_banner_img, top_banner_link, bottom_banner_img, bottom_banner_link FROM site_settings WHERE id = 1");
             if (result.rows.length > 0) {
-                banners.topBanner = {
-                    img: result.rows[0].top_banner_img,
-                    link: result.rows[0].top_banner_link
-                };
+                const row = result.rows[0];
+                if (row.top_banner_img) {
+                    banners.topBanner = { img: row.top_banner_img, link: row.top_banner_link };
+                }
+                if (row.bottom_banner_img) {
+                    banners.bottomBanner = { img: row.bottom_banner_img, link: row.bottom_banner_link };
+                }
             }
         } catch (e) { console.error("Error fetching banners:", e); }
     }
     res.json(banners);
 });
 
-// --- API חדש לשמירת הגדרות מנהל ---
+// --- API לשמירת הגדרות מנהל (כולל באנר תחתון) ---
 app.post("/admin/settings", async (req, res) => {
     if (req.query.code !== ADMIN_CODE) return res.status(403).json({ ok: false, error: "Forbidden" });
-    const { topBannerImg, topBannerLink } = req.body;
+    const { topBannerImg, topBannerLink, bottomBannerImg, bottomBannerLink } = req.body;
     if (dbReady && pool) {
         try {
             await pool.query(
-                `UPDATE site_settings SET top_banner_img = $1, top_banner_link = $2 WHERE id = 1`,
-                [topBannerImg || null, topBannerLink || null]
+                `UPDATE site_settings SET 
+                    top_banner_img = $1, top_banner_link = $2,
+                    bottom_banner_img = $3, bottom_banner_link = $4
+                 WHERE id = 1`,
+                [topBannerImg || null, topBannerLink || null, bottomBannerImg || null, bottomBannerLink || null]
             );
             res.json({ ok: true });
         } catch (e) { 
@@ -661,7 +672,6 @@ app.post("/admin/settings", async (req, res) => {
         res.json({ ok: false, error: "No DB" });
     }
 });
-
 
 server.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);
