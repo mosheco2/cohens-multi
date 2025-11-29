@@ -70,8 +70,7 @@
     .help-box ul { margin: 0; padding: 12px 16px 16px 30px; list-style-type: disc; color: #433362; font-size: 0.95rem; }
     .help-box li { margin-bottom: 6px; }
 
-    /* תיקון: הגדלת גובה התיבה כדי שיוצגו יותר קטגוריות */
-    .categories-container { display: flex; flex-wrap: wrap; gap: 5px; max-height: 350px; overflow-y: auto; padding: 4px; border: 1px solid rgba(43, 30, 74, 0.1); border-radius: 14px; }
+    .categories-container { display: flex; flex-wrap: wrap; gap: 5px; max-height: 200px; overflow-y: auto; padding: 4px; border: 1px solid rgba(43, 30, 74, 0.1); border-radius: 14px; }
     
     .fab-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 100; align-items: center; transition: 0.3s; }
     .fab-btn { background: linear-gradient(135deg, #2B1E4A, #433362); color: #FFD76F; padding: 12px 24px; border-radius: 50px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 15px rgba(43, 30, 74, 0.3); transition: all 0.2s ease; font-size: 0.9rem; white-space: nowrap; }
@@ -341,6 +340,7 @@
     const adminFloatingPanel = document.getElementById("adminFloatingPanel");
     const supportBtn = document.getElementById("support-wa-btn");
     const customModal = document.getElementById("customModal");
+    const modalActions = document.getElementById("modalActions");
 
     const urlParams = new URLSearchParams(window.location.search);
     const branding = {
@@ -463,8 +463,11 @@
         });
     });
 
+    // תיקון: וידוא שפונקציית האישור מוגדרת כראוי לפני פתיחת המודאל
     document.getElementById("endGameBtn").addEventListener("click", () => {
+        console.log("End game button clicked");
         showConfirmModal("סגירת משחק", "האם אתה בטוח שברצונך לסגור את המשחק לכולם?", () => {
+            console.log("Emitting endGame event");
             socket.emit("endGame", { gameCode: currentGameCode });
         });
     });
@@ -527,12 +530,11 @@
     document.getElementById("hostBtnSkip").addEventListener("click", () => socket.emit("changeRoundScore", { gameCode: currentGameCode, delta: -1 }, getNextWordHost));
     function getNextWordHost() { socket.emit("getNextWord", { gameCode: currentGameCode }, (res) => { if(res.ok) document.getElementById("hostPresenterWord").innerText = res.word; }); }
 
-    // תיקון: טקסטים לפופאפ סיום סיבוב לפי דרישה
     function getScoreMessage(score) {
-        if (score < 5) return "חחח... לא נורא, אולי בפעם הבאה! 🤣"; // מתגלגל
-        if (score <= 10) return "סביר, אבל ציפינו ליותר. 😉"; // ציני
-        if (score <= 15) return "יפה מאוד! שיחקתם אותה. 👏"; // מרים ומפרגן
-        return "וואו! פשוט אלופים! 🏆🔥"; // חם ומעריץ
+        if (score < 5) return "לא נורא, קורה לטובים ביותר... 😅";
+        if (score <= 10) return "סביר, אבל ציפינו ליותר. 😉";
+        if (score <= 15) return "יפה מאוד! שיחקתם אותה. 👏";
+        return "וואו! פשוט אלופים! 🏆🔥";
     }
 
     socket.on("gameUpdated", renderGame);
@@ -574,6 +576,11 @@
         if(data.game.currentRound.explainerId === hostPlayerClientId) {
             getNextWordHost();
         }
+    });
+
+    // האזנה לאירוע ריענון כפוי
+    socket.on("forceRefreshPlayers", () => {
+        if(currentGameCode) socket.emit("getGameState", { gameCode: currentGameCode });
     });
 
     function renderGame(game) {
@@ -632,7 +639,6 @@
             const myTeam = Object.values(game.teams).find(t => t.players.includes(hostPlayerClientId));
             if(myTeam) {
                 document.getElementById("hostPlayerMyTeamName").textContent = myTeam.name;
-                // וידוא תצוגת חברי הקבוצה במצב שחקן-מנהל
                 document.getElementById("hostPlayerMyTeamPlayers").textContent = myTeam.players.map(pid => game.playersByClientId[pid]?.name).filter(Boolean).join(", ") || "ממתין...";
             }
             
@@ -691,11 +697,11 @@
           showModal("רשימת שחקנים", html);
       });
 
-    // פונקציות עזר לפופאפים מעוצבים
+    // פונקציות עזר לפופאפים מעוצבים - תיקון קריטי למנגנון האישור
     function showModal(title, body) { 
         document.getElementById("modalTitle").textContent = title; 
         document.getElementById("modalContent").innerHTML = body; 
-        document.getElementById("modalActions").innerHTML = '<button class="btn btn-primary" onclick="closeModal()">סגור</button>';
+        modalActions.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">סגור</button>';
         customModal.classList.add("active"); 
     }
 
@@ -703,10 +709,12 @@
         document.getElementById("modalTitle").textContent = title;
         document.getElementById("modalContent").textContent = body;
         pendingAction = onConfirm;
-        document.getElementById("modalActions").innerHTML = `
+        // שימוש ב-onclick ישיר כדי למנוע בעיות scope
+        modalActions.innerHTML = `
             <button class="btn btn-ghost" onclick="closeModal()">ביטול</button>
-            <button class="btn btn-danger" onclick="confirmAction()">אישור</button>
+            <button class="btn btn-danger" id="confirmActionBtn">אישור</button>
         `;
+        document.getElementById("confirmActionBtn").onclick = confirmAction;
         customModal.classList.add("active");
     }
 
