@@ -8,6 +8,7 @@
   <style>
      :root { font-size: 16px; --bg-color: #FFF8EA; }
      * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
+     /* שינוי: הסתרת הבועות במיתוג */
      body { margin: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; }
      body:not(.branded)::before, body:not(.branded)::after { content: ""; position: fixed; width: 280px; height: 280px; border-radius: 50%; z-index: -1; }
      body:not(.branded)::before { top: -130px; left: -70px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.30), transparent 60%); }
@@ -23,39 +24,40 @@
      .btn-ghost { background: transparent; border: 1px solid #ccc; color: #666; width: auto; font-size: 0.9rem; padding: 6px 12px; margin-top:0; }
      input, select { width: 100%; padding: 14px; border-radius: 18px; border: 2px solid rgba(43, 30, 74, 0.1); background: #FFFDF7; font-size: 1.1rem; text-align:center; font-weight:600; margin-bottom: 10px; }
      input:focus { border-color: #F84779; outline: none; background: #fff; }
+     /* תיקון: סגנון לשדה קריאה בלבד (אפור וניל) */
      input.readonly-code { background-color: #e5e7eb; color: #6b7280; border-color: #d1d5db; }
      .hidden { display: none !important; }
      #playerBigTimer { font-size: 3.5rem; text-align: center; font-weight: 900; color: #F84779; margin: 10px 0; font-variant-numeric: tabular-nums; }
      
-     .logo-area { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; text-align: center; }
-     .logo-area img { height: 150px; width: auto; object-fit: contain; background: transparent; }
-     .brand-info { text-align: right; display: flex; flex-direction: column; justify-content: center; }
+     /* תיקון: עיצוב אזור הלוגו */
+     .logo-area { margin-bottom: 25px; text-align: center; }
+     /* תיקון: מיכל לוגו מעוצב */
+     .logo-container { display: inline-block; background: #fff; padding: 15px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 15px; }
+     .logo-container img { height: 120px; width: auto; object-fit: contain; display: block; }
+     
+     .brand-info { text-align: center; }
      .brand-title { margin: 0 0 5px; font-size: 1.8rem; color: #2B1E4A; font-weight: 900; line-height: 1.1; }
+     /* תיקון: צבע הסלוגן הותאם לרקע כהה במיתוג */
      .brand-slogan { margin: 0; font-size: 1.1rem; color: #5a507a; font-weight: 600; }
+     body.branded .brand-title { color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+     body.branded .brand-slogan { color: rgba(255,255,255,0.9); }
 
      #support-wa-btn { position: fixed; bottom: 24px; right: 24px; z-index: 2000; background: #25D366; color: white; border-radius: 50px; padding: 12px 20px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; font-family: "Varela Round", sans-serif; display: flex; align-items: center; gap: 8px; }
-     
      .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; }
      .modal-overlay.active { opacity: 1; visibility: visible; }
      .modal-box { background: #fff; width: 85%; max-width: 400px; border-radius: 28px; padding: 30px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: translateY(20px); transition: 0.3s; }
      .modal-overlay.active .modal-box { transform: translateY(0); }
-     .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
-
      .data-block { background: #F8F7FF; padding: 10px; border-radius: 12px; margin-bottom: 5px; }
      .data-label { font-size: 0.8rem; color: #A18CCF; font-weight: bold; }
      .data-val { font-size: 1rem; color: #433362; font-weight: bold; }
-
-     @media (max-width: 640px) {
-         .logo-area { flex-direction: column; gap: 10px; }
-         .logo-area img { height: 120px; }
-         .brand-info { text-align: center; }
-     }
   </style>
 </head>
 <body>
   <div class="app">
-      <div class="logo-area">
-         <img id="playerLogo" src="logo.png" alt="לוגו" style="display:none;">
+      <div class="logo-area hidden" id="brandHeader">
+         <div class="logo-container hidden" id="logoContainer">
+             <img id="playerLogo" src="" alt="לוגו">
+         </div>
          <div class="brand-info hidden" id="brandInfoBox">
              <h1 id="brandTitle" class="brand-title"></h1>
              <p id="brandSlogan" class="brand-slogan hidden"></p>
@@ -82,7 +84,7 @@
       <div id="gameSection" class="card hidden">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
               <button class="btn-ghost" onclick="openInstructions()">?</button>
-              <button id="exitGameBtn" class="btn-danger">יציאה</button>
+              <button onclick="exitGame()" class="btn-danger">יציאה</button>
           </div>
           <div style="display:flex; gap:10px; margin-bottom:15px;">
               <div class="data-block" style="flex:1;">
@@ -124,7 +126,7 @@
       <div class="modal-box">
           <h2 id="modalTitle" style="margin-top:0;"></h2>
           <div id="modalContent"></div>
-          <div class="modal-actions" id="modalActions">
+          <div id="modalActions" style="margin-top:20px;">
               <button class="btn btn-primary" onclick="closeModal()">סגור</button>
           </div>
       </div>
@@ -151,7 +153,14 @@
       const modalContent = document.getElementById("modalContent");
       const supportBtn = document.getElementById("support-wa-btn");
 
-      // תיקון: פונקציות לפופאפים מעוצבים במקום alert/confirm
+      // תיקון: פונקציית עזר לטקסט סיום סיבוב (הועתקה מהמנהל)
+      function getScoreMessage(score) {
+          if (score < 5) return "לא נורא, קורה לטובים ביותר... 😅";
+          if (score <= 10) return "סביר, אבל ציפינו ליותר. 😉";
+          if (score <= 15) return "יפה מאוד! שיחקתם אותה. 👏";
+          return "וואו! פשוט אלופים! 🏆🔥";
+      }
+
       function showModal(title, body) { 
           modalTitle.textContent = title; 
           modalContent.innerHTML = body; 
@@ -159,6 +168,7 @@
           customModal.classList.add("active"); 
       }
 
+      // תיקון: פונקציה לפופאפ אישור מותאם
       function showConfirmModal(title, body, onConfirm) {
           modalTitle.textContent = title;
           modalContent.textContent = body;
@@ -194,7 +204,7 @@
       joinBtn.addEventListener("click", () => {
           const code = gameCodeInput.value.trim().toUpperCase();
           const name = playerNameInput.value.trim();
-          // תיקון: שימוש בפופאף מעוצב לולידציה
+          // תיקון: שימוש בפופאפ מותאם במקום alert
           if(code.length < 3 || name.length < 2) return showModal("שגיאה", "נא להזין קוד משחק ושם (לפחות 2 תווים)");
           joinBtn.disabled = true; joinStatus.innerText = "מתחבר...";
           const urlTeamId = new URLSearchParams(window.location.search).get("teamId");
@@ -210,13 +220,13 @@
           });
       });
 
-      // תיקון: כפתור יציאה מעוצב
-      document.getElementById("exitGameBtn").addEventListener("click", () => {
+      function exitGame() {
+          // תיקון: שימוש בפופאפ אישור מותאם במקום confirm
           showConfirmModal("יציאה מהמשחק", "האם אתה בטוח שברצונך לצאת?", () => {
               localStorage.removeItem(LOCAL_PLAYER_KEY); 
               location.reload();
           });
-      });
+      }
 
       function skipWord() { if(isExplainer) socket.emit("changeRoundScore", { gameCode: myGameCode, delta: -1 }, nextWord); }
       function correctWord() { if(isExplainer) socket.emit("changeRoundScore", { gameCode: myGameCode, delta: 1 }, nextWord); }
@@ -243,11 +253,19 @@
               nextWord();
           }
       });
-      socket.on("roundTimeUp", (data) => { timerEl.textContent = "00:00"; showModal("⏰ נגמר הזמן!", `<div style="text-align:center;"><img src="m3.png" style="height:100px;"></div><h3>${data.teamName}</h3><h2>${data.roundScore} נקודות</h2>`); presenterArea.classList.add("hidden"); isExplainer = false; });
       
-      // תיקון: הודעות מערכת מעוצבות
+      // תיקון: הוספת משפט סיום לפופאפ סיום סיבוב
+      socket.on("roundTimeUp", (data) => { 
+          timerEl.textContent = "00:00";
+          const msg = getScoreMessage(data.roundScore);
+          showModal("⏰ נגמר הזמן!", `<div style="text-align:center;"><img src="m3.png" style="height:100px;"></div><h3>${data.teamName}</h3><h2>${data.roundScore} נקודות</h2><p style="font-size:1.1rem; font-weight:bold; color:#F84779;">${msg}</p>`); 
+          presenterArea.classList.add("hidden"); 
+          isExplainer = false; 
+      });
+
+      // תיקון: הודעות מערכת בפופאפים מותאמים
       socket.on("gameEnded", () => { 
-          localStorage.removeItem(LOCAL_PLAYER_KEY); 
+          localStorage.removeItem(LOCAL_PLAYER_KEY);
           showModal("המשחק הסתיים", "<h3>המשחק נסגר על ידי המנהל.</h3><p>תודה שהשתתפתם!</p>");
           setTimeout(() => location.reload(), 3000);
       });
@@ -266,12 +284,18 @@
           if(!game) return;
           lastGameState = game;
           
-          if(game.branding) {
+          if(game.branding && (game.branding.title || game.branding.logo)) {
+              document.getElementById('brandHeader').classList.remove('hidden');
               if(game.branding.color) {
                   document.body.style.setProperty('--bg-color', '#' + game.branding.color);
                   document.body.classList.add('branded');
               }
-              if(game.branding.logo) { document.getElementById('playerLogo').src = game.branding.logo; document.getElementById('playerLogo').style.display = 'inline-block'; }
+              if(game.branding.logo) { 
+                  document.getElementById('playerLogo').src = game.branding.logo; 
+                  document.getElementById('logoContainer').classList.remove('hidden'); 
+              } else {
+                  document.getElementById('logoContainer').classList.add('hidden');
+              }
               
               const hasTitle = game.branding.title;
               const hasSlogan = game.branding.slogan;
@@ -282,18 +306,26 @@
                   if(hasSlogan) {
                       document.getElementById('brandSlogan').textContent = decodeURIComponent(game.branding.slogan);
                       document.getElementById('brandSlogan').classList.remove('hidden');
+                  } else {
+                      document.getElementById('brandSlogan').classList.add('hidden');
                   }
+              } else {
+                  document.getElementById('brandInfoBox').classList.add('hidden');
               }
           } else if (game.gameTitle) {
+              document.getElementById('brandHeader').classList.remove('hidden');
+              document.getElementById('logoContainer').classList.add('hidden');
               document.getElementById('brandInfoBox').classList.remove('hidden');
               document.getElementById('brandTitle').textContent = game.gameTitle;
+              document.getElementById('brandSlogan').classList.add('hidden');
+          } else {
+              document.getElementById('brandHeader').classList.add('hidden');
           }
 
           const myTeam = game.teams[myTeamId];
           if(myTeam) {
               document.getElementById("myTeamName").textContent = myTeam.name;
               document.getElementById("myTeamPlayers").textContent = myTeam.players.map(pid => game.playersByClientId[pid]?.name).filter(Boolean).join(", ") || "ממתין...";
-              // תיקון: עדכון ניקוד קבוצתי מצטבר
               document.getElementById("myTeamTotalScore").textContent = myTeam.score;
           }
 
