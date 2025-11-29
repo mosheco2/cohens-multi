@@ -21,8 +21,8 @@
     h3 { margin-top: 0; color: var(--accent); }
     
     /* Tabs */
-    .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #1e293b; padding: 5px; border-radius: 12px; }
-    .nav-btn { background: transparent; color: var(--text-secondary); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.2s; font-size: 1rem; font-family: inherit; }
+    .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #1e293b; padding: 5px; border-radius: 12px; overflow-x: auto; }
+    .nav-btn { background: transparent; color: var(--text-secondary); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.2s; font-size: 1rem; font-family: inherit; white-space: nowrap; }
     .nav-btn:hover { background: #334155; color: var(--text-primary); }
     .nav-btn.active { background: var(--accent); color: var(--bg-dark); }
 
@@ -79,6 +79,7 @@
         <button class="nav-btn active" onclick="switchTab('dashboard')">📊 דשבורד חי</button>
         <button class="nav-btn" onclick="switchTab('reports')">📑 דוחות ונתונים</button>
         <button class="nav-btn" onclick="switchTab('generator')">🔗 מחולל מותג</button>
+        <button class="nav-btn" onclick="switchTab('settings')">📢 פרסום והגדרות</button>
     </div>
 
     <div id="tab-dashboard">
@@ -184,6 +185,30 @@
             </div>
         </div>
     </div>
+
+    <div id="tab-settings" class="hidden">
+        <div class="card">
+            <h3>הגדרות פרסום גלובליות</h3>
+            <p style="color:var(--text-secondary); margin-bottom:20px; font-size:0.9rem;">
+                הגדרות אלו ישפיעו על כל דפי האתר (דף הבית, מסך מנהל, מסך שחקן).
+            </p>
+            
+            <div class="form-group" style="margin-bottom:15px;">
+                <label>באנר עליון - קישור לתמונה (URL)</label>
+                <input type="text" id="settingTopBannerImg" placeholder="https://example.com/banner.jpg">
+                <small style="color:var(--text-secondary);">מומלץ להשתמש בתמונה רחבה ונמוכה.</small>
+            </div>
+
+            <div class="form-group" style="margin-bottom:20px;">
+                 <label>באנר עליון - קישור ליעד (URL)</label>
+                 <input type="text" id="settingTopBannerLink" placeholder="https://example.com/landing-page">
+                 <small style="color:var(--text-secondary);">לאן יועבר המשתמש בלחיצה על הבאנר.</small>
+            </div>
+            
+            <button class="btn btn-submit" onclick="saveSettings()">שמור הגדרות</button>
+        </div>
+    </div>
+
   </div>
 
   <script>
@@ -201,13 +226,11 @@
     document.getElementById('finalLink').addEventListener('click', function() { this.select(); document.execCommand('copy'); alert('הלינק הועתק!'); });
 
     function switchTab(tabName) {
-        document.getElementById('tab-dashboard').classList.add('hidden');
-        document.getElementById('tab-reports').classList.add('hidden');
-        document.getElementById('tab-generator').classList.add('hidden');
+        const tabs = ['dashboard', 'reports', 'generator', 'settings'];
+        tabs.forEach(t => document.getElementById('tab-'+t).classList.add('hidden'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         
         document.getElementById('tab-'+tabName).classList.remove('hidden');
-        const tabs = ['dashboard', 'reports', 'generator'];
         document.querySelectorAll('.nav-btn')[tabs.indexOf(tabName)].classList.add('active');
     }
 
@@ -334,9 +357,41 @@
         const text = `היי ${companyName},\n\nהכנו עבורכם סביבת משחק ממותגת וחגיגית! 🎉\n\nאתם מוזמנים להיכנס לקישור הבא כדי לנהל את הפעילות:\n${link}\n\nתהנו!`;
         window.location.href = `https://wa.me/?text=${encodeURIComponent(text)}`;
     }
+
+    // --- פונקציות חדשות לניהול הגדרות ---
+    async function loadSettings() {
+        try {
+            const res = await fetch('/api/banners');
+            const data = await res.json();
+            if (data.topBanner) {
+                document.getElementById('settingTopBannerImg').value = data.topBanner.img || '';
+                document.getElementById('settingTopBannerLink').value = data.topBanner.link || '';
+            }
+        } catch (e) { console.error("Error loading settings:", e); }
+    }
+
+    async function saveSettings() {
+        const topBannerImg = document.getElementById('settingTopBannerImg').value;
+        const topBannerLink = document.getElementById('settingTopBannerLink').value;
+        
+        try {
+            const res = await fetch(`/admin/settings?code=${ADMIN_CODE}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topBannerImg, topBannerLink })
+            });
+            const json = await res.json();
+            if (json.ok) {
+                alert('ההגדרות נשמרו בהצלחה!');
+            } else {
+                alert('שגיאה בשמירת ההגדרות.');
+            }
+        } catch (e) { alert('תקלה ברשת.'); }
+    }
     
     setInterval(() => { if(!document.getElementById('tab-dashboard').classList.contains('hidden')) loadDashboard(); }, 10000);
     loadDashboard();
+    loadSettings(); // טעינת הגדרות בעת טעינת הדף
   </script>
 </body>
 </html>
