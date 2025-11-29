@@ -56,8 +56,9 @@ async function initDb() {
     try { await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS game_title TEXT;`); } catch (e) {}
 
     await pool.query(`CREATE TABLE IF NOT EXISTS game_teams (id SERIAL PRIMARY KEY, game_code TEXT, team_id TEXT, team_name TEXT, score INTEGER DEFAULT 0);`);
-    await pool.query(`CREATE TABLE IF NOT EXISTS game_players (id SERIAL PRIMARY KEY, game_code TEXT, client_id TEXT, name TEXT, team_id TEXT, ip_address TEXT);`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS game_players (id SERIAL PRIMARY KEY, game_code TEXT, client_id TEXT, name TEXT, team_id TEXT, ip_address TEXT, joined_at TIMESTAMPTZ DEFAULT NOW());`);
     try { await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS ip_address TEXT;`); } catch (e) {}
+    try { await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS joined_at TIMESTAMPTZ DEFAULT NOW();`); } catch (e) {}
 
     await pool.query(`CREATE TABLE IF NOT EXISTS active_states (game_code TEXT PRIMARY KEY, data TEXT, last_updated TIMESTAMPTZ DEFAULT NOW());`);
     
@@ -79,9 +80,8 @@ const safeCb = (cb, data) => { if (typeof cb === 'function') cb(data); };
 async function saveGameState(game) {
     if (!dbReady || !game) return;
     try {
-        // תיקון קריטי: יצירת עותק מלא לשמירה כדי לא לפגוע באובייקט בזיכרון
         const gameToSave = JSON.parse(JSON.stringify(game));
-        gameToSave.customWordsList = []; // לא שומרים מילים מותאמות אישית ל-DB
+        gameToSave.customWordsList = []; 
 
         const json = JSON.stringify(gameToSave);
         await pool.query(
@@ -124,17 +124,38 @@ async function restoreActiveGames() {
     } catch (e) { console.error("Restore Error:", e.message); }
 }
 
-// בנק מילים בסיסי
+// מאגר מילים מורחב - 15 קטגוריות, ~20 מילים כל אחת
 const WORD_BANK = [
-  { text: "חתול", category: "animals" }, { text: "כלב", category: "animals" }, { text: "פיל", category: "animals" },
-  { text: "שולחן", category: "objects" }, { text: "מחשב", category: "technology" }, { text: "טלפון", category: "technology" },
-  { text: "פיצה", category: "food" }, { text: "המבורגר", category: "food" }, { text: "משפחה", category: "family" },
-  { text: "חופשה", category: "travel" }, { text: "ים", category: "travel" }, { text: "כדורגל", category: "sports" },
-  { text: "כדורסל", category: "sports" }, { text: "סדרה בטלוויזיה", category: "entertainment" }, { text: "סרט", category: "entertainment" },
-  { text: "שיר", category: "music" }, { text: "גיטרה", category: "music" }, { text: "יער", category: "nature" },
-  { text: "מדבר", category: "nature" }, { text: "חג פסח", category: "holidays" }, { text: "ראש השנה", category: "holidays" },
-  { text: "מורה", category: "school" }, { text: "תלמיד", category: "school" }, { text: "בוס", category: "work" },
-  { text: "משרד", category: "work" }
+    // אוכל (Food)
+    {t:"פיצה",c:"food"},{t:"המבורגר",c:"food"},{t:"סושי",c:"food"},{t:"פלאפל",c:"food"},{t:"שווארמה",c:"food"},{t:"גלידה",c:"food"},{t:"שוקולד",c:"food"},{t:"פסטה",c:"food"},{t:"סלט",c:"food"},{t:"מרק",c:"food"},{t:"לחם",c:"food"},{t:"גבינה",c:"food"},{t:"עוגה",c:"food"},{t:"תפוח",c:"food"},{t:"בננה",c:"food"},{t:"אבטיח",c:"food"},{t:"קפה",c:"food"},{t:"תה",c:"food"},{t:"קולה",c:"food"},{t:"צ'יפס",c:"food"},
+    // חיות (Animals)
+    {t:"כלב",c:"animals"},{t:"חתול",c:"animals"},{t:"פיל",c:"animals"},{t:"אריה",c:"animals"},{t:"נמר",c:"animals"},{t:"ג'ירפה",c:"animals"},{t:"קוף",c:"animals"},{t:"דוב",c:"animals"},{t:"סוס",c:"animals"},{t:"פרה",c:"animals"},{t:"כבשה",c:"animals"},{t:"תרנגולת",c:"animals"},{t:"ציפור",c:"animals"},{t:"דג",c:"animals"},{t:"כריש",c:"animals"},{t:"לוויתן",c:"animals"},{t:"נחש",c:"animals"},{t:"צפרדע",c:"animals"},{t:"פרפר",c:"animals"},{t:"ארנב",c:"animals"},
+    // חפצים בבית (Objects)
+    {t:"שולחן",c:"objects"},{t:"כיסא",c:"objects"},{t:"מיטה",c:"objects"},{t:"ארון",c:"objects"},{t:"ספה",c:"objects"},{t:"טלוויזיה",c:"objects"},{t:"מחשב",c:"objects"},{t:"טלפון",c:"objects"},{t:"מקרר",c:"objects"},{t:"תנור",c:"objects"},{t:"מיקרוגל",c:"objects"},{t:"מכונת כביסה",c:"objects"},{t:"מזגן",c:"objects"},{t:"מנורה",c:"objects"},{t:"שטיח",c:"objects"},{t:"וילון",c:"objects"},{t:"ספר",c:"objects"},{t:"עט",c:"objects"},{t:"מחברת",c:"objects"},{t:"תיק",c:"objects"},
+    // ספורט (Sports)
+    {t:"כדורגל",c:"sports"},{t:"כדורסל",c:"sports"},{t:"טניס",c:"sports"},{t:"שחייה",c:"sports"},{t:"ריצה",c:"sports"},{t:"אופניים",c:"sports"},{t:"כדורעף",c:"sports"},{t:"כדוריד",c:"sports"},{t:"ג'ודו",c:"sports"},{t:"קראטה",c:"sports"},{t:"התעמלות",c:"sports"},{t:"יוגה",c:"sports"},{t:"פילאטיס",c:"sports"},{t:"גלישה",c:"sports"},{t:"סקי",c:"sports"},{t:"איגרוף",c:"sports"},{t:"שחמט",c:"sports"},{t:"פינג פונג",c:"sports"},{t:"באולינג",c:"sports"},{t:"חדר כושר",c:"sports"},
+    // מקומות בארץ (Places IL)
+    {t:"ירושלים",c:"places_il"},{t:"תל אביב",c:"places_il"},{t:"חיפה",c:"places_il"},{t:"אילת",c:"places_il"},{t:"באר שבע",c:"places_il"},{t:"הכנרת",c:"places_il"},{t:"ים המלח",c:"places_il"},{t:"החרמון",c:"places_il"},{t:"הכותל",c:"places_il"},{t:"מצדה",c:"places_il"},{t:"נמל יפו",c:"places_il"},{t:"שוק מחנה יהודה",c:"places_il"},{t:"פארק הירקון",c:"places_il"},{t:"הגולן",c:"places_il"},{t:"הגליל",c:"places_il"},{t:"הנגב",c:"places_il"},{t:"נתב״ג",c:"places_il"},{t:"עזריאלי",c:"places_il"},{t:"הכנסת",c:"places_il"},{t:"הסחנה",c:"places_il"},
+    // מותגים (Brands)
+    {t:"קוקה קולה",c:"brands"},{t:"אפל",c:"brands"},{t:"סמסונג",c:"brands"},{t:"נייקי",c:"brands"},{t:"אדידס",c:"brands"},{t:"מקדונלדס",c:"brands"},{t:"גוגל",c:"brands"},{t:"פייסבוק",c:"brands"},{t:"אינסטגרם",c:"brands"},{t:"טיקטוק",c:"brands"},{t:"נטפליקס",c:"brands"},{t:"דיסני",c:"brands"},{t:"טויוטה",c:"brands"},{t:"מרצדס",c:"brands"},{t:"איקאה",c:"brands"},{t:"ספוטיפיי",c:"brands"},{t:"זארה",c:"brands"},{t:"קסטרו",c:"brands"},{t:"תנובה",c:"brands"},{t:"אסם",c:"brands"},
+    // צבא וביטחון (Army)
+    {t:"חייל",c:"army"},{t:"מפקד",c:"army"},{t:"מדים",c:"army"},{t:"נשק",c:"army"},{t:"קסדה",c:"army"},{t:"אפוד",c:"army"},{t:"טנק",c:"army"},{t:"מטוס קרב",c:"army"},{t:"מסוק",c:"army"},{t:"צוללת",c:"army"},{t:"בסיס",c:"army"},{t:"טירונות",c:"army"},{t:"מילואים",c:"army"},{t:"רמטכ״ל",c:"army"},{t:"כיפת ברזל",c:"army"},{t:"אזעקה",c:"army"},{t:"ממ״ד",c:"army"},{t:"צו 8",c:"army"},{t:"דרגה",c:"army"},{t:"פק״ל",c:"army"},
+    // קיבוץ ומושב (Kibbutz)
+    {t:"רפת",c:"kibbutz"},{t:"לול",c:"kibbutz"},{t:"שדה",c:"kibbutz"},{t:"טרקטור",c:"kibbutz"},{t:"חדר אוכל",c:"kibbutz"},{t:"מכבסה",c:"kibbutz"},{t:"בריכה",c:"kibbutz"},{t:"פרדס",c:"kibbutz"},{t:"מטע",c:"kibbutz"},{t:"חציר",c:"kibbutz"},{t:"חליבה",c:"kibbutz"},{t:"בימבה",c:"kibbutz"},{t:"כלבו",c:"kibbutz"},{t:"מזכירות",c:"kibbutz"},{t:"נעורים",c:"kibbutz"},{t:"שומר",c:"kibbutz"},{t:"שער",c:"kibbutz"},{t:"אסיפת חברים",c:"kibbutz"},{t:"תורנות",c:"kibbutz"},{t:"חג משק",c:"kibbutz"},
+    // הייטק (Hi-Tech)
+    {t:"סטארטאפ",c:"hitech"},{t:"אקזיט",c:"hitech"},{t:"מתכנת",c:"hitech"},{t:"באג",c:"hitech"},{t:"קוד",c:"hitech"},{t:"אלגוריתם",c:"hitech"},{t:"אפליקציה",c:"hitech"},{t:"אתר אינטרנט",c:"hitech"},{t:"שרת",c:"hitech"},{t:"ענן",c:"hitech"},{t:"סייבר",c:"hitech"},{t:"בינה מלאכותית",c:"hitech"},{t:"רובוט",c:"hitech"},{t:"רחפן",c:"hitech"},{t:"האקתון",c:"hitech"},{t:"משקיע",c:"hitech"},{t:"קרן הון סיכון",c:"hitech"},{t:"מנכ״ל",c:"hitech"},{t:"סמנכ״ל",c:"hitech"},{t:"הפי האוור",c:"hitech"},
+    // בית ספר (School)
+    {t:"מורה",c:"school"},{t:"תלמיד",c:"school"},{t:"כיתה",c:"school"},{t:"לוח",c:"school"},{t:"גיר",c:"school"},{t:"מחק",c:"school"},{t:"עיפרון",c:"school"},{t:"מחברת",c:"school"},{t:"ספר לימוד",c:"school"},{t:"תיק אוכל",c:"school"},{t:"הפסקה",c:"school"},{t:"צלצול",c:"school"},{t:"מבחן",c:"school"},{t:"שיעורי בית",c:"school"},{t:"תעודה",c:"school"},{t:"טיול שנתי",c:"school"},{t:"מנהל",c:"school"},{t:"יועצת",c:"school"},{t:"ספרייה",c:"school"},{t:"אולם ספורט",c:"school"},
+    // טבע וסביבה (Nature)
+    {t:"עץ",c:"nature"},{t:"פרח",c:"nature"},{t:"דשא",c:"nature"},{t:"הר",c:"nature"},{t:"גבעה",c:"nature"},{t:"עמק",c:"nature"},{t:"נהר",c:"nature"},{t:"נחל",c:"nature"},{t:"ים",c:"nature"},{t:"חוף",c:"nature"},{t:"מדבר",c:"nature"},{t:"יער",c:"nature"},{t:"שמש",c:"nature"},{t:"ירח",c:"nature"},{t:"כוכב",c:"nature"},{t:"ענן",c:"nature"},{t:"גשם",c:"nature"},{t:"רוח",c:"nature"},{t:"אש",c:"nature"},{t:"אדמה",c:"nature"},
+    // תרבות ובידור (Culture)
+    {t:"סרט",c:"culture"},{t:"הצגה",c:"culture"},{t:"מופע",c:"culture"},{t:"קונצרט",c:"culture"},{t:"מוזיאון",c:"culture"},{t:"תערוכה",c:"culture"},{t:"גלריה",c:"culture"},{t:"קולנוע",c:"culture"},{t:"תיאטרון",c:"culture"},{t:"ספר",c:"culture"},{t:"שיר",c:"culture"},{t:"ריקוד",c:"culture"},{t:"ציור",c:"culture"},{t:"פסל",c:"culture"},{t:"צילום",c:"culture"},{t:"פסטיבל",c:"culture"},{t:"קרקס",c:"culture"},{t:"סטנדאפ",c:"culture"},{t:"סדרה",c:"culture"},{t:"חדשות",c:"culture"},
+    // חגים ומועדים (Holidays)
+    {t:"ראש השנה",c:"holidays"},{t:"יום כיפור",c:"holidays"},{t:"סוכות",c:"holidays"},{t:"שמחת תורה",c:"holidays"},{t:"חנוכה",c:"holidays"},{t:"טו בשבט",c:"holidays"},{t:"פורים",c:"holidays"},{t:"פסח",c:"holidays"},{t:"יום העצמאות",c:"holidays"},{t:"שבועות",c:"holidays"},{t:"שבת",c:"holidays"},{t:"סופגניה",c:"holidays"},{t:"מצה",c:"holidays"},{t:"לולב",c:"holidays"},{t:"אתרוג",c:"holidays"},{t:"סביבון",c:"holidays"},{t:"רעשן",c:"holidays"},{t:"תחפושת",c:"holidays"},{t:"זיקוקים",c:"holidays"},{t:"מנגל",c:"holidays"},
+    // משפחה (Family)
+    {t:"אמא",c:"family"},{t:"אבא",c:"family"},{t:"אח",c:"family"},{t:"אחות",c:"family"},{t:"סבא",c:"family"},{t:"סבתא",c:"family"},{t:"דוד",c:"family"},{t:"דודה",c:"family"},{t:"בן דוד",c:"family"},{t:"תינוק",c:"family"},{t:"ילד",c:"family"},{t:"הורים",c:"family"},{t:"נכד",c:"family"},{t:"אחיין",c:"family"},{t:"גיס",c:"family"},{t:"חמות",c:"family"},{t:"כלה",c:"family"},{t:"חתן",c:"family"},{t:"תאומים",c:"family"},{t:"משפחה",c:"family"},
+    // כלי תחבורה (Transport)
+    {t:"מכונית",c:"transport"},{t:"אוטובוס",c:"transport"},{t:"משאית",c:"transport"},{t:"אופנוע",c:"transport"},{t:"אופניים",c:"transport"},{t:"קורקינט",c:"transport"},{t:"רכבת",c:"transport"},{t:"מטוס",c:"transport"},{t:"מסוק",c:"transport"},{t:"אונייה",c:"transport"},{t:"סירה",c:"transport"},{t:"מונית",c:"transport"},{t:"ניידת משטרה",c:"transport"},{t:"אמבולנס",c:"transport"},{t:"כבאית",c:"transport"},{t:"טרקטורון",c:"transport"},{t:"רכבל",c:"transport"},{t:"מעלית",c:"transport"},{t:"דרגנוע",c:"transport"},{t:"גלגיליות",c:"transport"}
 ];
 
 function getRandomWord(game) {
@@ -146,10 +167,10 @@ function getRandomWord(game) {
   const categories = game.categories || [];
   if (Array.isArray(categories) && categories.length > 0 && !categories.includes('all')) {
     const catSet = new Set(categories);
-    const filtered = WORD_BANK.filter((w) => catSet.has(w.category));
-    pool = pool.concat(filtered);
+    const filtered = WORD_BANK.filter((w) => catSet.has(w.c));
+    pool = pool.concat(filtered.map(w => ({text: w.t, category: w.c})));
   } else {
-    pool = pool.concat(WORD_BANK);
+    pool = pool.concat(WORD_BANK.map(w => ({text: w.t, category: w.c})));
   }
 
   if (pool.length === 0) return { text: "אין מילים", category: "כללי" };
@@ -359,19 +380,20 @@ io.on("connection", (socket) => {
       let clientIp = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
       if (clientIp && clientIp.includes(',')) clientIp = clientIp.split(',')[0].trim();
 
-      game.playersByClientId[clientId] = { clientId, name: playerName, teamId: chosenTeamId, isHost: false, ip: clientIp };
+      const now = new Date();
+      game.playersByClientId[clientId] = { clientId, name: playerName, teamId: chosenTeamId, isHost: false, ip: clientIp, joinedAt: now };
       if(!game.teams[chosenTeamId].players.includes(clientId)) {
           game.teams[chosenTeamId].players.push(clientId);
       }
 
       if (dbReady && pool) {
         try {
-          await pool.query(`INSERT INTO game_players (game_code, client_id, name, team_id, ip_address) VALUES ($1, $2, $3, $4, $5)`,
-            [code, clientId, playerName, chosenTeamId, clientIp]);
+          await pool.query(`INSERT INTO game_players (game_code, client_id, name, team_id, ip_address, joined_at) VALUES ($1, $2, $3, $4, $5, $6)`,
+            [code, clientId, playerName, chosenTeamId, clientIp, now]);
         } catch (e) {}
       }
 
-      game.lastActivity = new Date();
+      game.lastActivity = now;
       saveGameState(game);
 
       socket.join("game-" + code);
@@ -549,10 +571,11 @@ app.get("/admin/stats", async (req, res) => {
   const activeGames = Object.values(games).map(g => ({
     code: g.code,
     hostName: g.hostName,
+    gameTitle: g.gameTitle,
     playerCount: Object.keys(g.playersByClientId).length,
     teamCount: Object.keys(g.teams).length,
     createdAt: g.createdAt,
-    players: Object.values(g.playersByClientId)
+    players: Object.values(g.playersByClientId).map(p => ({ name: p.name, ip: p.ip, joinedAt: p.joinedAt }))
   }));
 
   res.json({ activeGames, dbStats });
@@ -568,7 +591,7 @@ app.get("/admin/reports", async (req, res) => {
         if (type === 'ips') {
             query = `SELECT ip_address, MAX(name) as last_name, COUNT(*) as games_count, MAX(created_at) as last_seen FROM game_players WHERE created_at >= $1::date AND created_at <= ($2::date + 1) GROUP BY ip_address ORDER BY last_seen DESC`;
         } else if (type === 'games') {
-            query = `SELECT code, host_name, host_ip, created_at FROM games WHERE created_at >= $1::date AND created_at <= ($2::date + 1) ORDER BY created_at DESC`;
+            query = `SELECT code, host_name, game_title, host_ip, created_at FROM games WHERE created_at >= $1::date AND created_at <= ($2::date + 1) ORDER BY created_at DESC`;
         }
         const result = await pool.query(query, params);
         res.json({ data: result.rows });
@@ -588,7 +611,8 @@ app.post("/admin/game/:gameCode/close", (req, res) => {
     const code = req.params.gameCode;
     if(games[code]) {
         clearRoundTimer(code); delete games[code]; deleteGameState(code);
-        io.to("game-" + code).emit("gameEnded", { code });
+        // שינוי: אירוע ספציפי לסגירת מנהל
+        io.to("game-" + code).emit("adminClosedGame", { code });
         res.json({ok:true});
     } else res.status(404).send();
 });
