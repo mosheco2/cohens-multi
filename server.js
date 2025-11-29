@@ -51,6 +51,7 @@ async function initDb() {
       ssl: process.env.PGSSL === "false" ? false : { rejectUnauthorized: false },
     });
 
+    // יצירת טבלאות קיימות
     await pool.query(`CREATE TABLE IF NOT EXISTS games (code TEXT PRIMARY KEY, host_name TEXT, target_score INTEGER, default_round_seconds INTEGER, categories TEXT[], created_at TIMESTAMPTZ DEFAULT NOW());`);
     try { await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS host_ip TEXT;`); } catch (e) {}
     try { await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS branding JSONB;`); } catch (e) {}
@@ -63,6 +64,15 @@ async function initDb() {
 
     await pool.query(`CREATE TABLE IF NOT EXISTS active_states (game_code TEXT PRIMARY KEY, data TEXT, last_updated TIMESTAMPTZ DEFAULT NOW());`);
     
+    // --- טבלה חדשה להגדרות אתר גלובליות (באנרים וכו') ---
+    await pool.query(`CREATE TABLE IF NOT EXISTS site_settings (
+        id SERIAL PRIMARY KEY,
+        top_banner_img TEXT,
+        top_banner_link TEXT
+    );`);
+    // וידוא שקיימת שורה אחת לפחות
+    await pool.query(`INSERT INTO site_settings (id, top_banner_img, top_banner_link) VALUES (1, NULL, NULL) ON CONFLICT (id) DO NOTHING;`);
+
     dbReady = true;
     console.log("✅ Postgres ready.");
     await restoreActiveGames();
@@ -615,7 +625,43 @@ app.post("/admin/game/:gameCode/player/:clientId/disconnect", (req, res) => {
     } else res.status(404).send();
 });
 
-app.get("/api/banners", (req, res) => res.json({}));
+// --- API חדש לבאנרים ---
+app.get("/api/banners", async (req, res) => {
+    let banners = {};
+    if (dbReady && pool) {
+        try {
+            const result = await pool.query("SELECT top_banner_img, top_banner_link FROM site_settings WHERE id = 1");
+            if (result.rows.length > 0) {
+                banners.topBanner = {
+                    img: result.rows[0].top_banner_img,
+                    link: result.rows[0].top_banner_link
+                };
+            }
+        } catch (e) { console.error("Error fetching banners:", e); }
+    }
+    res.json(banners);
+});
+
+// --- API חדש לשמירת הגדרות מנהל ---
+app.post("/admin/settings", async (req, res) => {
+    if (req.query.code !== ADMIN_CODE) return res.status(403).json({ ok: false, error: "Forbidden" });
+    const { topBannerImg, topBannerLink } = req.body;
+    if (dbReady && pool) {
+        try {
+            await pool.query(
+                `UPDATE site_settings SET top_banner_img = $1, top_banner_link = $2 WHERE id = 1`,
+                [topBannerImg || null, topBannerLink || null]
+            );
+            res.json({ ok: true });
+        } catch (e) { 
+            console.error("Error saving settings:", e);
+            res.json({ ok: false, error: "DB Error" });
+        }
+    } else {
+        res.json({ ok: false, error: "No DB" });
+    }
+});
+
 
 server.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);
