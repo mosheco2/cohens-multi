@@ -195,7 +195,13 @@
               timerEl.textContent = t;
           }
       });
-      socket.on("roundStarted", (data) => { renderGame(data.game); });
+      socket.on("roundStarted", (data) => { 
+          renderGame(data.game);
+          // תיקון: בקשת מילה ראשונה אם אני המסביר
+          if(data.game.currentRound.explainerId === socket.id) {
+              nextWord();
+          }
+      });
       socket.on("roundTimeUp", (data) => { timerEl.textContent = "00:00"; showModal("⏰ נגמר הזמן!", `<div style="text-align:center;"><img src="m3.png" style="height:100px;"></div><h3>${data.teamName}</h3><h2>${data.roundScore} נקודות</h2>`); presenterArea.classList.add("hidden"); isExplainer = false; });
       socket.on("gameEnded", () => { alert("המשחק נסגר ע\"י המנהל."); localStorage.removeItem(LOCAL_PLAYER_KEY); location.reload(); });
       socket.on("playerRemoved", () => { alert("הוסרת מהמשחק ע\"י המנהל."); localStorage.removeItem(LOCAL_PLAYER_KEY); location.reload(); });
@@ -252,7 +258,6 @@
               if(isExplainer) {
                    document.getElementById("playerRoundCurrentScore").textContent = `ניקוד בסיבוב: ${r.roundScore || 0}`;
                    presenterArea.classList.remove("hidden");
-                   if(document.getElementById("wordDisplay").textContent === "מילה") nextWord();
               } else {
                    presenterArea.classList.add("hidden");
               }
