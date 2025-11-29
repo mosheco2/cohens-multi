@@ -125,47 +125,28 @@ async function restoreActiveGames() {
 
 // מאגר מילים
 const WORD_BANK = [
-    // חיות (animals)
     {text:"כלב",category:"animals"},{text:"חתול",category:"animals"},{text:"פיל",category:"animals"},{text:"אריה",category:"animals"},{text:"ג'ירפה",category:"animals"},{text:"קוף",category:"animals"},{text:"דג",category:"animals"},{text:"ציפור",category:"animals"},{text:"נחש",category:"animals"},{text:"צפרדע",category:"animals"},
-    // אוכל (food)
     {text:"פיצה",category:"food"},{text:"המבורגר",category:"food"},{text:"סושי",category:"food"},{text:"פסטה",category:"food"},{text:"גלידה",category:"food"},{text:"שוקולד",category:"food"},{text:"לחם",category:"food"},{text:"תפוח",category:"food"},{text:"בננה",category:"food"},{text:"עוגה",category:"food"},
-    // חפצים (objects)
     {text:"שולחן",category:"objects"},{text:"כיסא",category:"objects"},{text:"מנורה",category:"objects"},{text:"ספר",category:"objects"},{text:"עט",category:"objects"},{text:"תיק",category:"objects"},{text:"שעון",category:"objects"},{text:"משקפיים",category:"objects"},{text:"מפתח",category:"objects"},{text:"כוס",category:"objects"},
-    // ספורט (sports)
     {text:"כדורגל",category:"sports"},{text:"כדורסל",category:"sports"},{text:"טניס",category:"sports"},{text:"שחייה",category:"sports"},{text:"ריצה",category:"sports"},{text:"אופניים",category:"sports"},{text:"ג'ודו",category:"sports"},{text:"כדורעף",category:"sports"},{text:"בייסבול",category:"sports"},{text:"גלישה",category:"sports"},
-    // מקצועות (professions)
     {text:"רופא",category:"professions"},{text:"מורה",category:"professions"},{text:"שוטר",category:"professions"},{text:"כבאים",category:"professions"},{text:"טבח",category:"professions"},{text:"נהג",category:"professions"},{text:"זמר",category:"professions"},{text:"שחקן",category:"professions"},{text:"צייר",category:"professions"},{text:"מתכנת",category:"professions"},
-    // טכנולוגיה (technology)
     {text:"מחשב",category:"technology"},{text:"טלפון",category:"technology"},{text:"טאבלט",category:"technology"},{text:"אינטרנט",category:"technology"},{text:"רובוט",category:"technology"},{text:"חללית",category:"technology"},{text:"לוויין",category:"technology"},{text:"מקלדת",category:"technology"},{text:"עכבר",category:"technology"},{text:"מסך",category:"technology"},
-    // טבע (nature)
     {text:"עץ",category:"nature"},{text:"פרח",category:"nature"},{text:"ים",category:"nature"},{text:"הר",category:"nature"},{text:"נהר",category:"nature"},{text:"שמש",category:"nature"},{text:"ירח",category:"nature"},{text:"כוכב",category:"nature"},{text:"ענן",category:"nature"},{text:"גשם",category:"nature"},
-    // בית (home)
     {text:"סלון",category:"home"},{text:"מטבח",category:"home"},{text:"אמבטיה",category:"home"},{text:"חדר שינה",category:"home"},{text:"מרפסת",category:"home"},{text:"גינה",category:"home"},{text:"גג",category:"home"},{text:"דלת",category:"home"},{text:"חלון",category:"home"},{text:"מיטה",category:"home"},
-    // בגדים (clothing)
     {text:"חולצה",category:"clothing"},{text:"מכנסיים",category:"clothing"},{text:"שמלה",category:"clothing"},{text:"חצאית",category:"clothing"},{text:"נעליים",category:"clothing"},{text:"גרביים",category:"clothing"},{text:"כובע",category:"clothing"},{text:"מעיל",category:"clothing"},{text:"צעיף",category:"clothing"},{text:"כפפות",category:"clothing"},
-    // רגשות (emotions)
     {text:"שמחה",category:"emotions"},{text:"עצב",category:"emotions"},{text:"כעס",category:"emotions"},{text:"פחד",category:"emotions"},{text:"הפתעה",category:"emotions"},{text:"אהבה",category:"emotions"},{text:"שנאה",category:"emotions"},{text:"קנאה",category:"emotions"},{text:"גאווה",category:"emotions"},{text:"בושה",category:"emotions"},
-    // כלי תחבורה (transport)
     {text:"מכונית",category:"transport"},{text:"אוטובוס",category:"transport"},{text:"רכבת",category:"transport"},{text:"מטוס",category:"transport"},{text:"אונייה",category:"transport"},{text:"אופנוע",category:"transport"},{text:"משאית",category:"transport"},{text:"מונית",category:"transport"},{text:"קלנועית",category:"transport"},{text:"מסוק",category:"transport"},
-    // כלי נגינה (instruments)
     {text:"גיטרה",category:"instruments"},{text:"פסנתר",category:"instruments"},{text:"תוף",category:"instruments"},{text:"כינור",category:"instruments"},{text:"חליל",category:"instruments"},{text:"חצוצרה",category:"instruments"},{text:"סקסופון",category:"instruments"},{text:"אקורדיון",category:"instruments"},{text:"מפוחית",category:"instruments"},{text:"דרבוקה",category:"instruments"},
-    // מדינות (countries)
     {text:"ישראל",category:"countries"},{text:"ארה״ב",category:"countries"},{text:"צרפת",category:"countries"},{text:"איטליה",category:"countries"},{text:"ספרד",category:"countries"},{text:"יפן",category:"countries"},{text:"סין",category:"countries"},{text:"רוסיה",category:"countries"},{text:"מצרים",category:"countries"},{text:"יוון",category:"countries"},
-    // צבעים (colors)
     {text:"אדום",category:"colors"},{text:"כחול",category:"colors"},{text:"ירוק",category:"colors"},{text:"צהוב",category:"colors"},{text:"כתום",category:"colors"},{text:"סגול",category:"colors"},{text:"ורוד",category:"colors"},{text:"חום",category:"colors"},{text:"שחור",category:"colors"},{text:"לבן",category:"colors"},
-    // פעלים (verbs)
     {text:"לרוץ",category:"verbs"},{text:"לקפוץ",category:"verbs"},{text:"לשיר",category:"verbs"},{text:"לרקוד",category:"verbs"},{text:"לאכול",category:"verbs"},{text:"לשתות",category:"verbs"},{text:"לישון",category:"verbs"},{text:"לחשוב",category:"verbs"},{text:"לדבר",category:"verbs"},{text:"לכתוב",category:"verbs"}
 ];
 
 function getRandomWord(game) {
-  // 1. בדיקה אם יש מילים ידניות שטרם שוחקו
   if (game.customWordsList && game.customWordsList.length > 0) {
-      // שליפת המילה הראשונה מהרשימה
       const wordText = game.customWordsList.shift();
       return { text: wordText, category: 'מותאם אישית', isCustom: true };
   }
-
-  // 2. אם אין מילים ידניות, שליפה מהמאגר הכללי
   let pool = [];
   const categories = game.categories || [];
   if (Array.isArray(categories) && categories.length > 0 && !categories.includes('all')) {
@@ -175,7 +156,6 @@ function getRandomWord(game) {
   } else {
     pool = pool.concat(WORD_BANK);
   }
-
   if (pool.length === 0) return { text: "אין מילים", category: "כללי" };
   const idx = Math.floor(Math.random() * pool.length);
   return { ...pool[idx], isCustom: false };
@@ -224,9 +204,7 @@ function startTimerInterval(code) {
     roundTimers[code] = setInterval(() => {
         const g = games[code];
         if (!g || !g.currentRound || !g.currentRound.active) { clearRoundTimer(code); return; }
-        
         g.currentRound.secondsLeft--;
-        
         if (g.currentRound.secondsLeft <= 0) {
             g.currentRound.secondsLeft = 0;
             finishRound(code, { reason: "timer" });
@@ -275,12 +253,9 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
   }
 
   const totalScore = teamId && game.teams[teamId] ? game.teams[teamId].score : 0;
-  
   saveGameState(game);
-  
   broadcastGame(game);
   io.to("game-" + code).emit("forceRefreshPlayers");
-
   io.to("game-" + code).emit("roundFinished", { teamId, roundScore, totalScore, reason: options.reason || "manual" });
 
   if (options.reason === "timer") {
@@ -490,7 +465,6 @@ io.on("connection", (socket) => {
       if(game && game.currentRound) {
           const w = getRandomWord(game);
           if (w.isCustom) {
-              // אם נשלפה מילה ידנית, נשמור את המצב המעודכן (רשימה פחות מילה)
               saveGameState(game);
           }
           safeCb(cb, {ok:true, word: w.text, category: w.category});
