@@ -8,7 +8,12 @@
   <style>
      :root { font-size: 16px; --bg-color: #FFF8EA; }
      * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
-     body { margin: 0; background: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; }
+     /* שינוי: הסתרת הבועות במיתוג */
+     body { margin: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; }
+     body:not(.branded)::before, body:not(.branded)::after { content: ""; position: fixed; width: 280px; height: 280px; border-radius: 50%; z-index: -1; }
+     body:not(.branded)::before { top: -130px; left: -70px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.30), transparent 60%); }
+     body:not(.branded)::after { bottom: -150px; right: -50px; background: radial-gradient(circle at center, rgba(21, 196, 193, 0.28), transparent 60%); }
+
      .app { padding: 20px; max-width: 600px; margin: 0 auto; }
      .card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 15px; }
      .btn { width: 100%; padding: 14px; border-radius: 14px; border: none; font-weight: bold; font-size: 1.1rem; margin-top: 10px; cursor: pointer; transition: 0.2s; }
@@ -21,10 +26,14 @@
      input:focus { border-color: #F84779; outline: none; background: #fff; }
      .hidden { display: none !important; }
      #playerBigTimer { font-size: 3.5rem; text-align: center; font-weight: 900; color: #F84779; margin: 10px 0; font-variant-numeric: tabular-nums; }
-     .logo-area { text-align: center; margin-bottom: 20px; }
-     .logo-area img { height: 80px; width: auto; max-width: 200px; transition: 0.3s; object-fit: contain; }
-     .brand-title { margin: 15px 0 5px; font-size: 1.6rem; color: #2B1E4A; font-weight: 800; }
-     .brand-slogan { margin: 0 0 20px; font-size: 1.1rem; color: #6B618F; font-weight: 600; }
+     
+     /* תיקון לייאוט לוגו וכותרת בשחקן: פלקס שורה, לוגו גדול יותר */
+     .logo-area { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; text-align: center; }
+     .logo-area img { height: 150px; width: auto; object-fit: contain; }
+     .brand-info { text-align: right; display: flex; flex-direction: column; justify-content: center; }
+     .brand-title { margin: 0 0 5px; font-size: 1.8rem; color: #2B1E4A; font-weight: 900; line-height: 1.1; }
+     .brand-slogan { margin: 0; font-size: 1.1rem; color: #5a507a; font-weight: 600; }
+
      #support-wa-btn { position: fixed; bottom: 24px; right: 24px; z-index: 2000; background: #25D366; color: white; border-radius: 50px; padding: 12px 20px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; font-family: "Varela Round", sans-serif; display: flex; align-items: center; gap: 8px; }
      .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; }
      .modal-overlay.active { opacity: 1; visibility: visible; }
@@ -33,14 +42,22 @@
      .data-block { background: #F8F7FF; padding: 10px; border-radius: 12px; margin-bottom: 5px; }
      .data-label { font-size: 0.8rem; color: #A18CCF; font-weight: bold; }
      .data-val { font-size: 1rem; color: #433362; font-weight: bold; }
+
+     @media (max-width: 640px) {
+         .logo-area { flex-direction: column; gap: 10px; }
+         .logo-area img { height: 120px; }
+         .brand-info { text-align: center; }
+     }
   </style>
 </head>
 <body>
   <div class="app">
       <div class="logo-area">
          <img id="playerLogo" src="logo.png" alt="לוגו" style="display:none;">
-         <h1 id="brandTitle" class="brand-title hidden"></h1>
-         <p id="brandSlogan" class="brand-slogan hidden"></p>
+         <div class="brand-info hidden" id="brandInfoBox">
+             <h1 id="brandTitle" class="brand-title"></h1>
+             <p id="brandSlogan" class="brand-slogan hidden"></p>
+         </div>
       </div>
 
       <div id="joinSection" class="card">
@@ -104,7 +121,7 @@
           <button class="btn btn-primary" style="margin-top:20px;" onclick="document.getElementById('customModal').classList.remove('active')">סגור</button>
       </div>
   </div>
-  <div id="support-wa-btn" onclick="openSupport()">💬 עזרה</div>
+  <div id="support-wa-btn" onclick="window.location.href='https://wa.me/972504000024'">💬 עזרה</div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -125,7 +142,7 @@
       const modalContent = document.getElementById("modalContent");
 
       function showModal(title, body) { modalTitle.textContent = title; modalContent.innerHTML = body; customModal.classList.add("active"); }
-      function openSupport() { window.open(`https://wa.me/972504000024`, '_blank'); }
+      function openSupport() { window.location.href = 'https://wa.me/972504000024'; }
       function openInstructions() { window.location.href = 'instructions.html'; }
 
       joinBtn.addEventListener("click", () => {
@@ -151,7 +168,6 @@
       function nextWord() { socket.emit("getNextWord", { gameCode: myGameCode }, (res) => { if(res.ok) { document.getElementById("wordDisplay").textContent = res.word; document.getElementById("wordCategory").textContent = res.category ? `(${res.category})` : ""; } }); }
 
       socket.on("gameUpdated", renderGame);
-      // האזנה לאירוע עדכון ניקוד מהיר
       socket.on("roundScoreUpdated", (data) => {
           if(data.gameCode === myGameCode && isExplainer) {
               document.getElementById("playerRoundCurrentScore").textContent = `ניקוד בסיבוב: ${data.roundScore}`;
@@ -176,13 +192,26 @@
           lastGameState = game;
           
           if(game.branding) {
-              if(game.branding.color) document.body.style.setProperty('--bg-color', '#' + game.branding.color);
+              if(game.branding.color) {
+                  document.body.style.setProperty('--bg-color', '#' + game.branding.color);
+                  document.body.classList.add('branded'); // הסתרת בועות
+              }
               if(game.branding.logo) { document.getElementById('playerLogo').src = game.branding.logo; document.getElementById('playerLogo').style.display = 'inline-block'; }
-              if(game.branding.title) { document.getElementById('brandTitle').textContent = decodeURIComponent(game.branding.title); document.getElementById('brandTitle').classList.remove('hidden'); }
-              if(game.branding.slogan) { document.getElementById('brandSlogan').textContent = decodeURIComponent(game.branding.slogan); document.getElementById('brandSlogan').classList.remove('hidden'); }
+              
+              const hasTitle = game.branding.title;
+              const hasSlogan = game.branding.slogan;
+              
+              if(hasTitle || hasSlogan) {
+                  document.getElementById('brandInfoBox').classList.remove('hidden');
+                  if(hasTitle) document.getElementById('brandTitle').textContent = decodeURIComponent(game.branding.title);
+                  if(hasSlogan) {
+                      document.getElementById('brandSlogan').textContent = decodeURIComponent(game.branding.slogan);
+                      document.getElementById('brandSlogan').classList.remove('hidden');
+                  }
+              }
           } else if (game.gameTitle) {
+              document.getElementById('brandInfoBox').classList.remove('hidden');
               document.getElementById('brandTitle').textContent = game.gameTitle;
-              document.getElementById('brandTitle').classList.remove('hidden');
           }
 
           const myTeam = game.teams[myTeamId];
@@ -200,7 +229,6 @@
               document.getElementById("roundStatus").textContent = `מסביר: ${r.explainerName}`;
               isExplainer = (r.explainerId === socket.id);
               
-              // עדכון ניקוד נוכחי ברינדור
               if(isExplainer) {
                    document.getElementById("playerRoundCurrentScore").textContent = `ניקוד בסיבוב: ${r.roundScore || 0}`;
                    presenterArea.classList.remove("hidden");
@@ -214,7 +242,6 @@
               timerEl.textContent = "00:00";
               isExplainer = false;
               document.getElementById("wordDisplay").textContent = "מילה";
-              // איפוס ניקוד נוכחי
               document.getElementById("playerRoundCurrentScore").textContent = "ניקוד בסיבוב: 0";
           }
       }
