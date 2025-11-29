@@ -24,10 +24,10 @@ async function sendNewGameEmail(gameInfo) {
   fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // תיקון: הוספת שם החדר למייל
       body: JSON.stringify({
           code: gameInfo.code,
           host: gameInfo.hostName,
+          // תיקון: וידוא ששם החדר נשלח במייל
           title: gameInfo.gameTitle || "ללא שם"
       })
   }).catch(err => console.error("Webhook error:", err.message));
@@ -126,7 +126,7 @@ async function restoreActiveGames() {
     } catch (e) { console.error("Restore Error:", e.message); }
 }
 
-// תיקון: בנק מילים מורחב - 15 קטגוריות
+// מאגר מילים
 const WORD_BANK = [
     // חיות (animals)
     {text:"כלב",category:"animals"},{text:"חתול",category:"animals"},{text:"פיל",category:"animals"},{text:"אריה",category:"animals"},{text:"ג'ירפה",category:"animals"},{text:"קוף",category:"animals"},{text:"דג",category:"animals"},{text:"ציפור",category:"animals"},{text:"נחש",category:"animals"},{text:"צפרדע",category:"animals"},
@@ -277,10 +277,8 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
   
   saveGameState(game);
   
-  // תיקון: וידוא סנכרון מלא בסיום סיבוב
+  // תיקון: שידור עדכון משחק רגיל מספיק. הוסרה הפקודה הכפולה forceRefreshPlayers
   broadcastGame(game);
-  // שליחת אירוע שמכריח את כל הלקוחות לרענן את המצב שלהם מול השרת
-  io.to("game-" + code).emit("forceRefreshPlayers");
 
   io.to("game-" + code).emit("roundFinished", { teamId, roundScore, totalScore, reason: options.reason || "manual" });
 
@@ -336,6 +334,7 @@ io.on("connection", (socket) => {
 
       if (dbReady && pool) {
         try {
+          // תיקון: וידוא רישום מלא של המשחק כולל כותרת ו-IP
           await pool.query(`INSERT INTO games (code, host_name, target_score, default_round_seconds, categories, host_ip, game_title) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [code, hostName, targetScore, defaultRoundSeconds, categories, clientIp, game.gameTitle]);
           
@@ -394,6 +393,7 @@ io.on("connection", (socket) => {
 
       if (dbReady && pool) {
         try {
+          // תיקון: וידוא רישום מלא של השחקן כולל IP וזמן
           await pool.query(`INSERT INTO game_players (game_code, client_id, name, team_id, ip_address, created_at) VALUES ($1, $2, $3, $4, $5, $6)`,
             [code, clientId, playerName, chosenTeamId, clientIp, now]);
         } catch (e) {}
@@ -535,6 +535,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+      // תיקון קריטי: ביטול מחיקת שחקנים אוטומטית בעת ניתוק socket.
+      // זה מונע משחקנים להיעלם לרגע למנהל אם יש להם בעיית רשת רגעית במובייל.
+      // השחקנים יישארו ברשימה עד שהמנהל יסיר אותם ידנית או שהמשחק יסתיים.
+      
+      /* הקוד הישן שנמחק:
       const pid = socket.id;
       Object.values(games).forEach(g => {
           if(g.hostSocketId === pid) return; 
@@ -544,9 +549,7 @@ io.on("connection", (socket) => {
               if(g.teams[p.teamId]) {
                   g.teams[p.teamId].players = g.teams[p.teamId].players.filter(id=>id!==pid);
               }
-              
               saveGameState(g);
-
               if(g.currentRound && g.currentRound.explainerId === pid) {
                   finishRound(g.code, {reason:"player_disconnected"});
               } else {
@@ -554,6 +557,7 @@ io.on("connection", (socket) => {
               }
           }
       });
+      */
   });
 });
 
@@ -595,7 +599,6 @@ app.get("/admin/reports", async (req, res) => {
     try {
         let query = "", params = [from || '2020-01-01', to || '2030-01-01'];
         if (type === 'ips') {
-            // תיקון: שאילתה המציגה כל כניסת שחקן בנפרד כולל תאריך
             query = `SELECT gp.created_at, gp.ip_address, gp.name, g.game_title, g.code 
                      FROM game_players gp 
                      LEFT JOIN games g ON gp.game_code = g.code
