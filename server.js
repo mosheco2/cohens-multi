@@ -24,9 +24,11 @@ async function sendNewGameEmail(gameInfo) {
   fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      // תיקון: הוספת שם החדר למייל
       body: JSON.stringify({
           code: gameInfo.code,
-          host: gameInfo.hostName
+          host: gameInfo.hostName,
+          title: gameInfo.gameTitle || "ללא שם"
       })
   }).catch(err => console.error("Webhook error:", err.message));
 }
@@ -56,8 +58,9 @@ async function initDb() {
     try { await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS game_title TEXT;`); } catch (e) {}
 
     await pool.query(`CREATE TABLE IF NOT EXISTS game_teams (id SERIAL PRIMARY KEY, game_code TEXT, team_id TEXT, team_name TEXT, score INTEGER DEFAULT 0);`);
-    await pool.query(`CREATE TABLE IF NOT EXISTS game_players (id SERIAL PRIMARY KEY, game_code TEXT, client_id TEXT, name TEXT, team_id TEXT, ip_address TEXT);`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS game_players (id SERIAL PRIMARY KEY, game_code TEXT, client_id TEXT, name TEXT, team_id TEXT, ip_address TEXT, created_at TIMESTAMPTZ DEFAULT NOW());`);
     try { await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS ip_address TEXT;`); } catch (e) {}
+    try { await pool.query(`ALTER TABLE game_players ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`); } catch (e) {}
 
     await pool.query(`CREATE TABLE IF NOT EXISTS active_states (game_code TEXT PRIMARY KEY, data TEXT, last_updated TIMESTAMPTZ DEFAULT NOW());`);
     
@@ -79,7 +82,6 @@ const safeCb = (cb, data) => { if (typeof cb === 'function') cb(data); };
 async function saveGameState(game) {
     if (!dbReady || !game) return;
     try {
-        // יצירת עותק כדי לא לשמור מילים מותאמות אישית ל-DB
         const gameToSave = JSON.parse(JSON.stringify(game));
         gameToSave.customWordsList = []; 
 
@@ -124,17 +126,38 @@ async function restoreActiveGames() {
     } catch (e) { console.error("Restore Error:", e.message); }
 }
 
-// בנק מילים בסיסי
+// תיקון: בנק מילים מורחב - 15 קטגוריות
 const WORD_BANK = [
-  { text: "חתול", category: "animals" }, { text: "כלב", category: "animals" }, { text: "פיל", category: "animals" },
-  { text: "שולחן", category: "objects" }, { text: "מחשב", category: "technology" }, { text: "טלפון", category: "technology" },
-  { text: "פיצה", category: "food" }, { text: "המבורגר", category: "food" }, { text: "משפחה", category: "family" },
-  { text: "חופשה", category: "travel" }, { text: "ים", category: "travel" }, { text: "כדורגל", category: "sports" },
-  { text: "כדורסל", category: "sports" }, { text: "סדרה בטלוויזיה", category: "entertainment" }, { text: "סרט", category: "entertainment" },
-  { text: "שיר", category: "music" }, { text: "גיטרה", category: "music" }, { text: "יער", category: "nature" },
-  { text: "מדבר", category: "nature" }, { text: "חג פסח", category: "holidays" }, { text: "ראש השנה", category: "holidays" },
-  { text: "מורה", category: "school" }, { text: "תלמיד", category: "school" }, { text: "בוס", category: "work" },
-  { text: "משרד", category: "work" }
+    // חיות (animals)
+    {text:"כלב",category:"animals"},{text:"חתול",category:"animals"},{text:"פיל",category:"animals"},{text:"אריה",category:"animals"},{text:"ג'ירפה",category:"animals"},{text:"קוף",category:"animals"},{text:"דג",category:"animals"},{text:"ציפור",category:"animals"},{text:"נחש",category:"animals"},{text:"צפרדע",category:"animals"},
+    // אוכל (food)
+    {text:"פיצה",category:"food"},{text:"המבורגר",category:"food"},{text:"סושי",category:"food"},{text:"פסטה",category:"food"},{text:"גלידה",category:"food"},{text:"שוקולד",category:"food"},{text:"לחם",category:"food"},{text:"תפוח",category:"food"},{text:"בננה",category:"food"},{text:"עוגה",category:"food"},
+    // חפצים (objects)
+    {text:"שולחן",category:"objects"},{text:"כיסא",category:"objects"},{text:"מנורה",category:"objects"},{text:"ספר",category:"objects"},{text:"עט",category:"objects"},{text:"תיק",category:"objects"},{text:"שעון",category:"objects"},{text:"משקפיים",category:"objects"},{text:"מפתח",category:"objects"},{text:"כוס",category:"objects"},
+    // ספורט (sports)
+    {text:"כדורגל",category:"sports"},{text:"כדורסל",category:"sports"},{text:"טניס",category:"sports"},{text:"שחייה",category:"sports"},{text:"ריצה",category:"sports"},{text:"אופניים",category:"sports"},{text:"ג'ודו",category:"sports"},{text:"כדורעף",category:"sports"},{text:"בייסבול",category:"sports"},{text:"גלישה",category:"sports"},
+    // מקצועות (professions)
+    {text:"רופא",category:"professions"},{text:"מורה",category:"professions"},{text:"שוטר",category:"professions"},{text:"כבאים",category:"professions"},{text:"טבח",category:"professions"},{text:"נהג",category:"professions"},{text:"זמר",category:"professions"},{text:"שחקן",category:"professions"},{text:"צייר",category:"professions"},{text:"מתכנת",category:"professions"},
+    // טכנולוגיה (technology)
+    {text:"מחשב",category:"technology"},{text:"טלפון",category:"technology"},{text:"טאבלט",category:"technology"},{text:"אינטרנט",category:"technology"},{text:"רובוט",category:"technology"},{text:"חללית",category:"technology"},{text:"לוויין",category:"technology"},{text:"מקלדת",category:"technology"},{text:"עכבר",category:"technology"},{text:"מסך",category:"technology"},
+    // טבע (nature)
+    {text:"עץ",category:"nature"},{text:"פרח",category:"nature"},{text:"ים",category:"nature"},{text:"הר",category:"nature"},{text:"נהר",category:"nature"},{text:"שמש",category:"nature"},{text:"ירח",category:"nature"},{text:"כוכב",category:"nature"},{text:"ענן",category:"nature"},{text:"גשם",category:"nature"},
+    // בית (home)
+    {text:"סלון",category:"home"},{text:"מטבח",category:"home"},{text:"אמבטיה",category:"home"},{text:"חדר שינה",category:"home"},{text:"מרפסת",category:"home"},{text:"גינה",category:"home"},{text:"גג",category:"home"},{text:"דלת",category:"home"},{text:"חלון",category:"home"},{text:"מיטה",category:"home"},
+    // בגדים (clothing)
+    {text:"חולצה",category:"clothing"},{text:"מכנסיים",category:"clothing"},{text:"שמלה",category:"clothing"},{text:"חצאית",category:"clothing"},{text:"נעליים",category:"clothing"},{text:"גרביים",category:"clothing"},{text:"כובע",category:"clothing"},{text:"מעיל",category:"clothing"},{text:"צעיף",category:"clothing"},{text:"כפפות",category:"clothing"},
+    // רגשות (emotions)
+    {text:"שמחה",category:"emotions"},{text:"עצב",category:"emotions"},{text:"כעס",category:"emotions"},{text:"פחד",category:"emotions"},{text:"הפתעה",category:"emotions"},{text:"אהבה",category:"emotions"},{text:"שנאה",category:"emotions"},{text:"קנאה",category:"emotions"},{text:"גאווה",category:"emotions"},{text:"בושה",category:"emotions"},
+    // כלי תחבורה (transport)
+    {text:"מכונית",category:"transport"},{text:"אוטובוס",category:"transport"},{text:"רכבת",category:"transport"},{text:"מטוס",category:"transport"},{text:"אונייה",category:"transport"},{text:"אופנוע",category:"transport"},{text:"משאית",category:"transport"},{text:"מונית",category:"transport"},{text:"קלנועית",category:"transport"},{text:"מסוק",category:"transport"},
+    // כלי נגינה (instruments)
+    {text:"גיטרה",category:"instruments"},{text:"פסנתר",category:"instruments"},{text:"תוף",category:"instruments"},{text:"כינור",category:"instruments"},{text:"חליל",category:"instruments"},{text:"חצוצרה",category:"instruments"},{text:"סקסופון",category:"instruments"},{text:"אקורדיון",category:"instruments"},{text:"מפוחית",category:"instruments"},{text:"דרבוקה",category:"instruments"},
+    // מדינות (countries)
+    {text:"ישראל",category:"countries"},{text:"ארה״ב",category:"countries"},{text:"צרפת",category:"countries"},{text:"איטליה",category:"countries"},{text:"ספרד",category:"countries"},{text:"יפן",category:"countries"},{text:"סין",category:"countries"},{text:"רוסיה",category:"countries"},{text:"מצרים",category:"countries"},{text:"יוון",category:"countries"},
+    // צבעים (colors)
+    {text:"אדום",category:"colors"},{text:"כחול",category:"colors"},{text:"ירוק",category:"colors"},{text:"צהוב",category:"colors"},{text:"כתום",category:"colors"},{text:"סגול",category:"colors"},{text:"ורוד",category:"colors"},{text:"חום",category:"colors"},{text:"שחור",category:"colors"},{text:"לבן",category:"colors"},
+    // פעלים (verbs)
+    {text:"לרוץ",category:"verbs"},{text:"לקפוץ",category:"verbs"},{text:"לשיר",category:"verbs"},{text:"לרקוד",category:"verbs"},{text:"לאכול",category:"verbs"},{text:"לשתות",category:"verbs"},{text:"לישון",category:"verbs"},{text:"לחשוב",category:"verbs"},{text:"לדבר",category:"verbs"},{text:"לכתוב",category:"verbs"}
 ];
 
 function getRandomWord(game) {
@@ -172,7 +195,7 @@ function sanitizeGame(game) {
   });
   const playersByClientId = {};
   Object.entries(game.playersByClientId || {}).forEach(([cid, p]) => {
-    playersByClientId[cid] = { clientId: cid, name: p.name, teamId: p.teamId, isHost: p.isHost || false };
+    playersByClientId[cid] = { clientId: cid, name: p.name, teamId: p.teamId, isHost: p.isHost || false, joinedAt: p.joinedAt };
   });
   return {
     code: game.code, hostName: game.hostName,
@@ -253,7 +276,11 @@ async function finishRound(gameCode, options = { reason: "manual" }) {
   const totalScore = teamId && game.teams[teamId] ? game.teams[teamId].score : 0;
   
   saveGameState(game);
+  
+  // תיקון: וידוא סנכרון מלא בסיום סיבוב
   broadcastGame(game);
+  // שליחת אירוע שמכריח את כל הלקוחות לרענן את המצב שלהם מול השרת
+  io.to("game-" + code).emit("forceRefreshPlayers");
 
   io.to("game-" + code).emit("roundFinished", { teamId, roundScore, totalScore, reason: options.reason || "manual" });
 
@@ -360,7 +387,6 @@ io.on("connection", (socket) => {
       if (clientIp && clientIp.includes(',')) clientIp = clientIp.split(',')[0].trim();
       const now = new Date();
 
-      // הוספת זמן הצטרפות
       game.playersByClientId[clientId] = { clientId, name: playerName, teamId: chosenTeamId, isHost: false, ip: clientIp, joinedAt: now };
       if(!game.teams[chosenTeamId].players.includes(clientId)) {
           game.teams[chosenTeamId].players.push(clientId);
@@ -368,8 +394,8 @@ io.on("connection", (socket) => {
 
       if (dbReady && pool) {
         try {
-          await pool.query(`INSERT INTO game_players (game_code, client_id, name, team_id, ip_address) VALUES ($1, $2, $3, $4, $5)`,
-            [code, clientId, playerName, chosenTeamId, clientIp]);
+          await pool.query(`INSERT INTO game_players (game_code, client_id, name, team_id, ip_address, created_at) VALUES ($1, $2, $3, $4, $5, $6)`,
+            [code, clientId, playerName, chosenTeamId, clientIp, now]);
         } catch (e) {}
       }
 
@@ -378,7 +404,6 @@ io.on("connection", (socket) => {
 
       socket.join("game-" + code);
       safeCb(callback, { ok: true, game: sanitizeGame(game), clientId, teamId: chosenTeamId, teamName: game.teams[chosenTeamId].name, isHost: false });
-      // שידור עדכון קריטי לכל המשתתפים
       broadcastGame(game);
 
     } catch (err) {
@@ -552,12 +577,10 @@ app.get("/admin/stats", async (req, res) => {
   const activeGames = Object.values(games).map(g => ({
     code: g.code,
     hostName: g.hostName,
-    // הוספת כותרת משחק ל-API
     gameTitle: g.gameTitle || "ללא שם",
     playerCount: Object.keys(g.playersByClientId).length,
     teamCount: Object.keys(g.teams).length,
     createdAt: g.createdAt,
-    // שליחת פרטי שחקנים מלאים כולל IP וזמן הצטרפות
     players: Object.values(g.playersByClientId).map(p => ({ name: p.name, ip: p.ip, joinedAt: p.joinedAt }))
   }));
 
@@ -572,14 +595,18 @@ app.get("/admin/reports", async (req, res) => {
     try {
         let query = "", params = [from || '2020-01-01', to || '2030-01-01'];
         if (type === 'ips') {
-            query = `SELECT ip_address, MAX(name) as last_name, COUNT(*) as games_count, MAX(created_at) as last_seen FROM game_players WHERE created_at >= $1::date AND created_at <= ($2::date + 1) GROUP BY ip_address ORDER BY last_seen DESC`;
+            // תיקון: שאילתה המציגה כל כניסת שחקן בנפרד כולל תאריך
+            query = `SELECT gp.created_at, gp.ip_address, gp.name, g.game_title, g.code 
+                     FROM game_players gp 
+                     LEFT JOIN games g ON gp.game_code = g.code
+                     WHERE gp.created_at >= $1::date AND gp.created_at <= ($2::date + 1) 
+                     ORDER BY gp.created_at DESC`;
         } else if (type === 'games') {
-            // הוספת כותרת משחק לשאילתת הדוח
             query = `SELECT code, host_name, host_ip, game_title, created_at FROM games WHERE created_at >= $1::date AND created_at <= ($2::date + 1) ORDER BY created_at DESC`;
         }
         const result = await pool.query(query, params);
         res.json({ data: result.rows });
-    } catch (e) { res.status(500).json({ error: "DB Error" }); }
+    } catch (e) { console.error(e); res.status(500).json({ error: "DB Error" }); }
 });
 
 app.post("/admin/reset", async (req, res) => {
@@ -595,7 +622,6 @@ app.post("/admin/game/:gameCode/close", (req, res) => {
     const code = req.params.gameCode;
     if(games[code]) {
         clearRoundTimer(code); delete games[code]; deleteGameState(code);
-        // שינוי: שליחת אירוע ספציפי לסגירת אדמין
         io.to("game-" + code).emit("adminClosedGame", { code });
         res.json({ok:true});
     } else res.status(404).send();
