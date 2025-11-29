@@ -70,7 +70,8 @@
     .help-box ul { margin: 0; padding: 12px 16px 16px 30px; list-style-type: disc; color: #433362; font-size: 0.95rem; }
     .help-box li { margin-bottom: 6px; }
 
-    .categories-container { display: flex; flex-wrap: wrap; gap: 5px; max-height: 200px; overflow-y: auto; padding: 4px; border: 1px solid rgba(43, 30, 74, 0.1); border-radius: 14px; }
+    /* תיקון: הגדלת גובה התיבה כדי שיוצגו יותר קטגוריות */
+    .categories-container { display: flex; flex-wrap: wrap; gap: 5px; max-height: 350px; overflow-y: auto; padding: 4px; border: 1px solid rgba(43, 30, 74, 0.1); border-radius: 14px; }
     
     .fab-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 100; align-items: center; transition: 0.3s; }
     .fab-btn { background: linear-gradient(135deg, #2B1E4A, #433362); color: #FFD76F; padding: 12px 24px; border-radius: 50px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 15px rgba(43, 30, 74, 0.3); transition: all 0.2s ease; font-size: 0.9rem; white-space: nowrap; }
@@ -462,7 +463,6 @@
         });
     });
 
-    // תיקון: החלפת confirm בפופאפ מותאם
     document.getElementById("endGameBtn").addEventListener("click", () => {
         showConfirmModal("סגירת משחק", "האם אתה בטוח שברצונך לסגור את המשחק לכולם?", () => {
             socket.emit("endGame", { gameCode: currentGameCode });
@@ -472,7 +472,6 @@
     document.getElementById("refreshPlayersBtn").addEventListener("click", () => { if(currentGameCode) socket.emit("getGameState", { gameCode: currentGameCode }); });
 
     window.removePlayer = (clientId, playerName) => {
-        // תיקון: החלפת confirm בפופאפ מותאם
         showConfirmModal("הסרת שחקן", `האם להסיר את השחקן "${playerName}" מהמשחק?`, () => {
             socket.emit("removePlayer", { gameCode: currentGameCode, clientId });
         });
@@ -528,12 +527,12 @@
     document.getElementById("hostBtnSkip").addEventListener("click", () => socket.emit("changeRoundScore", { gameCode: currentGameCode, delta: -1 }, getNextWordHost));
     function getNextWordHost() { socket.emit("getNextWord", { gameCode: currentGameCode }, (res) => { if(res.ok) document.getElementById("hostPresenterWord").innerText = res.word; }); }
 
-    // תיקון: פונקציית עזר לטקסט סיום סיבוב
+    // תיקון: טקסטים לפופאפ סיום סיבוב לפי דרישה
     function getScoreMessage(score) {
-        if (score < 5) return "לא נורא, קורה לטובים ביותר... 😅";
-        if (score <= 10) return "סביר, אבל ציפינו ליותר. 😉";
-        if (score <= 15) return "יפה מאוד! שיחקתם אותה. 👏";
-        return "וואו! פשוט אלופים! 🏆🔥";
+        if (score < 5) return "חחח... לא נורא, אולי בפעם הבאה! 🤣"; // מתגלגל
+        if (score <= 10) return "סביר, אבל ציפינו ליותר. 😉"; // ציני
+        if (score <= 15) return "יפה מאוד! שיחקתם אותה. 👏"; // מרים ומפרגן
+        return "וואו! פשוט אלופים! 🏆🔥"; // חם ומעריץ
     }
 
     socket.on("gameUpdated", renderGame);
@@ -558,7 +557,6 @@
     socket.on("roundTimeUp", (data) => {
         document.getElementById("roundTimer").textContent = "00:00";
         document.getElementById("hostPlayerBigTimer").textContent = "00:00";
-        // תיקון: שימוש בטקסט דינמי בסיום סיבוב
         const msg = getScoreMessage(data.roundScore);
         showModal("⏰ נגמר הזמן!", `<div style="text-align:center;"><img src="m3.png" style="height:80px;"></div><h3>${data.teamName}</h3><h2>${data.roundScore} נקודות</h2><p style="font-size:1.1rem; font-weight:bold; color:#F84779;">${msg}</p>`);
         document.getElementById("hostPresenterSection").classList.add("hidden");
@@ -576,11 +574,6 @@
         if(data.game.currentRound.explainerId === hostPlayerClientId) {
             getNextWordHost();
         }
-    });
-
-    // תיקון: האזנה לאירוע ריענון כפוי
-    socket.on("forceRefreshPlayers", () => {
-        if(currentGameCode) socket.emit("getGameState", { gameCode: currentGameCode });
     });
 
     function renderGame(game) {
@@ -639,7 +632,7 @@
             const myTeam = Object.values(game.teams).find(t => t.players.includes(hostPlayerClientId));
             if(myTeam) {
                 document.getElementById("hostPlayerMyTeamName").textContent = myTeam.name;
-                // תיקון: הצגת חברי הקבוצה במצב שחקן-מנהל
+                // וידוא תצוגת חברי הקבוצה במצב שחקן-מנהל
                 document.getElementById("hostPlayerMyTeamPlayers").textContent = myTeam.players.map(pid => game.playersByClientId[pid]?.name).filter(Boolean).join(", ") || "ממתין...";
             }
             
@@ -698,7 +691,7 @@
           showModal("רשימת שחקנים", html);
       });
 
-    // פונקציות עזר לפופאפים
+    // פונקציות עזר לפופאפים מעוצבים
     function showModal(title, body) { 
         document.getElementById("modalTitle").textContent = title; 
         document.getElementById("modalContent").innerHTML = body; 
