@@ -248,13 +248,15 @@
     const adminFab = document.getElementById("adminFab");
     const adminFloatingPanel = document.getElementById("adminFloatingPanel");
 
-    // מיתוג
+    // מיתוג (חדש)
     const urlParams = new URLSearchParams(window.location.search);
     const branding = {
         logo: urlParams.get('logo'),
-        color: urlParams.get('color')
+        color: urlParams.get('color'),
+        title: urlParams.get('title'),
+        slogan: urlParams.get('slogan')
     };
-    if(branding.color) document.body.style.setProperty('--bg-color', '#' + branding.color);
+    if(branding.color && branding.color !== 'ffffff') document.body.style.setProperty('--bg-color', '#' + branding.color);
     if(branding.logo) {
         const img = document.getElementById('host-logo');
         img.src = branding.logo;
@@ -288,6 +290,7 @@
             E: document.getElementById("teamNameE").value
         };
 
+        // שליחת המיתוג יחד עם יצירת המשחק
         socket.emit("createGame", { hostName, teamNames, branding }, (res) => {
             if(res.ok) {
                 currentGameCode = res.gameCode;
@@ -365,17 +368,17 @@
     function renderGame(game) {
         if(!game) {
             document.getElementById("createGameCard").classList.remove("hidden");
-            document.getElementById("activeGameControls").classList.add("hidden");
+            document.getElementById("gameCodeRow").style.display = "none";
             return;
         }
         lastGameState = game;
         currentGameCode = game.code;
         
         document.getElementById("createGameCard").classList.add("hidden");
-        document.getElementById("activeGameControls").classList.remove("hidden");
+        document.getElementById("gameCodeRow").style.display = "block";
         document.getElementById("gameCodeDisplay").textContent = game.code;
 
-        // עדכון רשימת שיתוף
+        // עדכון רשימת שיתוף (חדש)
         const shareList = document.getElementById('teamsShareList');
         shareList.innerHTML = "";
         Object.values(game.teams).forEach(t => {
