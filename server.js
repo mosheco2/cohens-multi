@@ -378,6 +378,7 @@ io.on("connection", (socket) => {
 
       socket.join("game-" + code);
       safeCb(callback, { ok: true, game: sanitizeGame(game), clientId, teamId: chosenTeamId, teamName: game.teams[chosenTeamId].name, isHost: false });
+      // שידור עדכון קריטי לכל המשתתפים
       broadcastGame(game);
 
     } catch (err) {
