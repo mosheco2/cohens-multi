@@ -81,10 +81,7 @@ const safeCb = (cb, data) => { if (typeof cb === 'function') cb(data); };
 async function saveGameState(game) {
     if (!dbReady || !game) return;
     try {
-        // תיקון: שמירת רשימת המילים המותאמות אישית שנותרו
         const gameToSave = JSON.parse(JSON.stringify(game));
-        // gameToSave.customWordsList = []; // שורה זו נמחקה כדי לשמור את המילים
-
         const json = JSON.stringify(gameToSave);
         await pool.query(
             `INSERT INTO active_states (game_code, data, last_updated) VALUES ($1, $2, NOW()) 
@@ -160,7 +157,6 @@ const WORD_BANK = [
     {text:"לרוץ",category:"verbs"},{text:"לקפוץ",category:"verbs"},{text:"לשיר",category:"verbs"},{text:"לרקוד",category:"verbs"},{text:"לאכול",category:"verbs"},{text:"לשתות",category:"verbs"},{text:"לישון",category:"verbs"},{text:"לחשוב",category:"verbs"},{text:"לדבר",category:"verbs"},{text:"לכתוב",category:"verbs"}
 ];
 
-// תיקון: פונקציה שנותנת עדיפות למילים מותאמות אישית
 function getRandomWord(game) {
   // 1. בדיקה אם יש מילים ידניות שטרם שוחקו
   if (game.customWordsList && game.customWordsList.length > 0) {
@@ -492,7 +488,6 @@ io.on("connection", (socket) => {
   socket.on("getNextWord", (data, cb) => {
       const game = games[data.gameCode];
       if(game && game.currentRound) {
-          // תיקון: שימוש בפונקציה החדשה ששומרת את המצב
           const w = getRandomWord(game);
           if (w.isCustom) {
               // אם נשלפה מילה ידנית, נשמור את המצב המעודכן (רשימה פחות מילה)
