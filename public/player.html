@@ -8,10 +8,12 @@
   <style>
      :root { font-size: 16px; --bg-color: #FFF8EA; }
      * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
-     body { margin: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; }
      
-     /* עוטף תוכן ראשי כדי שהבאנר התחתון ידחף למטה */
-     .main-content-wrapper { flex: 1; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; }
+     /* איפוס מלא לגוף האתר כדי לאפשר 100% רוחב */
+     body { margin: 0; padding: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; }
+     
+     /* עוטף לתוכן המרכזי בלבד - שומר על מרווחים */
+     .main-content-wrapper { flex: 1; padding: 30px 20px; max-width: 600px; margin: 0 auto; width: 100%; }
 
      body:not(.branded)::before, body:not(.branded)::after { content: ""; position: fixed; width: 280px; height: 280px; border-radius: 50%; z-index: -1; }
      body:not(.branded)::before { top: -130px; left: -70px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.30), transparent 60%); }
@@ -45,22 +47,23 @@
      .data-label { font-size: 0.8rem; color: #A18CCF; font-weight: bold; }
      .data-val { font-size: 1rem; color: #433362; font-weight: bold; }
 
-     /* --- CSS מתוקן סופית לבאנרים --- */
+     /* --- CSS סופי לבאנרים: 100% רוחב, גובה קבוע, COVER --- */
      .banner-container {
-         width: 100%;
-         text-align: center;
-         padding: 10px 0;
+         width: 100vw; /* רוחב מסך מלא */
+         margin: 0;
+         padding: 0;
+         line-height: 0;
+         background: #eee;
      }
      .banner-container img {
-         width: 100%; /* תמיד רוחב מלא */
-         height: auto; /* גובה אוטומטי למניעת חיתוך */
-         max-width: 800px; /* מגבלת רוחב */
+         width: 100%;
          display: block;
-         margin: 0 auto;
-         border-radius: 12px;
-         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-         object-fit: contain;
+         object-fit: cover;
+         object-position: center center;
      }
+     /* גבהים קבועים */
+     #globalTopBanner img { height: 80px; }
+     #globalBottomBanner img { height: 160px; }
 
      @media (max-width: 640px) {
          .logo-area { flex-direction: column; gap: 10px; }
@@ -135,7 +138,7 @@
           <h3 style="margin:0 0 10px;">🏆 טבלת ניקוד</h3>
           <div id="scoreboard" style="font-size:1rem;"></div>
           <button id="viewAllPlayersBtn" class="btn btn-ghost" style="width:100%; margin-top:15px;">👀 הצג את כל השחקנים</button>
-          </div>
+      </div>
   </div>
 
   <div id="globalBottomBanner" class="banner-container hidden">
