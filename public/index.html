@@ -7,7 +7,7 @@
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-TP7Z9DX6');</script>
   <meta charset="UTF-8" />
-  <title>מילמניה - דף הבית</title>
+  <title>מילמניה - יצירת משחק</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
   <style>
@@ -24,28 +24,25 @@
      .header-area img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; }
 
      .main-content-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; width: 100%; }
-     .main-card { background: #fff; border-radius: 30px; padding: 40px 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); max-width: 450px; width: 100%; text-align: center; position: relative; overflow: hidden; }
-     h1 { font-size: 3rem; margin: 0 0 10px; color: #2B1E4A; font-weight: 900; line-height: 1; background: linear-gradient(135deg, #F84779, #2B1E4A); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-     p.subtitle { font-size: 1.2rem; color: #6B618F; margin-bottom: 35px; font-weight: 600; }
+     .main-card { background: #fff; border-radius: 30px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); max-width: 450px; width: 100%; position: relative; overflow: hidden; }
+     h1 { font-size: 2.2rem; margin: 0 0 20px; text-align: center; color: #2B1E4A; font-weight: 900; }
      
-     .btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 16px; border-radius: 18px; border: none; font-weight: 800; font-size: 1.3rem; margin-bottom: 15px; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); text-decoration: none; position: relative; overflow: hidden; gap: 10px; }
-     .btn:active { transform: scale(0.96); }
-     .btn-host { background: linear-gradient(135deg, #F84779, #FF8566); color: white; box-shadow: 0 8px 20px rgba(248, 71, 121, 0.3); }
-     .btn-player { background: linear-gradient(135deg, #15C4C1, #42E695); color: white; box-shadow: 0 8px 20px rgba(21, 196, 193, 0.3); }
-     .btn-instructions { background: white; color: #6B618F; border: 2px solid #E0E0E0; font-size: 1.1rem; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-     .icon { font-size: 1.6rem; }
+     label { display: block; margin-bottom: 8px; font-weight: 700; color: #4A3F75; font-size: 0.95rem; }
+     input, select { width: 100%; padding: 12px 15px; border-radius: 15px; border: 2px solid #E0E0E0; background: #FFFDF7; font-size: 1rem; color: #2B1E4A; transition: all 0.3s; font-family: inherit; margin-bottom: 15px; }
+     input:focus, select:focus { border-color: #F84779; outline: none; box-shadow: 0 0 0 3px rgba(248, 71, 121, 0.2); background: #fff; }
+     
+     .btn-submit { width: 100%; padding: 16px; border-radius: 18px; border: none; font-weight: 800; font-size: 1.2rem; margin-top: 10px; cursor: pointer; transition: all 0.3s; background: linear-gradient(135deg, #F84779, #FF8566); color: white; box-shadow: 0 8px 20px rgba(248, 71, 121, 0.3); }
+     .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(248, 71, 121, 0.4); }
+     .btn-submit:active { transform: scale(0.98); }
 
      /* סגנון חדש לבאנר תחתון פנימי */
      .banner-slot { width: 100%; margin-top: 20px; }
      .banner-slot img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; display: block; }
-     
      .hidden { display: none !important; }
 
      @media (max-width: 480px) {
-         .main-card { padding: 30px 20px; }
-         h1 { font-size: 2.5rem; }
-         p.subtitle { font-size: 1.1rem; margin-bottom: 25px; }
-         .btn { font-size: 1.1rem; padding: 14px; }
+         .main-card { padding: 25px 20px; }
+         h1 { font-size: 1.8rem; }
      }
   </style>
 </head>
@@ -58,21 +55,20 @@
 
   <div class="main-content-wrapper">
       <div class="main-card">
-          <h1>מילמניה</h1>
-          <p class="subtitle">המשחק שישבור לכם את השיניים... מצחוק! 😂</p>
+          <h1>יצירת משחק חדש 👑</h1>
           
-          <a href="host.html" class="btn btn-host">
-              <span class="icon">👑</span>
-              אני רוצה לנהל משחק
-          </a>
-          <a href="player.html" class="btn btn-player">
-              <span class="icon">🎮</span>
-              אני רוצה להצטרף למשחק
-          </a>
-          <a href="instructions.html" class="btn btn-instructions">
-              <span class="icon">📜</span>
-              איך משחקים? (הוראות)
-          </a>
+          <form action="/create-game" method="POST">
+              <label for="hostName">שם המנהל (יופיע במשחק)</label>
+              <input type="text" id="hostName" name="hostName" placeholder="לדוגמה: דני המלך" required>
+              
+              <label for="targetScore">יעד נקודות לניצחון</label>
+              <input type="number" id="targetScore" name="targetScore" value="50" min="10" max="200" required>
+              
+              <label for="roundSeconds">שניות לכל סיבוב</label>
+              <input type="number" id="roundSeconds" name="roundSeconds" value="60" min="30" max="180" required>
+
+              <button type="submit" class="btn-submit">צור משחק והתחל!</button>
+          </form>
 
           <div id="home-banner-slot" class="banner-slot hidden">
               <a id="home-banner-link" href="#" target="_blank">
