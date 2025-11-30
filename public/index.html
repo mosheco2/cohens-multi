@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-TP7Z9DX6');</script>
   <meta charset="UTF-8" />
   <title>מילמניה - דף הבית</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
@@ -8,51 +13,46 @@
   <style>
      :root { font-size: 16px; --bg-color: #FFF8EA; }
      * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
-     body { margin: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; padding: 0; }
-     /* הוספתי padding-top/bottom כדי שהבאנרים לא ידבקו לקצוות אם רוצים רווח */
-     .main-content-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; width: 100%; }
-
+     body { margin: 0; padding: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; }
      body::before, body::after { content: ""; position: fixed; width: 300px; height: 300px; border-radius: 50%; z-index: -1; }
      body::before { top: -100px; left: -100px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.25), transparent 65%); }
      body::after { bottom: -100px; right: -100px; background: radial-gradient(circle at center, rgba(21, 196, 193, 0.25), transparent 65%); }
 
+     /* עדכון לבאנר עליון: רוחב מוגבל, גובה מוגבל, פינות עגולות */
+     .header-area { width: 100%; max-width: 450px; padding: 20px 20px 0; text-align: center; }
+     .header-area img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; }
+
+     .main-content-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; width: 100%; }
      .main-card { background: #fff; border-radius: 30px; padding: 40px 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); max-width: 450px; width: 100%; text-align: center; position: relative; overflow: hidden; }
      h1 { font-size: 3rem; margin: 0 0 10px; color: #2B1E4A; font-weight: 900; line-height: 1; background: linear-gradient(135deg, #F84779, #2B1E4A); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
      p.subtitle { font-size: 1.2rem; color: #6B618F; margin-bottom: 35px; font-weight: 600; }
      
      .btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 16px; border-radius: 18px; border: none; font-weight: 800; font-size: 1.3rem; margin-bottom: 15px; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); text-decoration: none; position: relative; overflow: hidden; gap: 10px; }
      .btn:active { transform: scale(0.96); }
-     .btn::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(255,255,255,0.2), transparent); opacity: 0; transition: 0.3s; }
-     .btn:hover::after { opacity: 1; }
-
      .btn-host { background: linear-gradient(135deg, #F84779, #FF8566); color: white; box-shadow: 0 8px 20px rgba(248, 71, 121, 0.3); }
      .btn-player { background: linear-gradient(135deg, #15C4C1, #42E695); color: white; box-shadow: 0 8px 20px rgba(21, 196, 193, 0.3); }
      .btn-instructions { background: white; color: #6B618F; border: 2px solid #E0E0E0; font-size: 1.1rem; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-     .btn-instructions:hover { border-color: #A18CCF; color: #2B1E4A; background: #F8F7FF; }
-
      .icon { font-size: 1.6rem; }
 
-     /* --- CSS מעודכן לבאנרים --- */
-     .banner-container { width: 100%; text-align: center; line-height: 0; }
-     .banner-container img {
-         width: 100%; /* רוחב מלא */
-         object-fit: cover; /* מילוי וחיתוך */
-         display: block;
-     }
-     /* באנר עליון - גובה 80 */
-     #globalTopBanner img { height: 80px; }
-     /* באנר תחתון - גובה כפול 160 */
-     #globalBottomBanner img { height: 160px; }
-     
+     /* עדכון לבאנר תחתון: רוחב מוגבל, מרוכז, גובה מוגבל */
+     #globalBottomBanner { width: 100%; max-width: 450px; margin: 0 auto 20px; padding: 0 20px; box-sizing: border-box; }
+     #globalBottomBanner img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; display: block; }
      .hidden { display: none !important; }
+
+     @media (max-width: 480px) {
+         .main-card { padding: 30px 20px; }
+         h1 { font-size: 2.5rem; }
+         p.subtitle { font-size: 1.1rem; margin-bottom: 25px; }
+         .btn { font-size: 1.1rem; padding: 14px; }
+     }
   </style>
 </head>
 <body>
-    <div id="globalTopBanner" class="banner-container hidden">
-        <a id="globalTopBannerLink" href="#" target="_blank">
-            <img id="globalTopBannerImg" src="" alt="פרסומת עליונה">
-        </a>
-    </div>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TP7Z9DX6"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <div class="header-area">
+      <img src="banner_top.jpg" alt="באנר עליון">
+  </div>
 
   <div class="main-content-wrapper">
       <div class="main-card">
@@ -74,22 +74,14 @@
       </div>
   </div>
 
-  <div id="globalBottomBanner" class="banner-container hidden">
+  <div id="globalBottomBanner" class="hidden">
       <a id="globalBottomBannerLink" href="#" target="_blank">
           <img id="globalBottomBannerImg" src="" alt="פרסומת תחתונה">
       </a>
   </div>
 
   <script>
-      // טעינת באנרים (עליון ותחתון)
       fetch("/api/banners").then(r=>r.json()).then(d => {
-          // טעינת באנר עליון
-          if(d.topBanner && d.topBanner.img) {
-              document.getElementById("globalTopBannerImg").src = d.topBanner.img;
-              document.getElementById("globalTopBannerLink").href = d.topBanner.link || "#";
-              document.getElementById("globalTopBanner").classList.remove("hidden");
-          }
-          // טעינת באנר תחתון (בהנחה שהשרת מחזיר bottomBanner)
           if(d.bottomBanner && d.bottomBanner.img) {
               document.getElementById("globalBottomBannerImg").src = d.bottomBanner.img;
               document.getElementById("globalBottomBannerLink").href = d.bottomBanner.link || "#";
