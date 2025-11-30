@@ -13,18 +13,21 @@
   <style>
      :root { font-size: 16px; --bg-color: #FFF8EA; }
      * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
-     /* הוספת align-items: center ליישור הבאנר העליון */
      body { margin: 0; padding: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; }
      body::before, body::after { content: ""; position: fixed; width: 300px; height: 300px; border-radius: 50%; z-index: -1; }
      body::before { top: -100px; left: -100px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.25), transparent 65%); }
      body::after { bottom: -100px; right: -100px; background: radial-gradient(circle at center, rgba(21, 196, 193, 0.25), transparent 65%); }
 
-     /* סגנון חדש לבאנר עליון */
+     /* סגנון לבאנר עליון */
      .header-area { width: 100%; max-width: 450px; padding: 20px 20px 0; text-align: center; }
-     .header-area img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; }
+     .header-area img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; display: block; }
 
      .main-content-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; width: 100%; }
      .main-card { background: #fff; border-radius: 30px; padding: 40px 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); max-width: 450px; width: 100%; text-align: center; position: relative; overflow: hidden; }
+     
+     /* סגנון ללוגו הפנימי */
+     .inner-logo { max-width: 150px; height: auto; margin-bottom: 15px; }
+
      h1 { font-size: 3rem; margin: 0 0 10px; color: #2B1E4A; font-weight: 900; line-height: 1; background: linear-gradient(135deg, #F84779, #2B1E4A); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
      p.subtitle { font-size: 1.2rem; color: #6B618F; margin-bottom: 35px; font-weight: 600; }
      
@@ -35,7 +38,7 @@
      .btn-instructions { background: white; color: #6B618F; border: 2px solid #E0E0E0; font-size: 1.1rem; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
      .icon { font-size: 1.6rem; }
 
-     /* סגנון חדש לבאנר תחתון פנימי */
+     /* סגנון לבאנר תחתון פנימי */
      .banner-slot { width: 100%; margin-top: 20px; }
      .banner-slot img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; display: block; }
      
@@ -52,12 +55,16 @@
 <body>
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TP7Z9DX6"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <div class="header-area">
-      <img src="banner_top.jpg" alt="באנר עליון">
+  <div id="home-top-banner-slot" class="header-area hidden">
+      <a id="home-top-banner-link" href="#" target="_blank">
+          <img id="home-top-banner-img" src="" alt="באנר עליון">
+      </a>
   </div>
 
   <div class="main-content-wrapper">
       <div class="main-card">
+          <img src="file_0000000007c471fda94c28ef5ca7422b.png" alt="לוגו מילמניה" class="inner-logo">
+
           <h1>מילמניה</h1>
           <p class="subtitle">המשחק שישבור לכם את השיניים... מצחוק! 😂</p>
           
@@ -74,21 +81,31 @@
               איך משחקים? (הוראות)
           </a>
 
-          <div id="home-banner-slot" class="banner-slot hidden">
-              <a id="home-banner-link" href="#" target="_blank">
-                  <img id="home-banner-img" src="" alt="פרסומת תחתונה">
+          <div id="home-bottom-banner-slot" class="banner-slot hidden">
+              <a id="home-bottom-banner-link" href="#" target="_blank">
+                  <img id="home-bottom-banner-img" src="" alt="פרסומת תחתונה">
               </a>
           </div>
       </div>
   </div>
 
   <script>
-      // טעינת באנר תחתון
+      // טעינת באנרים (עליון ותחתון) - מותאם לדף הבית
       fetch("/api/banners").then(r=>r.json()).then(d => {
-          if(d.bottomBanner && d.bottomBanner.img) {
-              document.getElementById("home-banner-img").src = d.bottomBanner.img;
-              document.getElementById("home-banner-link").href = d.bottomBanner.link || "#";
-              document.getElementById("home-banner-slot").classList.remove("hidden");
+          // בדיקה אם קיים מידע עבור 'home'
+          if(d.home && d.home.imageUrl) {
+              const imageUrl = d.home.imageUrl;
+              const linkUrl = d.home.linkUrl || "#";
+
+              // אכלוס באנר עליון
+              document.getElementById("home-top-banner-img").src = imageUrl;
+              document.getElementById("home-top-banner-link").href = linkUrl;
+              document.getElementById("home-top-banner-slot").classList.remove("hidden");
+
+              // אכלוס באנר תחתון
+              document.getElementById("home-bottom-banner-img").src = imageUrl;
+              document.getElementById("home-bottom-banner-link").href = linkUrl;
+              document.getElementById("home-bottom-banner-slot").classList.remove("hidden");
           }
       }).catch(e => console.error("Error fetching banners:", e));
   </script>
