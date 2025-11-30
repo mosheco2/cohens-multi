@@ -10,7 +10,10 @@
   <style>
     :root { font-size: 16px; --bg-color: #FFF8EA; }
     * { box-sizing: border-box; font-family: "Varela Round", system-ui, sans-serif; }
+    
+    /* איפוס שוליים בגוף */
     body { margin: 0; padding: 0; background-color: var(--bg-color); color: #2B1E4A; min-height: 100vh; font-size: 1rem; position: relative; overflow-x: hidden; }
+    
     body:not(.branded)::before, body:not(.branded)::after { content: ""; position: fixed; width: 280px; height: 280px; border-radius: 50%; z-index: -1; }
     body:not(.branded)::before { top: -130px; left: -70px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.30), transparent 60%); }
     body:not(.branded)::after { bottom: -150px; right: -50px; background: radial-gradient(circle at center, rgba(21, 196, 193, 0.28), transparent 60%); }
@@ -86,22 +89,19 @@
     .modal-box { background: #fff; width: 85%; max-width: 400px; border-radius: 28px; padding: 30px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
     .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
 
-    /* --- CSS מתוקן סופית לבאנר עליון --- */
+    /* --- CSS סופי לבאנר עליון --- */
     .top-banner-container { 
-        width: 100%; 
-        max-width: 1024px; 
-        margin: 0 auto 16px auto; 
-        text-align: center;
-        padding: 10px 0;
+        width: 100vw; 
+        margin: 0; padding: 0;
+        line-height: 0;
+        background: #eee;
     }
     .top-banner-container img { 
-        width: 100%; /* תמיד רוחב מלא */
-        height: auto; /* גובה אוטומטי למניעת חיתוך */
-        max-width: 800px; /* מגבלת רוחב */
+        width: 100%;
+        height: 80px; /* גובה קבוע */
         display: block; 
-        margin: 0 auto; 
-        border-radius: 12px; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        object-fit: cover;
+        object-position: center center;
     }
 
     @media (max-width: 640px) { 
@@ -119,6 +119,12 @@
   </style>
 </head>
 <body>
+  <div id="globalTopBanner" class="top-banner-container hidden">
+      <a id="globalTopBannerLink" href="#" target="_blank">
+          <img id="globalTopBannerImg" src="" alt="פרסומת">
+      </a>
+  </div>
+
   <div class="app">
     <div class="card" id="hostTop">
       <div class="page-header">
@@ -148,12 +154,6 @@
       </div>
     </div>
     
-    <div id="globalTopBanner" class="top-banner-container hidden">
-        <a id="globalTopBannerLink" href="#" target="_blank">
-            <img id="globalTopBannerImg" src="" alt="פרסומת">
-        </a>
-    </div>
-
     <details class="help-box">
         <summary>🤔 איך מתחילים? לחץ כאן להסבר קצר</summary>
         <ul>
@@ -269,7 +269,6 @@
         <div id="scoreboard"></div>
         <hr style="border:none; border-top:1px solid rgba(180, 169, 214, 0.5); margin:10px 8px;" />
         <div id="playersByTeam" class="status-text"></div>
-        <div id="host-banner-slot" style="margin-top:8px;"></div>
       </div>
     </div>
 
@@ -761,407 +760,6 @@
             document.getElementById("globalTopBanner").classList.remove("hidden");
         }
     }).catch(()=>{});
-  </script>
-</body>
-</html>
-### 3. קובץ `public/player.html` (מסך שחקן) - מתוקן
-
-```html
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <title>מילמניה - מסך שחקן</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <link href="[https://fonts.googleapis.com/css2?family=Varela+Round&display=swap](https://fonts.googleapis.com/css2?family=Varela+Round&display=swap)" rel="stylesheet">
-  <style>
-     :root { font-size: 16px; --bg-color: #FFF8EA; }
-     * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
-     body { margin: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; }
-     
-     /* עוטף תוכן ראשי כדי שהבאנר התחתון ידחף למטה */
-     .main-content-wrapper { flex: 1; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; }
-
-     body:not(.branded)::before, body:not(.branded)::after { content: ""; position: fixed; width: 280px; height: 280px; border-radius: 50%; z-index: -1; }
-     body:not(.branded)::before { top: -130px; left: -70px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.30), transparent 60%); }
-     body:not(.branded)::after { bottom: -150px; right: -50px; background: radial-gradient(circle at center, rgba(21, 196, 193, 0.28), transparent 60%); }
-
-     .card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 15px; }
-     .btn { width: 100%; padding: 14px; border-radius: 14px; border: none; font-weight: bold; font-size: 1.1rem; margin-top: 10px; cursor: pointer; transition: 0.2s; }
-     .btn:active { transform: scale(0.98); }
-     .btn-primary { background: linear-gradient(135deg, #F84779, #FF8566); color: white; }
-     .btn-success { background: linear-gradient(135deg, #15C4C1, #42E695); color: white; }
-     .btn-danger { background: rgba(239, 68, 68, 0.1); color: #EF4444; width: auto; font-size: 0.9rem; padding: 6px 12px; margin-top:0; }
-     .btn-ghost { background: transparent; border: 1px solid #ccc; color: #666; width: auto; font-size: 0.9rem; padding: 6px 12px; margin-top:0; }
-     input, select { width: 100%; padding: 14px; border-radius: 18px; border: 2px solid rgba(43, 30, 74, 0.1); background: #FFFDF7; font-size: 1.1rem; text-align:center; font-weight:600; margin-bottom: 10px; }
-     input:focus { border-color: #F84779; outline: none; background: #fff; }
-     input.readonly-code { background-color: #e5e7eb; color: #6b7280; border-color: #d1d5db; }
-     .hidden { display: none !important; }
-     #playerBigTimer { font-size: 3.5rem; text-align: center; font-weight: 900; color: #F84779; margin: 10px 0; font-variant-numeric: tabular-nums; }
-     
-     .logo-area { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; text-align: center; }
-     .logo-area img { height: 150px; width: auto; object-fit: contain; background: transparent; }
-     .brand-info { text-align: right; display: flex; flex-direction: column; justify-content: center; }
-     .brand-title { margin: 0 0 5px; font-size: 1.8rem; color: #2B1E4A; font-weight: 900; line-height: 1.1; }
-     .brand-slogan { margin: 0; font-size: 1.1rem; color: #5a507a; font-weight: 600; }
-
-     #support-wa-btn { position: fixed; bottom: 24px; right: 24px; z-index: 2000; background: #25D366; color: white; border-radius: 50px; padding: 12px 20px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; font-family: "Varela Round", sans-serif; display: flex; align-items: center; gap: 8px; }
-     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; }
-     .modal-overlay.active { opacity: 1; visibility: visible; }
-     .modal-box { background: #fff; width: 85%; max-width: 400px; border-radius: 28px; padding: 30px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: translateY(20px); transition: 0.3s; }
-     .modal-overlay.active .modal-box { transform: translateY(0); }
-     .data-block { background: #F8F7FF; padding: 10px; border-radius: 12px; margin-bottom: 5px; }
-     .data-label { font-size: 0.8rem; color: #A18CCF; font-weight: bold; }
-     .data-val { font-size: 1rem; color: #433362; font-weight: bold; }
-
-     /* --- CSS מתוקן סופית לבאנרים --- */
-     .banner-container {
-         width: 100%;
-         text-align: center;
-         padding: 10px 0;
-     }
-     .banner-container img {
-         width: 100%; /* תמיד רוחב מלא */
-         height: auto; /* גובה אוטומטי למניעת חיתוך */
-         max-width: 800px; /* מגבלת רוחב */
-         display: block;
-         margin: 0 auto;
-         border-radius: 12px;
-         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-     }
-
-     @media (max-width: 640px) {
-         .logo-area { flex-direction: column; gap: 10px; }
-         .logo-area img { height: 120px; }
-         .brand-info { text-align: center; }
-     }
-  </style>
-</head>
-<body>
-  <div id="globalTopBanner" class="banner-container hidden">
-    <a id="globalTopBannerLink" href="#" target="_blank">
-        <img id="globalTopBannerImg" src="" alt="פרסומת עליונה">
-    </a>
-  </div>
-
-  <div class="main-content-wrapper">
-      <div class="logo-area">
-         <img id="playerLogo" src="logo.png" alt="לוגו" style="display:none;">
-         <div class="brand-info hidden" id="brandInfoBox">
-             <h1 id="brandTitle" class="brand-title"></h1>
-             <p id="brandSlogan" class="brand-slogan hidden"></p>
-         </div>
-      </div>
-
-      <div id="joinSection" class="card">
-          <h2 style="text-align:center; margin-top:0;">הצטרפות למשחק</h2>
-          <div id="inviteInfo" style="background:#e0f2fe; padding:12px; border-radius:12px; color:#0369a1; margin-bottom:15px; font-weight:bold; text-align:center; display:none;"></div>
-          <div id="manualLoginFields">
-              <label>קוד משחק</label>
-              <input id="gameCodeInput" placeholder="לדוגמה: AB12" style="text-transform:uppercase;">
-              <div id="teamSelectContainer" class="hidden">
-                  <label>בחירת קבוצה</label>
-                  <select id="teamSelect"><option value="">טוען קבוצות...</option></select>
-              </div>
-          </div>
-          <label>השם שלך</label>
-          <input id="playerNameInput" placeholder="לדוגמה: יוסי המהיר">
-          <button id="joinBtn" class="btn btn-primary">🚀 כניסה למשחק</button>
-          <div id="joinStatus" style="text-align:center; margin-top:10px; color:#666; font-size:0.9rem;"></div>
-      </div>
-
-      <div id="gameSection" class="card hidden">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-              <button class="btn-ghost" onclick="openInstructions()">?</button>
-              <button onclick="exitGame()" class="btn-danger">יציאה</button>
-          </div>
-          <div style="display:flex; gap:10px; margin-bottom:15px;">
-              <div class="data-block" style="flex:1;">
-                  <div class="data-label">הקבוצה שלי</div>
-                  <div class="data-val" id="myTeamName"></div>
-              </div>
-              <div class="data-block" style="flex:1.5;">
-                   <div class="data-label">חברים לקבוצה</div>
-                   <div class="data-val" id="myTeamPlayers" style="font-weight:normal; font-size:0.9rem;"></div>
-              </div>
-          </div>
-          <div style="text-align:center; padding: 20px 0;">
-              <div id="roundStatus" style="font-size:1.1rem; color:#666;">ממתין...</div>
-              <div id="playerBigTimer">--:--</div>
-          </div>
-          <div id="presenterArea" class="hidden" style="text-align:center; margin-top:10px; background:#fff4e6; padding:20px; border-radius:20px; border:2px dashed #ffcc80;">
-              <div style="font-size:0.9rem; color:#e67e22; font-weight:bold; margin-bottom:5px;">אתה המסביר!</div>
-              <div id="playerRoundCurrentScore" style="font-size:1.1rem; color:#25D366; font-weight:bold; margin-bottom: 5px;">ניקוד בסיבוב: 0</div>
-              <h1 id="wordDisplay" style="font-size:2.8rem; margin:5px 0; color:#2B1E4A;">מילה</h1>
-              <div id="wordCategory" style="color:#888; margin-bottom:15px;"></div>
-              <div style="display:flex; gap:10px;">
-                  <button class="btn btn-primary" style="background:#ff8a65;" onclick="skipWord()">דלג (-1)</button>
-                  <button class="btn btn-success" onclick="correctWord()">נכון! (+1)</button>
-              </div>
-          </div>
-          <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
-          <h3 style="margin:0 0 10px;">🏆 טבלת ניקוד</h3>
-          <div id="scoreboard" style="font-size:1rem;"></div>
-          <button id="viewAllPlayersBtn" class="btn btn-ghost" style="width:100%; margin-top:15px;">👀 הצג את כל השחקנים</button>
-          </div>
-  </div>
-
-  <div id="globalBottomBanner" class="banner-container hidden">
-      <a id="globalBottomBannerLink" href="#" target="_blank">
-          <img id="globalBottomBannerImg" src="" alt="פרסומת תחתונה">
-      </a>
-  </div>
-
-  <div class="modal-overlay" id="customModal">
-      <div class="modal-box">
-          <h2 id="modalTitle" style="margin-top:0;"></h2>
-          <div id="modalContent"></div>
-          <div id="modalActions" style="margin-top:20px;">
-              <button class="btn btn-primary" onclick="closeModal()">סגור</button>
-          </div>
-      </div>
-  </div>
-  <div id="support-wa-btn">💬 עזרה</div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-      const socket = io();
-      const LOCAL_PLAYER_KEY = "millmania-player-join";
-      let myGameCode = null; let myTeamId = null; let isExplainer = false; let lastGameState = null;
-      let pendingAction = null;
-
-      const joinSection = document.getElementById("joinSection");
-      const gameSection = document.getElementById("gameSection");
-      const gameCodeInput = document.getElementById("gameCodeInput");
-      const playerNameInput = document.getElementById("playerNameInput");
-      const joinBtn = document.getElementById("joinBtn");
-      const joinStatus = document.getElementById("joinStatus");
-      const timerEl = document.getElementById("playerBigTimer");
-      const presenterArea = document.getElementById("presenterArea");
-      const customModal = document.getElementById("customModal");
-      const modalTitle = document.getElementById("modalTitle");
-      const modalContent = document.getElementById("modalContent");
-      const supportBtn = document.getElementById("support-wa-btn");
-
-      function getScoreMessage(score) {
-          if (score < 5) return "לא נורא, קורה לטובים ביותר... 😅";
-          if (score <= 10) return "סביר, אבל ציפינו ליותר. 😉";
-          if (score <= 15) return "יפה מאוד! שיחקתם אותה. 👏";
-          return "וואו! פשוט אלופים! 🏆🔥";
-      }
-
-      function showModal(title, body) { 
-          modalTitle.textContent = title; 
-          modalContent.innerHTML = body; 
-          document.getElementById("modalActions").innerHTML = '<button class="btn btn-primary" onclick="closeModal()">סגור</button>';
-          customModal.classList.add("active"); 
-      }
-
-      function showConfirmModal(title, body, onConfirm) {
-          modalTitle.textContent = title;
-          modalContent.textContent = body;
-          pendingAction = onConfirm;
-          document.getElementById("modalActions").innerHTML = `
-              <button class="btn btn-ghost" onclick="closeModal()">ביטול</button>
-              <button class="btn btn-danger" onclick="confirmAction()">אישור</button>
-          `;
-          customModal.classList.add("active");
-      }
-
-      function closeModal() {
-          customModal.classList.remove("active");
-          pendingAction = null;
-      }
-
-      function confirmAction() {
-          if (pendingAction) pendingAction();
-          closeModal();
-      }
-
-      function openInstructions() { window.location.href = 'instructions.html'; }
-
-      function updateSupportLink() {
-          let text = "היי, אשמח לעזרה במשחק מילמניה.";
-          if (myGameCode) {
-              text = `היי, אני שחקן במשחק ${myGameCode} ואשמח לעזרה.`;
-          }
-          supportBtn.onclick = () => window.location.href = `https://wa.me/972504000024?text=${encodeURIComponent(text)}`;
-      }
-      updateSupportLink();
-
-      joinBtn.addEventListener("click", () => {
-          const code = gameCodeInput.value.trim().toUpperCase();
-          const name = playerNameInput.value.trim();
-          if(code.length < 3 || name.length < 2) return showModal("שגיאה", "נא להזין קוד משחק ושם (לפחות 2 תווים)");
-          joinBtn.disabled = true; joinStatus.innerText = "מתחבר...";
-          const urlTeamId = new URLSearchParams(window.location.search).get("teamId");
-          socket.emit("joinGame", { gameCode: code, name: name, teamId: urlTeamId || null }, (res) => {
-              joinBtn.disabled = false;
-              if(res.ok) {
-                  myGameCode = code; myTeamId = res.teamId;
-                  localStorage.setItem(LOCAL_PLAYER_KEY, JSON.stringify({ gameCode: code, name: name }));
-                  joinSection.classList.add("hidden"); gameSection.classList.remove("hidden");
-                  renderGame(res.game);
-                  updateSupportLink();
-              } else { joinStatus.innerText = res.error || "שגיאה בהתחברות"; }
-          });
-      });
-
-      function exitGame() {
-          showConfirmModal("יציאה מהמשחק", "האם אתה בטוח שברצונך לצאת?", () => {
-              localStorage.removeItem(LOCAL_PLAYER_KEY); 
-              location.reload();
-          });
-      }
-
-      function skipWord() { if(isExplainer) socket.emit("changeRoundScore", { gameCode: myGameCode, delta: -1 }, nextWord); }
-      function correctWord() { if(isExplainer) socket.emit("changeRoundScore", { gameCode: myGameCode, delta: 1 }, nextWord); }
-      function nextWord() { socket.emit("getNextWord", { gameCode: myGameCode }, (res) => { if(res.ok) { document.getElementById("wordDisplay").textContent = res.word; document.getElementById("wordCategory").textContent = res.category ? `(${res.category})` : ""; } }); }
-
-      socket.on("gameUpdated", renderGame);
-      socket.on("roundScoreUpdated", (data) => {
-          if(data.gameCode === myGameCode && isExplainer) {
-              document.getElementById("playerRoundCurrentScore").textContent = `ניקוד בסיבוב: ${data.roundScore}`;
-          }
-      });
-      socket.on("roundTick", (data) => {
-          if(data.gameCode === myGameCode) {
-              let t = "00:00";
-              if (data.secondsLeft > 0) {
-                 t = Math.floor(data.secondsLeft/60).toString().padStart(2,'0') + ':' + (data.secondsLeft%60).toString().padStart(2,'0');
-              }
-              timerEl.textContent = t;
-          }
-      });
-      socket.on("roundStarted", (data) => { 
-          renderGame(data.game);
-          if(data.game.currentRound.explainerId === socket.id) {
-              nextWord();
-          }
-      });
-      
-      socket.on("roundTimeUp", (data) => { 
-          timerEl.textContent = "00:00";
-          const msg = getScoreMessage(data.roundScore);
-          showModal("⏰ נגמר הזמן!", `<div style="text-align:center;"><img src="m3.png" style="height:100px;"></div><h3>${data.teamName}</h3><h2>${data.roundScore} נקודות</h2><p style="font-size:1.1rem; font-weight:bold; color:#F84779;">${msg}</p>`); 
-          presenterArea.classList.add("hidden"); 
-          isExplainer = false; 
-      });
-
-      socket.on("gameEnded", () => { 
-          localStorage.removeItem(LOCAL_PLAYER_KEY);
-          showModal("המשחק הסתיים", "<h3>המשחק נסגר על ידי המנהל.</h3><p>תודה שהשתתפתם!</p>");
-          setTimeout(() => location.reload(), 3000);
-      });
-      socket.on("playerRemoved", () => { 
-          localStorage.removeItem(LOCAL_PLAYER_KEY);
-          showModal("הוסרת מהמשחק", "<h3>הוסרת מהמשחק על ידי המנהל.</h3>");
-          setTimeout(() => location.reload(), 3000);
-      });
-      socket.on("adminClosedGame", () => { 
-        localStorage.removeItem(LOCAL_PLAYER_KEY);
-        showModal("המשחק נסגר", "<h3>המשחק נסגר על ידי מנהל המערכת.</h3><p>תודה שהשתתפתם!</p>");
-        setTimeout(() => location.reload(), 3000);
-    });
-
-      function renderGame(game) {
-          if(!game) return;
-          lastGameState = game;
-          
-          if(game.branding) {
-              if(game.branding.color) {
-                  document.body.style.setProperty('--bg-color', '#' + game.branding.color);
-                  document.body.classList.add('branded');
-              }
-              if(game.branding.logo) { document.getElementById('playerLogo').src = game.branding.logo; document.getElementById('playerLogo').style.display = 'inline-block'; }
-              
-              const hasTitle = game.branding.title;
-              const hasSlogan = game.branding.slogan;
-              
-              if(hasTitle || hasSlogan) {
-                  document.getElementById('brandInfoBox').classList.remove('hidden');
-                  if(hasTitle) document.getElementById('brandTitle').textContent = decodeURIComponent(game.branding.title);
-                  if(hasSlogan) {
-                      document.getElementById('brandSlogan').textContent = decodeURIComponent(game.branding.slogan);
-                      document.getElementById('brandSlogan').classList.remove('hidden');
-                  }
-              }
-          } else if (game.gameTitle) {
-              document.getElementById('brandInfoBox').classList.remove('hidden');
-              document.getElementById('brandTitle').textContent = game.gameTitle;
-          }
-
-          const myTeam = game.teams[myTeamId];
-          if(myTeam) {
-              document.getElementById("myTeamName").textContent = myTeam.name;
-              document.getElementById("myTeamPlayers").textContent = myTeam.players.map(pid => game.playersByClientId[pid]?.name).filter(Boolean).join(", ") || "ממתין...";
-          }
-
-          let scoreHtml = "";
-          Object.values(game.teams).forEach(t => { scoreHtml += `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee;"><span>${t.name}</span><span style="font-weight:bold; color:#F84779;">${t.score}</span></div>`; });
-          document.getElementById("scoreboard").innerHTML = scoreHtml;
-
-          const r = game.currentRound;
-          if(r && r.isActive) {
-              document.getElementById("roundStatus").textContent = `מסביר: ${r.explainerName}`;
-              isExplainer = (r.explainerId === socket.id);
-              
-              if(isExplainer) {
-                   document.getElementById("playerRoundCurrentScore").textContent = `ניקוד בסיבוב: ${r.roundScore || 0}`;
-                   presenterArea.classList.remove("hidden");
-              } else {
-                   presenterArea.classList.add("hidden");
-              }
-          } else {
-              document.getElementById("roundStatus").textContent = "המתנה לסיבוב";
-              presenterArea.classList.add("hidden");
-              timerEl.textContent = "00:00";
-              isExplainer = false;
-              document.getElementById("wordDisplay").textContent = "מילה";
-              document.getElementById("playerRoundCurrentScore").textContent = "ניקוד בסיבוב: 0";
-          }
-      }
-
-      document.getElementById("viewAllPlayersBtn").addEventListener("click", () => {
-          if(!lastGameState) return;
-          let html = `<div style="text-align:right; max-height:300px; overflow-y:auto;">`;
-          Object.values(lastGameState.teams).forEach(t => {
-              const pNames = t.players.map(cid => lastGameState.playersByClientId[cid]?.name).join(", ");
-              html += `<div style="margin-bottom:15px;"><div style="font-weight:bold; color:#2B1E4A;">${t.name}</div><div style="background:#f5f5f5; padding:8px; border-radius:8px; font-size:0.9rem;">${pNames || "אין שחקנים"}</div></div>`;
-          });
-          html += `</div>`;
-          showModal("רשימת שחקנים", html);
-      });
-
-      (function handleAutoJoin() {
-          const params = new URLSearchParams(window.location.search);
-          const code = params.get("code");
-          const teamName = params.get("teamName") ? decodeURIComponent(params.get("teamName")) : null;
-          if(code) {
-              gameCodeInput.value = code;
-              gameCodeInput.readOnly = true;
-              gameCodeInput.classList.add('readonly-code');
-              if(teamName) { document.getElementById("inviteInfo").style.display = "block"; document.getElementById("inviteInfo").textContent = `הוזמנת לקבוצת: ${teamName}`; }
-          }
-          const saved = JSON.parse(localStorage.getItem(LOCAL_PLAYER_KEY));
-          if(saved && saved.gameCode === code) { document.getElementById("playerNameInput").value = saved.name; setTimeout(() => joinBtn.click(), 500); }
-      })();
-      
-      // טעינת באנרים (עליון ותחתון)
-      fetch("/api/banners").then(r=>r.json()).then(d => {
-          // טעינת באנר עליון
-          if(d.topBanner && d.topBanner.img) {
-              document.getElementById("globalTopBannerImg").src = d.topBanner.img;
-              document.getElementById("globalTopBannerLink").href = d.topBanner.link || "#";
-              document.getElementById("globalTopBanner").classList.remove("hidden");
-          }
-          // טעינת באנר תחתון
-          if(d.bottomBanner && d.bottomBanner.img) {
-              document.getElementById("globalBottomBannerImg").src = d.bottomBanner.img;
-              document.getElementById("globalBottomBannerLink").href = d.bottomBanner.link || "#";
-              document.getElementById("globalBottomBanner").classList.remove("hidden");
-          }
-      }).catch(e => console.error("Error fetching banners:", e));
   </script>
 </body>
 </html>
