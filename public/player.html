@@ -47,23 +47,20 @@
      .data-label { font-size: 0.8rem; color: #A18CCF; font-weight: bold; }
      .data-val { font-size: 1rem; color: #433362; font-weight: bold; }
 
-     /* --- CSS סופי לבאנרים: 100% רוחב, גובה קבוע, COVER --- */
-     .banner-container {
+     /* --- CSS סופי לבאנרים: רוחב מלא, גובה אוטומטי --- */
+     .banner-container-full { 
          width: 100vw; /* רוחב מסך מלא */
          margin: 0;
          padding: 0;
          line-height: 0;
-         background: #eee;
+         background: transparent;
      }
-     .banner-container img {
+     .banner-container-full img { 
          width: 100%;
-         display: block;
-         object-fit: cover;
-         object-position: center center;
+         height: auto; /* גובה אוטומטי לשמירה על פרופורציות */
+         display: block; 
+         /* אין מילוי כפוי, אין גובה קבוע */
      }
-     /* גבהים קבועים */
-     #globalTopBanner img { height: 80px; }
-     #globalBottomBanner img { height: 160px; }
 
      @media (max-width: 640px) {
          .logo-area { flex-direction: column; gap: 10px; }
@@ -73,7 +70,7 @@
   </style>
 </head>
 <body>
-  <div id="globalTopBanner" class="banner-container hidden">
+  <div id="globalTopBanner" class="banner-container-full hidden">
     <a id="globalTopBannerLink" href="#" target="_blank">
         <img id="globalTopBannerImg" src="" alt="פרסומת עליונה">
     </a>
@@ -141,7 +138,7 @@
       </div>
   </div>
 
-  <div id="globalBottomBanner" class="banner-container hidden">
+  <div id="globalBottomBanner" class="banner-container-full hidden">
       <a id="globalBottomBannerLink" href="#" target="_blank">
           <img id="globalBottomBannerImg" src="" alt="פרסומת תחתונה">
       </a>
