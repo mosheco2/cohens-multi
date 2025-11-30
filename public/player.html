@@ -45,28 +45,22 @@
      .data-label { font-size: 0.8rem; color: #A18CCF; font-weight: bold; }
      .data-val { font-size: 1rem; color: #433362; font-weight: bold; }
 
-     /* --- CSS מתוקן לבאנרים: שימוש ב-CONTAIN ומירכוז --- */
+     /* --- CSS מתוקן סופית לבאנרים --- */
      .banner-container {
          width: 100%;
          text-align: center;
-         display: flex;
-         justify-content: center;
+         padding: 10px 0;
      }
      .banner-container img {
-         width: auto; /* הרוחב ייקבע לפי הגובה */
-         max-width: 100%; /* שלא יחרוג מהמסך */
-         object-fit: contain; /* קריטי: דוחס את התמונה למסגרת בלי לחתוך */
+         width: 100%; /* תמיד רוחב מלא */
+         height: auto; /* גובה אוטומטי למניעת חיתוך */
+         max-width: 800px; /* מגבלת רוחב */
          display: block;
-         margin: 0 auto; /* מירכוז אופקי */
-         border-radius: 16px;
+         margin: 0 auto;
+         border-radius: 12px;
+         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+         object-fit: contain;
      }
-     /* באנר עליון - גובה 80 */
-     #globalTopBanner img { height: 80px; }
-     #globalTopBanner { margin-bottom: 20px; }
-
-     /* באנר תחתון - גובה כפול 160 */
-     #globalBottomBanner img { height: 160px; }
-     #globalBottomBanner { margin-top: 20px; }
 
      @media (max-width: 640px) {
          .logo-area { flex-direction: column; gap: 10px; }
