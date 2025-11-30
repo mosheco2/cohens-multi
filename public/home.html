@@ -8,7 +8,9 @@
   <style>
      :root { font-size: 16px; --bg-color: #FFF8EA; }
      * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
-     body { margin: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+     body { margin: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; padding: 0; }
+     .main-content-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; width: 100%; }
+
      body::before, body::after { content: ""; position: fixed; width: 300px; height: 300px; border-radius: 50%; z-index: -1; }
      body::before { top: -100px; left: -100px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.25), transparent 65%); }
      body::after { bottom: -100px; right: -100px; background: radial-gradient(circle at center, rgba(21, 196, 193, 0.25), transparent 65%); }
@@ -29,55 +31,78 @@
 
      .icon { font-size: 1.6rem; }
 
-     /* CSS לבאנר עליון - תוקן למרכוז ומניעת חיתוך */
-    .top-banner-container { width: 100%; max-width: 450px; margin: 0 auto 20px auto; text-align: center; }
-    .top-banner-container img { 
-        width: auto; 
-        height: 80px; 
-        max-width: 100%; 
-        object-fit: contain; 
-        border-radius: 16px; 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-        display: block; 
-        margin: 0 auto; 
-    }
-    .hidden { display: none !important; }
+     /* --- CSS מתוקן לבאנרים: שימוש ב-CONTAIN ומירכוז --- */
+     .banner-container {
+         width: 100%;
+         text-align: center;
+         display: flex;
+         justify-content: center;
+         background: transparent; /* או צבע רקע אם רוצים שוליים בצבע מסוים */
+     }
+     .banner-container img {
+         width: auto; /* הרוחב ייקבע לפי הגובה */
+         max-width: 100%; /* שלא יחרוג מהמסך */
+         object-fit: contain; /* קריטי: דוחס את התמונה למסגרת בלי לחתוך */
+         display: block;
+         margin: 0 auto; /* מירכוז אופקי */
+     }
+     /* באנר עליון - גובה 80 */
+     #globalTopBanner img { height: 80px; }
+     #globalTopBanner { margin-bottom: 20px; }
+
+     /* באנר תחתון - גובה כפול 160 */
+     #globalBottomBanner img { height: 160px; }
+     #globalBottomBanner { margin-top: 20px; }
+     
+     .hidden { display: none !important; }
   </style>
 </head>
 <body>
-    <div id="globalTopBanner" class="top-banner-container hidden">
+    <div id="globalTopBanner" class="banner-container hidden">
         <a id="globalTopBannerLink" href="#" target="_blank">
-            <img id="globalTopBannerImg" src="" alt="פרסומת">
+            <img id="globalTopBannerImg" src="" alt="פרסומת עליונה">
         </a>
     </div>
 
-  <div class="main-card">
-      <h1>מילמניה</h1>
-      <p class="subtitle">המשחק שישבור לכם את השיניים... מצחוק! 😂</p>
-      
-      <a href="host.html" class="btn btn-host">
-          <span class="icon">👑</span>
-          אני רוצה לנהל משחק
-      </a>
-      <a href="player.html" class="btn btn-player">
-          <span class="icon">🎮</span>
-          אני רוצה להצטרף למשחק
-      </a>
-      <a href="instructions.html" class="btn btn-instructions">
-          <span class="icon">📜</span>
-          איך משחקים? (הוראות)
+  <div class="main-content-wrapper">
+      <div class="main-card">
+          <h1>מילמניה</h1>
+          <p class="subtitle">המשחק שישבור לכם את השיניים... מצחוק! 😂</p>
+          
+          <a href="host.html" class="btn btn-host">
+              <span class="icon">👑</span>
+              אני רוצה לנהל משחק
+          </a>
+          <a href="player.html" class="btn btn-player">
+              <span class="icon">🎮</span>
+              אני רוצה להצטרף למשחק
+          </a>
+          <a href="instructions.html" class="btn btn-instructions">
+              <span class="icon">📜</span>
+              איך משחקים? (הוראות)
+          </a>
+      </div>
+  </div>
+
+  <div id="globalBottomBanner" class="banner-container hidden">
+      <a id="globalBottomBannerLink" href="#" target="_blank">
+          <img id="globalBottomBannerImg" src="" alt="פרסומת תחתונה">
       </a>
   </div>
 
   <script>
-      // קוד לטעינת באנר עליון בדף הבית
       fetch("/api/banners").then(r=>r.json()).then(d => {
           if(d.topBanner && d.topBanner.img) {
               document.getElementById("globalTopBannerImg").src = d.topBanner.img;
               document.getElementById("globalTopBannerLink").href = d.topBanner.link || "#";
               document.getElementById("globalTopBanner").classList.remove("hidden");
           }
-      }).catch(()=>{});
+          if(d.bottomBanner && d.bottomBanner.img) {
+              document.getElementById("globalBottomBannerImg").src = d.bottomBanner.img;
+              document.getElementById("globalBottomBannerLink").href = d.bottomBanner.link || "#";
+              document.getElementById("globalBottomBanner").classList.remove("hidden");
+          }
+      }).catch(e => console.error("Error fetching banners:", e));
   </script>
 </body>
 </html>
