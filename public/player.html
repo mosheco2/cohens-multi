@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-TP7Z9DX6');</script>
   <meta charset="UTF-8" />
   <title>מילמניה - מסך שחקן</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
@@ -70,6 +75,8 @@
   </style>
 </head>
 <body>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TP7Z9DX6"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div id="globalTopBanner" class="banner-container-full hidden">
     <a id="globalTopBannerLink" href="#" target="_blank">
         <img id="globalTopBannerImg" src="" alt="פרסומת עליונה">
@@ -271,7 +278,6 @@
               nextWord();
           }
       });
-      
       socket.on("roundTimeUp", (data) => { 
           timerEl.textContent = "00:00";
           const msg = getScoreMessage(data.roundScore);
@@ -279,7 +285,6 @@
           presenterArea.classList.add("hidden"); 
           isExplainer = false; 
       });
-
       socket.on("gameEnded", () => { 
           localStorage.removeItem(LOCAL_PLAYER_KEY);
           showModal("המשחק הסתיים", "<h3>המשחק נסגר על ידי המנהל.</h3><p>תודה שהשתתפתם!</p>");
@@ -290,6 +295,7 @@
           showModal("הוסרת מהמשחק", "<h3>הוסרת מהמשחק על ידי המנהל.</h3>");
           setTimeout(() => location.reload(), 3000);
       });
+      
       socket.on("adminClosedGame", () => { 
         localStorage.removeItem(LOCAL_PLAYER_KEY);
         showModal("המשחק נסגר", "<h3>המשחק נסגר על ידי מנהל המערכת.</h3><p>תודה שהשתתפתם!</p>");
