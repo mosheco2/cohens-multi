@@ -8,8 +8,12 @@
   <style>
      :root { font-size: 16px; --bg-color: #FFF8EA; }
      * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
-     body { margin: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; padding: 0; }
-     .main-content-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; width: 100%; }
+     
+     /* איפוס מלא לגוף האתר כדי לאפשר 100% רוחב */
+     body { margin: 0; padding: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; }
+
+     /* עוטף לתוכן המרכזי בלבד - שומר על מרווחים */
+     .main-content-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px 20px; width: 100%; }
 
      body::before, body::after { content: ""; position: fixed; width: 300px; height: 300px; border-radius: 50%; z-index: -1; }
      body::before { top: -100px; left: -100px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.25), transparent 65%); }
@@ -31,23 +35,23 @@
 
      .icon { font-size: 1.6rem; }
 
-     /* --- CSS מתוקן סופית לבאנרים --- */
+     /* --- CSS סופי לבאנרים: 100% רוחב, גובה קבוע, COVER --- */
      .banner-container {
-         width: 100%;
-         text-align: center;
-         /* מרווח קל מעל ומתחת לבאנר */
-         padding: 10px 0;
+         width: 100vw; /* רוחב מסך מלא */
+         margin: 0;
+         padding: 0;
+         line-height: 0; /* ביטול רווחים מיותרים */
+         background: #eee; /* צבע רקע זמני עד לטעינה */
      }
      .banner-container img {
-         width: 100%; /* תמיד רוחב מלא */
-         height: auto; /* הגובה יסתדר אוטומטית לפי הפרופורציה - מונע חיתוך */
-         max-width: 800px; /* מגבלת רוחב למסכים ענקיים, אפשר לשנות */
+         width: 100%;
          display: block;
-         margin: 0 auto; /* מירכוז */
-         border-radius: 12px; /* פינות עגולות */
-         box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* צל עדין */
+         object-fit: cover; /* מילוי המסגרת, עלול לחתוך קצוות */
+         object-position: center center; /* מירכוז התמונה */
      }
-     /* הסרנו את הגדרות הגובה הקבועות (height: 80px וכו') */
+     /* גבהים קבועים */
+     #globalTopBanner img { height: 80px; }
+     #globalBottomBanner img { height: 160px; }
      
      .hidden { display: none !important; }
   </style>
