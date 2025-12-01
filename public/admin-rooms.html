@@ -1,236 +1,331 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <title>מילמניה - ניהול חדרים ובאנרים</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
-  <style>
-     :root { font-size: 16px; --bg-color: #FFF8EA; }
-     * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
-     body { margin: 0; padding: 20px; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; }
-     .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-     h1 { text-align: center; margin-top: 0; color: #F84779; }
-     h2 { margin-top: 30px; color: #2B1E4A; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-     .section { margin-bottom: 30px; background: #F8F7FF; padding: 20px; border-radius: 16px; }
-     label { display: block; margin-bottom: 5px; font-weight: bold; color: #5a507a; }
-     input, select, textarea { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #eee; font-size: 1rem; margin-bottom: 15px; }
-     input:focus, select:focus, textarea:focus { border-color: #F84779; outline: none; }
-     .btn { padding: 12px 24px; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
-     .btn:active { transform: scale(0.98); }
-     .btn-save { background: linear-gradient(135deg, #F84779, #FF8566); color: white; width: 100%; }
-     .btn-refresh { background: linear-gradient(135deg, #15C4C1, #42E695); color: white; margin-bottom: 15px; }
-     .btn-wa { background: #25D366; color: white; text-decoration: none; display: inline-block; text-align: center; }
-     .banner-preview { max-width: 100%; height: auto; max-height: 150px; border-radius: 12px; margin-top: 10px; display: block; border: 2px dashed #ccc; }
-     .room-item { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-     .status-active { color: #25D366; font-weight: bold; }
-     .status-inactive { color: #EF4444; font-weight: bold; }
-     .brand-preview-box { border: 1px solid #eee; padding: 20px; border-radius: 16px; text-align: center; background: var(--preview-bg, #FFF8EA); margin-top: 20px; }
-     .brand-logo-prev { max-height: 100px; margin-bottom: 10px; }
-  </style>
+    <meta charset="UTF-8">
+    <title>מילמניה - ממשק ניהול מתקדם</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #F84779; --secondary: #15C4C1; --dark: #2B1E4A; --light: #FFF8EA; --bg: #f8f9fa; }
+        body { font-family: "Varela Round", sans-serif; margin: 0; padding: 20px; background: var(--bg); color: var(--dark); direction: rtl; }
+        .container { max-width: 1200px; margin: auto; background: #fff; padding: 25px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        h1 { text-align: center; color: var(--primary); margin-bottom: 30px; }
+
+        /* --- עיצוב טאבים --- */
+        .tabs-nav { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .tab-btn { padding: 12px 24px; border: none; background: transparent; font-size: 1.1rem; font-weight: bold; color: #666; cursor: pointer; border-radius: 12px; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- עיצוב מקורי (סטטיסטיקות וחדרים) --- */
+        .stats-header { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: linear-gradient(135deg, #fff, #f8f7ff); padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.05); text-align: center; }
+        .stat-card h3 { margin: 0 0 10px; font-size: 1rem; color: #666; }
+        .stat-number { font-size: 2.2rem; font-weight: 900; color: var(--primary); margin: 0; }
+        .stat-sub { font-size: 0.9rem; color: #888; margin-top: 5px; }
+
+        .filters-section { background: #fff; padding: 20px; border-radius: 16px; margin-bottom: 25px; border: 1px solid #eee; display: flex; gap: 15px; flex-wrap: wrap; align-items: end; }
+        .filter-group { flex: 1; min-width: 200px; }
+        .filter-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; font-family: inherit; font-size: 1rem; }
+
+        .room-card { background: #fff; border: 1px solid #eee; border-radius: 16px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; transition: 0.2s; position: relative; overflow: hidden; }
+        .room-card.active { border-left: 5px solid var(--secondary); background: #f0fffe; }
+        .room-card.ended { border-left: 5px solid #ccc; background: #f9f9f9; opacity: 0.8; }
+        .room-info h4 { margin: 0 0 5px; font-size: 1.3rem; }
+        .room-meta { font-size: 0.95rem; color: #666; margin: 4px 0; display: flex; gap: 15px; flex-wrap: wrap; }
+        .meta-item { display: flex; align-items: center; gap: 5px; }
+
+        .btn { padding: 10px 20px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.95rem; }
+        .btn-danger { background: #ffebeb; color: #d32f2f; border: 1px solid #ffcdd2; }
+        .btn-info { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        .players-list { width: 100%; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; display: none; }
+        .team-group { margin-bottom: 10px; }
+        .team-name { font-weight: bold; margin-bottom: 5px; }
+        .player-chip { display: inline-block; background: #eee; padding: 4px 12px; border-radius: 20px; margin: 2px; font-size: 0.9rem; }
+
+        /* --- עיצוב מחולל מותג (חדש) --- */
+        .brand-section { background: #F8F7FF; padding: 20px; border-radius: 16px; }
+        .brand-preview-box { border: 1px solid #eee; padding: 20px; border-radius: 16px; text-align: center; background: var(--preview-bg, #FFF8EA); margin-top: 20px; }
+        .brand-logo-prev { max-height: 100px; margin-bottom: 10px; }
+        .btn-wa { background: #25D366; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+
+        @media (max-width: 768px) {
+            .room-card { flex-direction: column; align-items: flex-start; }
+            .room-actions { width: 100%; display: flex; gap: 10px; margin-top: 15px; }
+            .room-actions .btn { flex: 1; }
+            .filters-section { flex-direction: column; }
+            .filter-group { width: 100%; }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-      <h1>מילמניה - ניהול 🛠️</h1>
+    <div class="container">
+        <h1>🛠️ מילמניה - מרכז שליטה</h1>
 
-      <div class="section">
-          <h2>ניהול באנרים גלובליים</h2>
-          <p style="font-size:0.9rem; color:#666;">באנרים אלו יופיעו בכל דפי המשחק שאינם ממותגים.</p>
-          
-          <h3>באנר עליון</h3>
-          <label>כתובת תמונה (Desktop)</label>
-          <input type="text" id="topBannerImg" placeholder="https://example.com/banner_desktop.jpg">
-          <label>כתובת תמונה (Mobile)</label>
-          <input type="text" id="topBannerImgMobile" placeholder="https://example.com/banner_mobile.jpg">
-          <label>קישור יעד</label>
-          <input type="text" id="topBannerLink" placeholder="https://example.com/target-page">
-          <img id="topBannerPreview" src="" class="banner-preview" alt="תצוגה מקדימה" onerror="this.style.display='none'">
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('rooms')">📊 ניהול חדרים וסטטיסטיקה</button>
+            <button class="tab-btn" onclick="switchTab('branding')">✨ מחולל מותג</button>
+        </div>
 
-          <h3>באנר תחתון</h3>
-          <label>כתובת תמונה (Desktop)</label>
-          <input type="text" id="bottomBannerImg" placeholder="https://example.com/banner_desktop.jpg">
-          <label>כתובת תמונה (Mobile)</label>
-          <input type="text" id="bottomBannerImgMobile" placeholder="https://example.com/banner_mobile.jpg">
-          <label>קישור יעד</label>
-          <input type="text" id="bottomBannerLink" placeholder="https://example.com/target-page">
-          <img id="bottomBannerPreview" src="" class="banner-preview" alt="תצוגה מקדימה" onerror="this.style.display='none'">
+        <div id="tab-rooms" class="tab-content active">
+            <div class="stats-header">
+                <div class="stat-card">
+                    <h3>משחקים פעילים כרגע</h3>
+                    <div class="stat-number" id="statActiveGames">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>משתמשים מחוברים (Socket)</h3>
+                    <div class="stat-number" id="statConnectedUsers">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>כתובות IP ייחודיות</h3>
+                    <div class="stat-number" id="statUniqueIps">-</div>
+                </div>
+            </div>
 
-          <button id="saveBannersBtn" class="btn btn-save" style="margin-top:20px;">שמור באנרים</button>
-      </div>
+            <div class="filters-section">
+                <div class="filter-group">
+                    <label>מתאריך</label>
+                    <input type="date" id="filterStartDate">
+                </div>
+                <div class="filter-group">
+                    <label>עד תאריך</label>
+                    <input type="date" id="filterEndDate">
+                </div>
+                <div class="filter-group" style="flex: 0 0 auto;">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary" onclick="fetchHistory()">📅 צפה בהיסטוריה</button>
+                </div>
+                <div class="filter-group" style="flex: 0 0 auto; margin-right: auto;">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-info" onclick="fetchAdminStats()">🔄 רענן בזמן אמת</button>
+                </div>
+            </div>
 
-      <div class="section">
-          <h2>מחולל מותג (Branding Gen)</h2>
-          <label>כותרת המותג</label>
-          <input type="text" id="brandTitle" placeholder="לדוגמה: בנק הפועלים">
-          <label>סלוגן</label>
-          <input type="text" id="brandSlogan" placeholder="להיות ראשון זה מחייב">
-          <label>כתובת לוגו</label>
-          <input type="text" id="brandLogo" placeholder="https://example.com/logo.png">
-          <label>צבע רקע (הקסדצימלי)</label>
-          <input type="color" id="brandColor" value="#FFF8EA" style="height:50px; padding:5px;">
-          
-          <div class="brand-preview-box" id="brandPreview">
-              <img id="brandLogoPrev" class="brand-logo-prev" src="" style="display:none;">
-              <h3 id="brandTitlePrev" style="margin:10px 0 5px;">כותרת המותג</h3>
-              <p id="brandSloganPrev" style="margin:0; color:#666;">סלוגן המותג</p>
-          </div>
+            <h2 style="margin-bottom: 20px;">רשימת חדרים</h2>
+            <div id="rooms-list">טוען נתונים...</div>
+        </div>
 
-          <label style="margin-top:20px;">קישור ממותג ליצירת משחק</label>
-          <div style="display:flex; gap:10px;">
-              <input type="text" id="generatedLink" readonly style="margin-bottom:0;">
-              <a id="shareWaBtn" class="btn btn-wa" href="#" target="_blank" style="display:none;">שלח בווצאפ</a>
-          </div>
-      </div>
+        <div id="tab-branding" class="tab-content">
+            <div class="brand-section">
+                <h2>מחולל מותג (Branding Gen)</h2>
+                <div style="display: grid; gap: 15px; margin-bottom: 20px;">
+                    <div>
+                        <label style="font-weight:bold;">כותרת המותג</label>
+                        <input type="text" id="brandTitle" placeholder="לדוגמה: בנק הפועלים">
+                    </div>
+                    <div>
+                        <label style="font-weight:bold;">סלוגן</label>
+                        <input type="text" id="brandSlogan" placeholder="להיות ראשון זה מחייב">
+                    </div>
+                    <div>
+                        <label style="font-weight:bold;">כתובת לוגו</label>
+                        <input type="text" id="brandLogo" placeholder="https://example.com/logo.png">
+                    </div>
+                    <div>
+                        <label style="font-weight:bold;">צבע רקע (הקסדצימלי)</label>
+                        <input type="color" id="brandColor" value="#FFF8EA" style="height:50px; padding:5px; width:100%;">
+                    </div>
+                </div>
+                
+                <div class="brand-preview-box" id="brandPreview">
+                    <img id="brandLogoPrev" class="brand-logo-prev" src="" style="display:none; margin: auto;">
+                    <h3 id="brandTitlePrev" style="margin:10px 0 5px;">כותרת המותג</h3>
+                    <p id="brandSloganPrev" style="margin:0; color:#666;">סלוגן המותג</p>
+                </div>
 
-      <div class="section">
-          <h2>חדרים פעילים</h2>
-          <button id="refreshRoomsBtn" class="btn btn-refresh">🔄 רענן רשימה</button>
-          <div id="roomsList">
-              <p>טוען...</p>
-          </div>
-      </div>
-  </div>
+                <label style="margin-top:20px; font-weight:bold; display:block;">קישור ממותג ליצירת משחק</label>
+                <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                    <input type="text" id="generatedLink" readonly style="margin-bottom:0; flex: 1; min-width: 250px;">
+                    <a id="shareWaBtn" class="btn btn-wa" href="#" target="_blank" style="display:none;">
+                        <span style="font-size: 1.2rem;">📱</span> שלח בווצאפ
+                    </a>
+                </div>
+            </div>
+        </div>
 
-  <script>
-      const API_BANNERS = "/api/banners"; // שים לב: יש לעדכן את צד השרת לתמיכה בשמירת באנרים למובייל
-      const API_ADMIN_STATS = "/admin/stats?code=ONEBTN"; // יש לוודא שקוד האדמין תואם לשרת
+    </div>
 
-      // --- טעינה ושמירה של באנרים ---
-      async function loadBanners() {
-          try {
-              const res = await fetch(API_BANNERS);
-              const data = await res.json();
-              if (data.topBanner) {
-                  document.getElementById('topBannerImg').value = data.topBanner.img || '';
-                  document.getElementById('topBannerImgMobile').value = data.topBanner.imgMobile || ''; // שדה חדש
-                  document.getElementById('topBannerLink').value = data.topBanner.link || '';
-                  updatePreview('topBannerImg', 'topBannerPreview');
-              }
-              if (data.bottomBanner) {
-                  document.getElementById('bottomBannerImg').value = data.bottomBanner.img || '';
-                  document.getElementById('bottomBannerImgMobile').value = data.bottomBanner.imgMobile || ''; // שדה חדש
-                  document.getElementById('bottomBannerLink').value = data.bottomBanner.link || '';
-                  updatePreview('bottomBannerImg', 'bottomBannerPreview');
-              }
-          } catch (e) { console.error("Error loading banners:", e); }
-      }
+    <script>
+        const API_ADMIN_STATS = "/admin/stats?code=ONEBTN"; // וודא שהקוד תואם לשרת
+        const API_ADMIN_HISTORY = "/admin/history?code=ONEBTN";
 
-      async function saveBanners() {
-          const banners = {
-              topBanner: {
-                  img: document.getElementById('topBannerImg').value.trim(),
-                  imgMobile: document.getElementById('topBannerImgMobile').value.trim(), // שדה חדש
-                  link: document.getElementById('topBannerLink').value.trim()
-              },
-              bottomBanner: {
-                  img: document.getElementById('bottomBannerImg').value.trim(),
-                  imgMobile: document.getElementById('bottomBannerImgMobile').value.trim(), // שדה חדש
-                  link: document.getElementById('bottomBannerLink').value.trim()
-              }
-          };
-          try {
-              await fetch(API_BANNERS, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(banners)
-              });
-              alert('הבאנרים נשמרו בהצלחה!');
-          } catch (e) { alert('שגיאה בשמירה'); console.error(e); }
-      }
+        // --- לוגיקת טאבים ---
+        function switchTab(tabId) {
+            // הסרת קלאס active מכל הכפתורים והתוכן
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-      function updatePreview(inputId, imgId) {
-          const url = document.getElementById(inputId).value.trim();
-          const img = document.getElementById(imgId);
-          if (url) { img.src = url; img.style.display = 'block'; }
-          else { img.style.display = 'none'; }
-      }
+            // הוספת active לטאב הנבחר
+            document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
 
-      document.getElementById('topBannerImg').addEventListener('input', () => updatePreview('topBannerImg', 'topBannerPreview'));
-      document.getElementById('bottomBannerImg').addEventListener('input', () => updatePreview('bottomBannerImg', 'bottomBannerPreview'));
-      document.getElementById('saveBannersBtn').addEventListener('click', saveBanners);
+        // --- לוגיקת ניהול חדרים (מקורי) ---
+        async function fetchAdminStats() {
+            try {
+                const res = await fetch(API_ADMIN_STATS);
+                const data = await res.json();
+                
+                document.getElementById('statActiveGames').innerText = data.stats.activeGamesCount;
+                document.getElementById('statConnectedUsers').innerText = data.stats.connectedSockets;
+                document.getElementById('statUniqueIps').innerText = data.stats.uniqueIps;
+                
+                renderRooms(data.activeGames, true);
+            } catch(e) {
+                console.error(e);
+                document.getElementById('rooms-list').innerHTML = '<p style="color:red">שגיאה בטעינת נתונים</p>';
+            }
+        }
 
-      // --- מחולל מותג ---
-      function generateLink() {
-          const title = encodeURIComponent(document.getElementById('brandTitle').value.trim());
-          const slogan = encodeURIComponent(document.getElementById('brandSlogan').value.trim());
-          const logo = encodeURIComponent(document.getElementById('brandLogo').value.trim());
-          const color = document.getElementById('brandColor').value.substring(1);
-          
-          let link = `${window.location.origin}/host.html?`;
-          if(title) link += `title=${title}&`;
-          if(slogan) link += `slogan=${slogan}&`;
-          if(logo) link += `logo=${logo}&`;
-          if(color) link += `color=${color}`;
+        async function fetchHistory() {
+            const start = document.getElementById('filterStartDate').value;
+            const end = document.getElementById('filterEndDate').value;
+            if(!start || !end) return alert("נא לבחור תאריכי התחלה וסיום");
 
-          document.getElementById('generatedLink').value = link;
-          
-          if(link.includes('=')) {
-              const waText = `היי, יצרתי לינק למשחק ממותג!\nכנסו מכאן:\n${link}`;
-              document.getElementById('shareWaBtn').href = `https://wa.me/?text=${encodeURIComponent(waText)}`;
-              document.getElementById('shareWaBtn').style.display = 'flex';
-          } else {
-              document.getElementById('shareWaBtn').style.display = 'none';
-          }
+            try {
+                document.getElementById('rooms-list').innerHTML = 'טוען היסטוריה...';
+                const res = await fetch(`${API_ADMIN_HISTORY}&startDate=${start}&endDate=${end}`);
+                const data = await res.json();
+                renderRooms(data.games, false);
+            } catch(e) {
+                console.error(e);
+                document.getElementById('rooms-list').innerHTML = '<p style="color:red">שגיאה בטעינת היסטוריה</p>';
+            }
+        }
 
-          // עדכון תצוגה מקדימה
-          document.getElementById('brandPreview').style.setProperty('--preview-bg', '#' + color);
-          const titleVal = document.getElementById('brandTitle').value.trim();
-          document.getElementById('brandTitlePrev').textContent = titleVal || 'כותרת המותג';
-          const sloganVal = document.getElementById('brandSlogan').value.trim();
-          document.getElementById('brandSloganPrev').textContent = sloganVal || (sloganVal === '' && titleVal === '' ? 'סלוגן המותג' : '');
-          const logoVal = document.getElementById('brandLogo').value.trim();
-          const logoImg = document.getElementById('brandLogoPrev');
-          if(logoVal) { logoImg.src = logoVal; logoImg.style.display = 'inline-block'; }
-          else { logoImg.style.display = 'none'; }
-      }
+        function formatIP(ip) {
+            return ip ? ip.replace('::ffff:', '') : 'לא ידוע';
+        }
 
-      ['brandTitle', 'brandSlogan', 'brandLogo', 'brandColor'].forEach(id => {
-          document.getElementById(id).addEventListener('input', generateLink);
-      });
+        function renderRooms(games, isActiveView) {
+            const container = document.getElementById('rooms-list');
+            if(!games || games.length === 0) {
+                container.innerHTML = '<p>לא נמצאו משחקים.</p>';
+                return;
+            }
 
-      // --- ניהול חדרים ---
-      async function loadRooms() {
-          const list = document.getElementById('roomsList');
-          list.innerHTML = '<p>טוען...</p>';
-          try {
-              const res = await fetch(API_ADMIN_STATS);
-              const data = await res.json();
-              if (!data || !data.activeGames || data.activeGames.length === 0) {
-                  list.innerHTML = '<p>אין חדרים פעילים כרגע.</p>';
-                  return;
-              }
-              
-              let html = '';
-              data.activeGames.forEach(g => {
-                  const statusClass = g.playerCount > 0 ? 'status-active' : 'status-inactive';
-                  const statusText = g.playerCount > 0 ? 'פעיל' : 'ממתין';
-                  html += `
-                      <div class="room-item">
-                          <div>
-                              <strong>קוד: ${g.code}</strong> | מנהל: ${g.hostName} | כותרת: ${g.gameTitle || '-'} | 
-                              <span class="${statusClass}">${statusText}</span>
-                          </div>
-                          <div>
-                              שחקנים: ${g.playerCount} | קבוצות: ${g.teamCount} | נוצר: ${new Date(g.createdAt).toLocaleTimeString()}
-                          </div>
-                          <div>
-                              <a href="/host.html?code=${g.code}" target="_blank" class="btn btn-wa" style="padding:6px 12px; font-size:0.9rem;">כנס לחדר כמנהל</a>
-                          </div>
-                      </div>
-                  `;
-              });
-              list.innerHTML = html;
-          } catch (e) {
-              list.innerHTML = '<p style="color:red;">שגיאה בטעינת חדרים.</p>';
-              console.error(e);
-          }
-      }
+            let html = '';
+            // מיון: פעילים קודם, ואז לפי זמן יצירה יורד
+            games.sort((a, b) => {
+                if (a.isActive !== b.isActive) return b.isActive - a.isActive;
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
 
-      document.getElementById('refreshRoomsBtn').addEventListener('click', loadRooms);
+            games.forEach(g => {
+                const statusClass = g.isActive ? 'active' : 'ended';
+                const statusText = g.isActive ? '🟢 פעיל כרגע' : '⚫ הסתיים';
+                const createdTime = new Date(g.createdAt).toLocaleString('he-IL');
+                const duration = g.endedAt ? Math.round((new Date(g.endedAt) - new Date(g.createdAt))/60000) + ' דק\'' : 'מתנהל...';
 
-      // טעינה ראשונית
-      loadBanners();
-      loadRooms();
-  </script>
+                let playersHtml = '';
+                if(g.teams) {
+                    Object.values(g.teams).forEach(t => {
+                        playersHtml += `<div class="team-group"><div class="team-name">${t.name} (${t.score} נק'):</div>`;
+                        t.players.forEach(p => {
+                            playersHtml += `<span class="player-chip">${p.name || 'לא ידוע'}</span>`;
+                        });
+                        playersHtml += `</div>`;
+                    });
+                }
+
+                html += `
+                <div class="room-card ${statusClass}" id="room-${g.code}">
+                    <div class="room-info">
+                        <h4>${g.gameTitle || 'ללא כותרת'} <span style="font-size:0.8em; opacity:0.7">(${g.code})</span></h4>
+                        <div class="room-meta">
+                            <span class="meta-item">👤 מנהל: <strong>${g.hostName}</strong></span>
+                            <span class="meta-item">🌐 IP: <strong>${formatIP(g.hostIp)}</strong></span>
+                        </div>
+                        <div class="room-meta">
+                            <span class="meta-item">📅 נוצר: ${createdTime}</span>
+                            <span class="meta-item">⏱️ משך: ${duration}</span>
+                            <span class="meta-item">${statusText}</span>
+                        </div>
+                         <div class="room-meta">
+                            <span class="meta-item">👥 שחקנים: ${g.totalPlayers || 0}</span>
+                            <span class="meta-item">🏳️ קבוצות: ${g.totalTeams || 0}</span>
+                        </div>
+                    </div>
+                    <div class="room-actions">
+                        <button class="btn btn-info" onclick="togglePlayers('${g.code}')">👥 הצג שחקנים</button>
+                        ${g.isActive ? `<button class="btn btn-danger" onclick="closeRoom('${g.code}')">🛑 סגור חדר</button>` : ''}
+                        <a href="/host.html?code=${g.code}" target="_blank" class="btn" style="background:#eee; text-decoration:none;">🔗 כניסה כמנהל</a>
+                    </div>
+                    <div id="players-${g.code}" class="players-list">
+                        ${playersHtml || 'אין נתוני שחקנים'}
+                    </div>
+                </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function togglePlayers(code) {
+            const el = document.getElementById(`players-${code}`);
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        async function closeRoom(code) {
+            if(!confirm(`האם אתה בטוח שברצונך לסגור את חדר ${code}? כל השחקנים ינותקו.`)) return;
+            try {
+                // נדרש נתיב בשרת לסגירת חדר (לא מומש בשרת המקורי, אך הכפתור היה קיים)
+                alert(`בקשה לסגירת חדר ${code} נשלחה (נדרש מימוש בשרת)`);
+                // fetch('/admin/close-room', { method: 'POST', body: JSON.stringify({code}) ... });
+                fetchAdminStats(); // רענון לאחר פעולה
+            } catch(e) { alert('שגיאה בסגירת החדר'); }
+        }
+
+        // --- לוגיקת מחולל מותג (החדש) ---
+        function generateLink() {
+            const title = encodeURIComponent(document.getElementById('brandTitle').value.trim());
+            const slogan = encodeURIComponent(document.getElementById('brandSlogan').value.trim());
+            const logo = encodeURIComponent(document.getElementById('brandLogo').value.trim());
+            const color = document.getElementById('brandColor').value.substring(1);
+            
+            let link = `${window.location.origin}/host.html?`;
+            if(title) link += `title=${title}&`;
+            if(slogan) link += `slogan=${slogan}&`;
+            if(logo) link += `logo=${logo}&`;
+            if(color) link += `color=${color}`;
+
+            document.getElementById('generatedLink').value = link;
+            
+            if(link.includes('=')) {
+                const waText = `היי, יצרתי לינק למשחק ממותג!\nכנסו מכאן:\n${link}`;
+                document.getElementById('shareWaBtn').href = `https://wa.me/?text=${encodeURIComponent(waText)}`;
+                document.getElementById('shareWaBtn').style.display = 'inline-flex';
+            } else {
+                document.getElementById('shareWaBtn').style.display = 'none';
+            }
+
+            // עדכון תצוגה מקדימה
+            document.getElementById('brandPreview').style.setProperty('--preview-bg', '#' + color);
+            const titleVal = document.getElementById('brandTitle').value.trim();
+            document.getElementById('brandTitlePrev').textContent = titleVal || 'כותרת המותג';
+            const sloganVal = document.getElementById('brandSlogan').value.trim();
+            document.getElementById('brandSloganPrev').textContent = sloganVal || '';
+            const logoVal = document.getElementById('brandLogo').value.trim();
+            const logoImg = document.getElementById('brandLogoPrev');
+            if(logoVal) { logoImg.src = logoVal; logoImg.style.display = 'block'; }
+            else { logoImg.style.display = 'none'; }
+        }
+
+        ['brandTitle', 'brandSlogan', 'brandLogo', 'brandColor'].forEach(id => {
+            document.getElementById(id).addEventListener('input', generateLink);
+        });
+
+        // אתחול: הגדרת תאריכים ברירת מחדל וטעינת נתונים
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('filterStartDate').value = today;
+        document.getElementById('filterEndDate').value = today;
+        fetchAdminStats();
+    </script>
 </body>
 </html>
