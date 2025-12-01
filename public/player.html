@@ -1,26 +1,22 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-TP7Z9DX6');</script>
   <meta charset="UTF-8" />
-  <title>מילמניה - מסך שחקן</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>מילמניה - מסך שחקן</title>
   <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
   <style>
      :root { font-size: 16px; --bg-color: #FFF8EA; }
      * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
      body { margin: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; }
-     body:not(.branded)::before, body:not(.branded)::after { content: ""; position: fixed; width: 280px; height: 280px; border-radius: 50%; z-index: -1; }
-     body:not(.branded)::before { top: -130px; left: -70px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.30), transparent 60%); }
-     body:not(.branded)::after { bottom: -150px; right: -50px; background: radial-gradient(circle at center, rgba(21, 196, 193, 0.28), transparent 60%); }
-
-     /* סגנון לבאנר עליון */
+     
+     /* באנר עליון */
      .header-area { width: 100%; max-width: 600px; padding: 20px 20px 0; text-align: center; }
      .header-area img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 20px; }
+
+     /* באנר תחתון - נוסף */
+     .banner-slot { width: 100%; margin-top: 20px; }
+     .banner-slot img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 20px; display: block; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
 
      .app { padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; }
      .card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 15px; }
@@ -40,7 +36,6 @@
      
      .logo-area { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
      
-     /* סעיף 9: תיקון רקע ללוגו ממותג */
      .logo-box { background: #fff; padding: 10px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #eee; display: none; }
      .logo-box img { height: 80px; width: auto; object-fit: contain; display: block; }
 
@@ -57,23 +52,15 @@
      .data-label { font-size: 0.8rem; color: #A18CCF; font-weight: bold; }
      .data-val { font-size: 1rem; color: #433362; font-weight: bold; }
 
-     /* סגנון לבאנר תחתון פנימי */
-     .banner-slot { width: 100%; margin-top: 20px; }
-     .banner-slot img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; display: block; }
-
      @media (max-width: 640px) {
          .logo-area { flex-direction: row-reverse; justify-content: space-between; }
          .logo-box img { height: 60px; }
          .brand-info { text-align: right; }
-         /* סעיף 1: התאמת באנרים למובייל - קירוב לקובייה */
-         .banner-slot { margin-top: 10px; }
          .header-area { padding-bottom: 10px; }
      }
   </style>
 </head>
 <body>
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TP7Z9DX6"
-  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="header-area hidden" id="top-banner-area">
       <a id="top-banner-link" href="#" target="_blank">
           <img id="top-banner-img" src="" alt="באנר עליון">
@@ -113,7 +100,7 @@
 
       <div id="gameSection" class="card hidden">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-              <button class="btn-ghost" onclick="openInstructions()">?</button>
+              <button class="btn-ghost" onclick="window.location.href='instructions.html'">?</button>
               <button onclick="exitGame()" class="btn-danger">יציאה</button>
           </div>
           <div style="display:flex; gap:10px; margin-bottom:15px;">
@@ -144,16 +131,15 @@
           <h3 style="margin:0 0 10px;">🏆 טבלת ניקוד</h3>
           <div id="scoreboard" style="font-size:1rem;"></div>
           <button id="viewAllPlayersBtn" class="btn btn-ghost" style="width:100%; margin-top:15px;">👀 הצג את כל השחקנים</button>
-          
-          <div id="player-banner-slot" class="banner-slot hidden">
-              <a id="player-banner-link" href="#" target="_blank">
-                  <img id="player-banner-img" src="" alt="פרסומת תחתונה">
-              </a>
-          </div>
       </div>
-  </div>
 
-  <div class="modal-overlay" id="customModal">
+      <div id="player-banner-slot" class="banner-slot hidden" style="max-width: 600px; margin: 20px auto 0;">
+          <a id="player-banner-link" href="#" target="_blank">
+              <img id="player-banner-img" src="" alt="פרסומת תחתונה">
+          </a>
+      </div>
+
+  </div> <div class="modal-overlay" id="customModal">
       <div class="modal-box">
           <h2 id="modalTitle" style="margin-top:0;"></h2>
           <div id="modalContent"></div>
@@ -219,8 +205,6 @@
           closeModal();
       }
 
-      function openInstructions() { window.location.href = 'instructions.html'; }
-
       function updateSupportLink() {
           let text = "היי, אשמח לעזרה במשחק מילמניה.";
           if (myGameCode) {
@@ -251,6 +235,7 @@
       function exitGame() {
           showConfirmModal("יציאה מהמשחק", "האם אתה בטוח שברצונך לצאת?", () => {
               localStorage.removeItem(LOCAL_PLAYER_KEY); 
+              socket.emit("removePlayer", { gameCode: myGameCode, clientId: socket.id });
               location.reload();
           });
       }
@@ -284,7 +269,7 @@
       socket.on("roundTimeUp", (data) => { 
           timerEl.textContent = "00:00";
           const msg = getScoreMessage(data.roundScore);
-          showModal("⏰ נגמר הזמן!", `<div style="text-align:center;"><img src="m3.png" style="height:100px;"></div><h3>${data.teamName}</h3><h2>${data.roundScore} נקודות</h2><p style="font-size:1.1rem; font-weight:bold; color:#F84779;">${msg}</p>`); 
+          showModal("⏰ נגמר הזמן!", `<h3>${data.teamName}</h3><h2>${data.roundScore} נקודות</h2><p style="font-size:1.1rem; font-weight:bold; color:#F84779;">${msg}</p>`); 
           presenterArea.classList.add("hidden"); 
           isExplainer = false; 
       });
@@ -312,9 +297,7 @@
           if(game.branding) {
               if(game.branding.color) {
                   document.body.style.setProperty('--bg-color', '#' + game.branding.color);
-                  document.body.classList.add('branded');
               }
-              // סעיף 9: טיפול בלוגו ממותג
               if(game.branding.logo) {
                   const logoImg = document.getElementById('playerLogo');
                   logoImg.src = game.branding.logo;
@@ -348,7 +331,6 @@
               document.getElementById("myTeamPlayers").textContent = myTeam.players.map(pid => game.playersByClientId[pid]?.name).filter(Boolean).join(", ") || "ממתין...";
           }
 
-          // סעיף 10: עדכון טבלת ניקוד
           let scoreHtml = "";
           Object.values(game.teams).forEach(t => { scoreHtml += `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee;"><span>${t.name}</span><span style="font-weight:bold; color:#F84779;">${t.score}</span></div>`; });
           document.getElementById("scoreboard").innerHTML = scoreHtml;
@@ -399,19 +381,19 @@
           if(saved && saved.gameCode === code) { document.getElementById("playerNameInput").value = saved.name; setTimeout(() => joinBtn.click(), 500); }
       })();
       
-      // סעיף 1: לוגיקה לבחירת באנר מותאם למובייל
+      // --- ניהול באנרים (כולל תחתון חדש) ---
       let bannersData = null;
 
       function getBannerUrl(bannerObj) {
           if (!bannerObj) return null;
-          const isMobile = window.innerWidth <= 640; // הגדרת רוחב למובייל
+          const isMobile = window.innerWidth <= 640;
           return (isMobile && bannerObj.imgMobile) ? bannerObj.imgMobile : bannerObj.img;
       }
 
       function updateBanners() {
           if (!bannersData) return;
 
-          // עדכון באנר עליון
+          // באנר עליון
           const topImgUrl = getBannerUrl(bannersData.topBanner);
           if (topImgUrl) {
               document.getElementById("top-banner-img").src = topImgUrl;
@@ -421,7 +403,7 @@
               document.getElementById("top-banner-area").classList.add("hidden");
           }
 
-          // עדכון באנר תחתון
+          // באנר תחתון (החדש)
           const bottomImgUrl = getBannerUrl(bannersData.bottomBanner);
           if (bottomImgUrl) {
               document.getElementById("player-banner-img").src = bottomImgUrl;
@@ -432,13 +414,12 @@
           }
       }
 
-      // טעינת באנרים (דינמי)
+      // טעינת באנרים
       fetch("/api/banners").then(r=>r.json()).then(d => {
           bannersData = d;
           updateBanners();
       }).catch(e => console.error("Error fetching banners:", e));
 
-      // האזנה לשינוי גודל מסך לעדכון באנרים
       window.addEventListener('resize', updateBanners);
   </script>
 </body>
