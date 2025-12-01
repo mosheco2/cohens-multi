@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-TP7Z9DX6');</script>
+  <meta charset="UTF-8" />
+  <title>מילמניה - דף הבית</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+  <style>
+     :root { font-size: 16px; --bg-color: #FFF8EA; }
+     * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
+     body { margin: 0; padding: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; }
+     body::before, body::after { content: ""; position: fixed; width: 300px; height: 300px; border-radius: 50%; z-index: -1; }
+     body::before { top: -100px; left: -100px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.25), transparent 65%); }
+     body::after { bottom: -100px; right: -100px; background: radial-gradient(circle at center, rgba(21, 196, 193, 0.25), transparent 65%); }
+
+     .main-content-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; width: 100%; }
+     .main-card { background: #fff; border-radius: 30px; padding: 40px 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); max-width: 450px; width: 100%; text-align: center; position: relative; overflow: hidden; }
+     h1 { font-size: 3rem; margin: 0 0 10px; color: #2B1E4A; font-weight: 900; line-height: 1; background: linear-gradient(135deg, #F84779, #2B1E4A); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+     p.subtitle { font-size: 1.2rem; color: #6B618F; margin-bottom: 35px; font-weight: 600; }
+     
+     .btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 16px; border-radius: 18px; border: none; font-weight: 800; font-size: 1.3rem; margin-bottom: 15px; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); text-decoration: none; position: relative; overflow: hidden; gap: 10px; }
+     .btn:active { transform: scale(0.96); }
+     .btn-host { background: linear-gradient(135deg, #F84779, #FF8566); color: white; box-shadow: 0 8px 20px rgba(248, 71, 121, 0.3); }
+     .btn-player { background: linear-gradient(135deg, #15C4C1, #42E695); color: white; box-shadow: 0 8px 20px rgba(21, 196, 193, 0.3); }
+     .btn-instructions { background: white; color: #6B618F; border: 2px solid #E0E0E0; font-size: 1.1rem; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+     .icon { font-size: 1.6rem; }
+
+     /* סגנון לבאנר תחתון פנימי */
+     .banner-slot { width: 100%; margin-top: 20px; }
+     .banner-slot img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; display: block; }
+     
+     /* סגנון לבאנר עליון */
+     .header-area { width: 100%; max-width: 450px; padding: 20px 20px 0; text-align: center; }
+     .header-area img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; }
+
+     .hidden { display: none !important; }
+
+     @media (max-width: 480px) {
+         .main-card { padding: 30px 20px; }
+         h1 { font-size: 2.5rem; }
+         p.subtitle { font-size: 1.1rem; margin-bottom: 25px; }
+         .btn { font-size: 1.1rem; padding: 14px; }
+         /* סעיף 1: התאמת באנרים למובייל - קירוב לקובייה */
+         .banner-slot { margin-top: 10px; }
+         .header-area { padding-bottom: 10px; }
+     }
+  </style>
+</head>
+<body>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TP7Z9DX6"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <div class="header-area hidden" id="top-banner-area">
+      <a id="top-banner-link" href="#" target="_blank">
+          <img id="top-banner-img" src="" alt="באנר עליון">
+      </a>
+  </div>
+
+  <div class="main-content-wrapper">
+      <div class="main-card">
+          <h1>מילמניה</h1>
+          <p class="subtitle">המשחק שישבור לכם את השיניים... מצחוק! 😂</p>
+          
+          <a href="host.html" class="btn btn-host">
+              <span class="icon">👑</span>
+              אני רוצה לנהל משחק
+          </a>
+          <a href="player.html" class="btn btn-player">
+              <span class="icon">🎮</span>
+              אני רוצה להצטרף למשחק
+          </a>
+          <a href="instructions.html" class="btn btn-instructions">
+              <span class="icon">📜</span>
+              איך משחקים? (הוראות)
+          </a>
+
+          <div id="home-banner-slot" class="banner-slot hidden">
+              <a id="home-banner-link" href="#" target="_blank">
+                  <img id="home-banner-img" src="" alt="פרסומת תחתונה">
+              </a>
+          </div>
+      </div>
+  </div>
+
+  <script>
+      // סעיף 1: לוגיקה לבחירת באנר מותאם למובייל
+      let bannersData = null;
+
+      function getBannerUrl(bannerObj) {
+          if (!bannerObj) return null;
+          const isMobile = window.innerWidth <= 640; // הגדרת רוחב למובייל
+          return (isMobile && bannerObj.imgMobile) ? bannerObj.imgMobile : bannerObj.img;
+      }
+
+      function updateBanners() {
+          if (!bannersData) return;
+
+          // עדכון באנר עליון
+          const topImgUrl = getBannerUrl(bannersData.topBanner);
+          if (topImgUrl) {
+              document.getElementById("top-banner-img").src = topImgUrl;
+              document.getElementById("top-banner-link").href = bannersData.topBanner.link || "#";
+              document.getElementById("top-banner-area").classList.remove("hidden");
+          } else {
+              document.getElementById("top-banner-area").classList.add("hidden");
+          }
+
+          // עדכון באנר תחתון
+          const bottomImgUrl = getBannerUrl(bannersData.bottomBanner);
+          if (bottomImgUrl) {
+              document.getElementById("home-banner-img").src = bottomImgUrl;
+              document.getElementById("home-banner-link").href = bannersData.bottomBanner.link || "#";
+              document.getElementById("home-banner-slot").classList.remove("hidden");
+          } else {
+              document.getElementById("home-banner-slot").classList.add("hidden");
+          }
+      }
+
+      // טעינת באנרים
+      fetch("/api/banners").then(r=>r.json()).then(d => {
+          bannersData = d;
+          updateBanners();
+      }).catch(e => console.error("Error fetching banners:", e));
+
+      // האזנה לשינוי גודל מסך לעדכון באנרים
+      window.addEventListener('resize', updateBanners);
+  </script>
+</body>
+</html>
