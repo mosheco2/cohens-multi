@@ -22,10 +22,12 @@
         h1, h2, h3 { text-align: center; color: var(--text-color); font-weight: 900; }
         h1 { font-size: 2.5rem; background: linear-gradient(135deg, var(--primary-color), var(--text-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
         
-        .btn { width: 100%; padding: 15px; border-radius: 18px; border: none; font-weight: 800; font-size: 1.2rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; color: white; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 15px; border-radius: 18px; border: none; font-weight: 800; font-size: 1.2rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; color: white; margin-bottom: 10px; text-decoration: none; }
         .btn:active { transform: scale(0.97); }
         .btn-primary { background: linear-gradient(135deg, var(--primary-color), #FF8566); box-shadow: 0 8px 20px rgba(248, 71, 121, 0.3); }
         .btn-success { background: linear-gradient(135deg, var(--secondary-color), #42E695); box-shadow: 0 8px 20px rgba(21, 196, 193, 0.3); }
+        .btn-danger { background: #fee2e2; color: #ef4444; }
+        .btn-wa { background: #25D366; color: white; box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3); }
         .btn-outline { background: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); }
         .btn-small { padding: 8px 15px; font-size: 1rem; width: auto; display: inline-flex; }
         
@@ -43,7 +45,6 @@
         
         .team-list { list-style: none; padding: 0; }
         .team-list li { background: #fff; padding: 10px 15px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-        .team-score { font-weight: bold; font-size: 1.2rem; color: var(--primary-color); }
         
         #timer { font-size: 4rem; text-align: center; font-weight: 900; color: var(--primary-color); margin: 20px 0; font-variant-numeric: tabular-nums; text-shadow: 2px 2px 0px rgba(0,0,0,0.1); }
         
@@ -133,8 +134,12 @@
                 <h2 id="displayGameCode">XXXX</h2>
                 <div class="share-hint">לחצו כאן כדי להעתיק קישור להזמנה 📋</div>
             </div>
+            
+            <a id="waShareBtn" class="btn btn-wa" target="_blank" style="margin-top: 15px;">
+                <span style="font-size: 1.5rem;">📱</span> שלח קישור לקבוצה בווצאפ
+            </a>
 
-            <div id="teamsContainer" class="grid-2">
+            <div id="teamsContainer" class="grid-2" style="margin-top: 30px;">
                 </div>
              <div style="margin-top: 20px; text-align: center;">
                 <button id="addTeamBtn" class="btn btn-outline btn-small">➕ הוסף קבוצה</button>
@@ -212,6 +217,7 @@
             over: document.getElementById("gameOverSection")
         };
         const brandingSection = document.getElementById('brandingSection');
+        const waShareBtn = document.getElementById("waShareBtn"); // כפתור ווצאפ
 
         // פונקציות עזר
         function showSection(sectionId) {
@@ -298,8 +304,6 @@
             }
 
             brandingData = { title: brandTitle, slogan: brandSlogan, logo: brandLogo, color: brandColor };
-            // הסתרת שדות מיתוג בטופס אם הם מגיעים מה-URL
-            // document.getElementById('brandingFields').style.display = 'none'; // אם היה קיים
         }
 
         // לוגיקת משחק
@@ -316,12 +320,18 @@
                 categories,
                 customWords: document.getElementById("customWordsInput").value,
                 branding: brandingData,
-                teamNames: { A: "קבוצה A", B: "קבוצה B" } // ברירת מחדל
+                teamNames: { A: "קבוצה A", B: "קבוצה B" }
             }, (res) => {
                 if(res.ok) {
                     myGameCode = res.gameCode;
                     gameState = res.game;
                     document.getElementById("displayGameCode").textContent = myGameCode;
+                    
+                    // עדכון כפתור הווצאפ (הוחזר)
+                    const waLink = `${window.location.origin}/player.html?code=${myGameCode}`;
+                    const waText = `היי חברים! בואו לשחק מילמניה. הכנסו לקישור והצטרפו:\n${waLink}`;
+                    waShareBtn.href = `https://wa.me/?text=${encodeURIComponent(waText)}`;
+
                     showSection("lobby");
                     renderLobby();
                 } else {
@@ -388,8 +398,6 @@
         }
 
         document.getElementById("addTeamBtn").addEventListener("click", () => {
-            const newId = "Team_" + Date.now(); // מזהה זמני
-            // כאן נדרש מימוש בשרת להוספת קבוצה דינמית, כרגע זה רק UI
             alert("הוספת קבוצות דינמית דורשת עדכון בשרת.");
         });
 
@@ -433,7 +441,6 @@
 
         socket.on("roundTimeUp", (data) => {
              // אפשר להוסיף כאן מודל סיכום סיבוב
-             // כרגע השרת שולח עדכון משחק שמעביר חזרה ללובי
         });
 
         socket.on("gameOver", (data) => {
