@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-TP7Z9DX6');</script>
+  <meta charset="UTF-8" />
+  <title>מילמניה - יצירת משחק</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+  <style>
+     :root { font-size: 16px; --bg-color: #FFF8EA; }
+     * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; }
+     body { margin: 0; padding: 0; background-color: var(--bg-color); color: #2B1E4A; font-family: "Varela Round", sans-serif; min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; }
+     body::before, body::after { content: ""; position: fixed; width: 300px; height: 300px; border-radius: 50%; z-index: -1; }
+     body::before { top: -100px; left: -100px; background: radial-gradient(circle at center, rgba(248, 71, 121, 0.25), transparent 65%); }
+     body::after { bottom: -100px; right: -100px; background: radial-gradient(circle at center, rgba(21, 196, 193, 0.25), transparent 65%); }
+
+     .main-content-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; width: 100%; }
+     .main-card { background: #fff; border-radius: 30px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); max-width: 450px; width: 100%; position: relative; overflow: hidden; }
+     h1 { font-size: 2.2rem; margin: 0 0 20px; text-align: center; color: #2B1E4A; font-weight: 900; }
+     
+     label { display: block; margin-bottom: 8px; font-weight: 700; color: #4A3F75; font-size: 0.95rem; }
+     input, select { width: 100%; padding: 12px 15px; border-radius: 15px; border: 2px solid #E0E0E0; background: #FFFDF7; font-size: 1rem; color: #2B1E4A; transition: all 0.3s; font-family: inherit; margin-bottom: 15px; }
+     input:focus, select:focus { border-color: #F84779; outline: none; box-shadow: 0 0 0 3px rgba(248, 71, 121, 0.2); background: #fff; }
+     
+     .btn-submit { width: 100%; padding: 16px; border-radius: 18px; border: none; font-weight: 800; font-size: 1.2rem; margin-top: 10px; cursor: pointer; transition: all 0.3s; background: linear-gradient(135deg, #F84779, #FF8566); color: white; box-shadow: 0 8px 20px rgba(248, 71, 121, 0.3); }
+     .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(248, 71, 121, 0.4); }
+     .btn-submit:active { transform: scale(0.98); }
+
+     /* סגנון לבאנר תחתון פנימי */
+     .banner-slot { width: 100%; margin-top: 20px; }
+     .banner-slot img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; display: block; }
+     
+     /* סגנון לבאנר עליון */
+     .header-area { width: 100%; max-width: 450px; padding: 20px 20px 0; text-align: center; }
+     .header-area img { width: 100%; height: auto; max-height: 180px; object-fit: cover; border-radius: 12px; }
+
+     .hidden { display: none !important; }
+
+     @media (max-width: 480px) {
+         .main-card { padding: 25px 20px; }
+         h1 { font-size: 1.8rem; }
+         /* סעיף 1: התאמת באנרים למובייל */
+         .banner-slot { margin-top: 10px; } /* קירוב לקובייה במובייל */
+     }
+  </style>
+</head>
+<body>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TP7Z9DX6"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <div class="header-area hidden" id="top-banner-area">
+      <a id="top-banner-link" href="#" target="_blank">
+          <img id="top-banner-img" src="" alt="באנר עליון">
+      </a>
+  </div>
+
+  <div class="main-content-wrapper">
+      <div class="main-card">
+          <h1>יצירת משחק חדש 👑</h1>
+          
+          <form action="/create-game" method="POST">
+              <label for="hostName">שם המנהל (יופיע במשחק)</label>
+              <input type="text" id="hostName" name="hostName" placeholder="לדוגמה: דני המלך" required>
+              
+              <label for="targetScore">יעד נקודות לניצחון</label>
+              <input type="number" id="targetScore" name="targetScore" value="50" min="10" max="200" required>
+              
+              <label for="roundSeconds">שניות לכל סיבוב</label>
+              <input type="number" id="roundSeconds" name="roundSeconds" value="60" min="30" max="180" required>
+
+              <button type="submit" class="btn-submit">צור משחק והתחל!</button>
+          </form>
+
+          <div id="home-banner-slot" class="banner-slot hidden">
+              <a id="home-banner-link" href="#" target="_blank">
+                  <img id="home-banner-img" src="" alt="פרסומת תחתונה">
+              </a>
+          </div>
+      </div>
+  </div>
+
+  <script>
+      // סעיף 1: לוגיקה לבחירת באנר מותאם למובייל
+      let bannersData = null;
+
+      function getBannerUrl(bannerObj) {
+          if (!bannerObj) return null;
+          const isMobile = window.innerWidth <= 640; // הגדרת רוחב למובייל
+          return (isMobile && bannerObj.imgMobile) ? bannerObj.imgMobile : bannerObj.img;
+      }
+
+      function updateBanners() {
+          if (!bannersData) return;
+
+          // עדכון באנר עליון
+          const topImgUrl = getBannerUrl(bannersData.topBanner);
+          if (topImgUrl) {
+              document.getElementById("top-banner-img").src = topImgUrl;
+              document.getElementById("top-banner-link").href = bannersData.topBanner.link || "#";
+              document.getElementById("top-banner-area").classList.remove("hidden");
+          } else {
+              document.getElementById("top-banner-area").classList.add("hidden");
+          }
+
+          // עדכון באנר תחתון
+          const bottomImgUrl = getBannerUrl(bannersData.bottomBanner);
+          if (bottomImgUrl) {
+              document.getElementById("home-banner-img").src = bottomImgUrl;
+              document.getElementById("home-banner-link").href = bannersData.bottomBanner.link || "#";
+              document.getElementById("home-banner-slot").classList.remove("hidden");
+          } else {
+              document.getElementById("home-banner-slot").classList.add("hidden");
+          }
+      }
+
+      // טעינת באנרים
+      fetch("/api/banners").then(r=>r.json()).then(d => {
+          bannersData = d;
+          updateBanners();
+      }).catch(e => console.error("Error fetching banners:", e));
+
+      // האזנה לשינוי גודל מסך לעדכון באנרים
+      window.addEventListener('resize', updateBanners);
+  </script>
+</body>
+</html>
