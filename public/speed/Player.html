@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>ספיד מניה - שחקן</title>
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --bg-color: #2B1E4A;
+            --tile-bg: #fff;
+            --tile-color: #2B1E4A;
+            --accent: #FFD700;
+            --success: #2ecc71;
+            --error: #e74c3c;
+        }
+
+        * { box-sizing: border-box; font-family: "Varela Round", sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* מניעת גלילה במשחק */
+        }
+
+        /* --- מסך כניסה --- */
+        .login-screen {
+            padding: 40px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .login-input {
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            text-align: center;
+            border: none;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .btn-action {
+            padding: 15px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            background: linear-gradient(135deg, #F84779, #F7C948);
+            color: #2B1E4A;
+            box-shadow: 0 4px 0 #c0392b;
+            cursor: pointer;
+        }
+        .btn-action:active { transform: translateY(4px); box-shadow: none; }
+
+        /* --- מסך משחק --- */
+        .game-header {
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .timer-badge {
+            background: #333;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .words-found-list {
+            flex: 1;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.1);
+            margin: 10px;
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-content: flex-start;
+        }
+        
+        .found-word-tag {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        /* אזור הבנייה */
+        .construction-zone {
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            min-height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .slot-tile {
+            width: 45px;
+            height: 45px;
+            background: var(--tile-bg);
+            color: var(--tile-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 3px 0 #ccc;
+            cursor: pointer;
+        }
+
+        /* אזור האותיות (המקלדת) */
+        .tiles-area {
+            padding: 10px;
+            padding-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tile-btn {
+            width: 55px;
+            height: 55px;
+            background: var(--tile-bg);
+            color: var(--tile-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #ccc;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .tile-btn.used {
+            opacity: 0.3;
+            transform: scale(0.9);
+            box-shadow: none;
+            background: #ccc;
+        }
+
+        /* כפתורי שליטה */
+        .controls {
+            display: flex;
+            gap: 10px;
+            padding: 10px 20px 20px;
+        }
+        
+        .ctrl-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .btn-submit { flex: 2; background: var(--success); color: white; box-shadow: 0 4px 0 #27ae60; }
+        .btn-clear { background: #e74c3c; color: white; box-shadow: 0 4px 0 #c0392b; }
+        .btn-shuffle { background: #3498db; color: white; box-shadow: 0 4px 0 #2980b9; }
+        
+        .ctrl-btn:active { transform: translateY(3px); box-shadow: none; }
+
+        .hidden { display: none !important; }
+
+        /* אנימציות פידבק */
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .shake { animation: shake 0.3s; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. כניסה -->
+    <div id="loginScreen" class="login-screen">
+        <img src="../m2.png" alt="לוגו" style="height:80px; object-fit:contain;" onerror="this.style.display='none'">
+        <h2 style="margin:0; color:var(--accent);">ספיד מניה ⚡</h2>
+        <input type="text" id="pGameCode" class="login-input" placeholder="קוד משחק (למשל ABCD)" style="text-transform:uppercase">
+        <input type="text" id="pName" class="login-input" placeholder="השם שלך">
+        <button class="btn-action" onclick="joinGame()">כנס למשחק</button>
+    </div>
+
+    <!-- 2. המתנה -->
+    <div id="waitingScreen" class="login-screen hidden">
+        <h1>⏳ ממתין...</h1>
+        <p>המנהל תכף יתחיל את הטירוף.</p>
+        <p style="font-size:0.9rem; opacity:0.7;">הכינו את האצבעות!</p>
+    </div>
+
+    <!-- 3. משחק פעיל -->
+    <div id="gameScreen" class="hidden" style="height:100vh; display:flex; flex-direction:column;">
+        <div class="game-header">
+            <div id="timerDisplay" class="timer-badge">60s</div>
+            <div>ניקוד: <span id="localScore">0</span></div>
+        </div>
+
+        <!-- רשימת מילים שמצאתי -->
+        <div class="words-found-list" id="foundWordsList">
+            <div style="width:100%; text-align:center; color:#ccc; font-size:0.9rem;">מילים שמצאת יופיעו כאן</div>
+        </div>
+
+        <!-- אזור הבנייה -->
+        <div class="construction-zone" id="constructionZone" onclick="returnLetter()">
+            <!-- אותיות שנבחרו -->
+        </div>
+
+        <!-- אזור האותיות -->
+        <div class="tiles-area" id="tilesArea">
+            <!-- אותיות מקור -->
+        </div>
+
+        <!-- שליטה -->
+        <div class="controls">
+            <button class="ctrl-btn btn-clear" onclick="clearWord()"><i class="ph ph-x"></i></button>
+            <button class="ctrl-btn btn-shuffle" onclick="shuffleLetters()"><i class="ph ph-arrows-clockwise"></i></button>
+            <button class="ctrl-btn btn-submit" onclick="submitWord()">שלח! <i class="ph ph-paper-plane-right"></i></button>
+        </div>
+    </div>
+
+    <!-- Socket.io וטיפול בשגיאות -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        let socket;
+        if (typeof io !== 'undefined') {
+            socket = io();
+        } else {
+            console.warn("Socket.io not found - Running in Mock mode for UI testing");
+            socket = {
+                on: (event, callback) => console.log(`[Mock On] ${event}`),
+                emit: (event, data) => console.log(`[Mock Emit] ${event}`, data)
+            };
+        }
+        
+        // מצב משחק מקומי
+        let currentLetters = []; // האותיות שקיבלנו מהשרת
+        let activeWord = []; // אינדקסים של האותיות שנבחרו
+        let foundWords = new Set();
+        
+        function joinGame() {
+            const code = document.getElementById('pGameCode').value.toUpperCase();
+            const name = document.getElementById('pName').value;
+            if(code.length < 3 || name.length < 2) return alert('נא למלא פרטים');
+
+            // socket.emit('speed:join', { code, name });
+            
+            // סימולציה:
+            showScreen('waitingScreen');
+            
+            // סימולציה של התחלת משחק אחרי 3 שניות
+            setTimeout(() => {
+                startGameMock(['ש', 'ל', 'ו', 'ם', 'כ', 'י', 'ת']);
+            }, 3000);
+        }
+
+        function startGameMock(letters) {
+            currentLetters = letters.map((char, index) => ({ char, id: index }));
+            showScreen('gameScreen');
+            renderTiles();
+            startLocalTimer(60);
+        }
+
+        function renderTiles() {
+            const area = document.getElementById('tilesArea');
+            area.innerHTML = '';
+            
+            currentLetters.forEach(item => {
+                const btn = document.createElement('div');
+                btn.className = 'tile-btn';
+                if(activeWord.includes(item.id)) {
+                    btn.classList.add('used');
+                }
+                btn.textContent = item.char;
+                btn.onclick = () => {
+                    if(!activeWord.includes(item.id)) {
+                        addLetter(item.id);
+                    }
+                };
+                area.appendChild(btn);
+            });
+        }
+
+        function renderConstruction() {
+            const zone = document.getElementById('constructionZone');
+            zone.innerHTML = '';
+            activeWord.forEach(id => {
+                const item = currentLetters.find(l => l.id === id);
+                const tile = document.createElement('div');
+                tile.className = 'slot-tile';
+                tile.textContent = item.char;
+                tile.onclick = () => removeLetter(id);
+                zone.appendChild(tile);
+            });
+        }
+
+        function addLetter(id) {
+            if(activeWord.length >= 7) return;
+            try { navigator.vibrate(10); } catch(e){} // רטט קל
+            activeWord.push(id);
+            renderTiles();
+            renderConstruction();
+        }
+
+        function removeLetter(id) {
+            activeWord = activeWord.filter(x => x !== id);
+            renderTiles();
+            renderConstruction();
+        }
+
+        function clearWord() {
+            activeWord = [];
+            renderTiles();
+            renderConstruction();
+        }
+
+        function shuffleLetters() {
+            // רק ויזואלי, לא משנה IDs
+            currentLetters.sort(() => Math.random() - 0.5);
+            renderTiles();
+        }
+
+        function submitWord() {
+            if(activeWord.length < 2) return;
+            
+            const word = activeWord.map(id => currentLetters.find(l => l.id === id).char).join('');
+            
+            if(foundWords.has(word)) {
+                // מילה כבר נמצאה
+                document.getElementById('constructionZone').classList.add('shake');
+                setTimeout(() => document.getElementById('constructionZone').classList.remove('shake'), 300);
+                clearWord();
+                return;
+            }
+
+            // socket.emit('speed:submitWord', { word });
+            
+            // סימולציה של הצלחה:
+            foundWords.add(word);
+            const tag = document.createElement('div');
+            tag.className = 'found-word-tag';
+            tag.textContent = word;
+            document.getElementById('foundWordsList').appendChild(tag);
+            document.getElementById('localScore').textContent = foundWords.size;
+            
+            try { navigator.vibrate([30, 30, 30]); } catch(e){} // רטט הצלחה
+            clearWord();
+        }
+        
+        function startLocalTimer(sec) {
+            const el = document.getElementById('timerDisplay');
+            // איפוס טיימר קודם
+            if(window.gameTimer) clearInterval(window.gameTimer);
+            
+            window.gameTimer = setInterval(() => {
+                sec--;
+                el.textContent = sec + 's';
+                if(sec <= 0) clearInterval(window.gameTimer);
+            }, 1000);
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
