@@ -32,9 +32,8 @@
         .tile { 
             width: 50px; height: 50px; background: white; color: #2B1E4A; border-radius: 10px; 
             font-size: 1.5rem; font-weight: bold; display: flex; justify-content: center; align-items: center; 
-            box-shadow: 0 4px 0 #ccc; cursor: grab; touch-action: none; position: relative; z-index: 10;
+            box-shadow: 0 4px 0 #ccc; cursor: pointer; touch-action: none; position: relative; z-index: 10;
         }
-        .tile.dragging { opacity: 0.5; transform: scale(1.1); z-index: 100; }
         
         .controls { display: flex; gap: 10px; width: 100%; margin-top: 10px; }
         .btn-ctrl { flex: 1; padding: 15px; border-radius: 10px; border: none; font-size: 1.2rem; cursor: pointer; }
@@ -99,14 +98,15 @@
         try { if(typeof io !== 'undefined') socket = io(); else throw new Error(); } 
         catch(e) { console.warn("Mock"); socket = { on:()=>{}, emit:()=>{} }; }
 
-        // אוטומציה לפרמטרים ב-URL
+        // אוטומציה לפרמטרים ב-URL (עבור המנהל שנכנס כשחקן)
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.get('code')) document.getElementById('pCode').value = urlParams.get('code');
+        if(urlParams.get('name')) document.getElementById('pName').value = urlParams.get('name');
 
         function join() {
             const code = document.getElementById('pCode').value.toUpperCase();
             const name = document.getElementById('pName').value;
-            const teamId = urlParams.get('teamId');
+            const teamId = urlParams.get('teamId'); // אם הגיע מהלינק בוואטסאפ
             
             if(!code || !name) return;
             socket.emit('speed:join', { code, name, teamId });
@@ -154,7 +154,7 @@
             clearBoard(false); // ניקוי הלוח אחרי הצלחה
         });
 
-        // --- לוגיקת רינדור וגרירה ---
+        // --- לוגיקת רינדור וגרירה (קליקים להעברה פשוטה ומהירה) ---
         function renderBoard(emit = true) {
             const slotsContainer = document.getElementById('slotsRow');
             const bankContainer = document.getElementById('bankRow');
@@ -176,7 +176,7 @@
                     tile.onclick = () => { moveLetter(letterObj.id, null); };
                     slotDiv.appendChild(tile);
                 } else {
-                    // קליק על סלוט ריק (אופציונלי: להעביר את האות הפנויה הראשונה)
+                    // קליק על סלוט ריק (מעביר את האות הפנויה הראשונה)
                     slotDiv.onclick = () => handleSlotClick(i);
                 }
                 slotsContainer.appendChild(slotDiv);
@@ -193,7 +193,7 @@
             });
 
             if(emit && myTeamId) {
-                // שליחת מצב הלוח (מערך של IDs או Null)
+                // שליחת מצב הלוח (מערך של IDs או Null) לקבוצה
                 const indices = slotsState.map(obj => obj ? obj.id : null);
                 socket.emit('speed:updateTeamBoard', { indices });
             }
@@ -204,7 +204,6 @@
             div.className = 'tile';
             div.textContent = letterObj.char;
             div.dataset.id = letterObj.id;
-            // כאן אפשר להוסיף Touch Events לגרירה ממשית בעתיד
             return div;
         }
 
@@ -239,9 +238,6 @@
             if (word.length < 2) return;
             socket.emit('speed:submitWord', { word });
         }
-
-        // --- פוליפיל פשוט לגרירה (אופציונלי למתקדמים, כרגע הקליקים עובדים מצוין) ---
-        // הוספתי אינטראקציית "קליק" שהיא יותר אמינה במובייל למשחק מהיר
     </script>
 </body>
 </html>
