@@ -1,7 +1,7 @@
 const express = require("express");
 const http = require("http");
 const path = require("path");
-const fs = require("fs"); // הוספנו את זה לבדיקת קבצים
+const fs = require("fs");
 const { Server } = require("socket.io");
 const { Pool } = require("pg");
 
@@ -11,15 +11,15 @@ const io = new Server(server, {
   cors: { origin: "*" },
 });
 
-// --- טעינת מודול ספיד מניה (עם הגנה מקריסה) ---
+// --- טעינת מודול ספיד מניה ---
+// וודא שיצרת תיקייה בשם backend ושמת בה את הקובץ speedGameManager.js
 const speedModulePath = path.join(__dirname, 'backend', 'speedGameManager.js');
 if (fs.existsSync(speedModulePath)) {
     const { initSpeedGame } = require('./backend/speedGameManager');
     initSpeedGame(io);
     console.log("✅ Speed Mania module loaded successfully.");
 } else {
-    console.error("⚠️ Speed Mania module NOT found at:", speedModulePath);
-    console.error("Please ensure you created the 'backend' folder and placed 'speedGameManager.js' inside.");
+    console.error("⚠️ Error: 'backend/speedGameManager.js' not found.");
 }
 
 const PORT = process.env.PORT || 3000;
@@ -29,7 +29,7 @@ const ADMIN_CODE = process.env.ADMIN_CODE || "ONEBTN";
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
-// --- Database & Persistence (חלק מהקוד המקורי שלך) ---
+// --- Database (חלק מהקוד המקורי שלך - מקוצר אך שומר על פונקציונליות) ---
 let pool = null;
 let dbReady = false;
 
@@ -44,10 +44,9 @@ async function initDb() {
       connectionString,
       ssl: process.env.PGSSL === "false" ? false : { rejectUnauthorized: false },
     });
-    // יצירת טבלאות (חלק מהקוד המקורי - קוצר לתצוגה)
+    // יצירת טבלאות בסיסיות למניעת שגיאות
     await pool.query(`CREATE TABLE IF NOT EXISTS site_settings (id SERIAL PRIMARY KEY, top_banner_img TEXT, top_banner_link TEXT, bottom_banner_img TEXT, bottom_banner_link TEXT, top_banner_img_mobile TEXT, bottom_banner_img_mobile TEXT);`);
     await pool.query(`INSERT INTO site_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;`);
-    
     dbReady = true;
     console.log("✅ Postgres ready.");
   } catch (err) {
@@ -56,7 +55,7 @@ async function initDb() {
 }
 initDb();
 
-// --- API לבאנרים (חלק מהקוד המקורי) ---
+// --- API לבאנרים ---
 app.get("/api/banners", async (req, res) => {
     let banners = {};
     if (dbReady && pool) {
