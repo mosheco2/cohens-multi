@@ -7,19 +7,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        :root { 
-            --bg: #2B1E4A; --tile: #fff; --accent: #FFD700; --primary: #F84779;
-        }
+        :root { --bg: #2B1E4A; --tile: #fff; --accent: #FFD700; --primary: #F84779; }
         body { margin:0; background: var(--bg); color: white; font-family: "Varela Round", sans-serif; overflow: hidden; user-select: none; display: flex; flex-direction: column; height: 100dvh; }
         
-        /* כניסה */
         #loginScreen, #waitScreen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
         .input-group { width: 100%; max-width: 300px; margin-bottom: 10px; }
         input { width: 100%; padding: 15px; border-radius: 12px; border: none; text-align: center; font-size: 1.2rem; background: rgba(255,255,255,0.9); }
         .btn-big { width: 100%; max-width: 300px; padding: 15px; border-radius: 50px; background: linear-gradient(135deg, var(--primary), #ff8e53); border: none; color: white; font-weight: bold; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(248, 71, 121, 0.4); margin-top: 10px; }
         .btn-big:active { transform: scale(0.98); }
 
-        /* מסך משחק */
         #gameScreen { height: 100%; display: flex; flex-direction: column; }
         .top-bar { padding: 15px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(5px); }
         .score-box { font-size: 1.1rem; font-weight: bold; display: flex; gap: 10px; }
@@ -28,7 +24,6 @@
         .words-area { flex: 1; margin: 10px; background: rgba(255,255,255,0.05); border-radius: 15px; padding: 10px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; border: 1px solid rgba(255,255,255,0.1); }
         .word-tag { background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; animation: popIn 0.3s; font-size: 0.9rem; }
 
-        /* אזור המשחק התחתון (מקובע למטה) */
         .play-area { 
             background: rgba(0,0,0,0.4); 
             border-radius: 25px 25px 0 0; 
@@ -37,28 +32,26 @@
             box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
         }
         
-        /* סלוטים */
         .slots-container { display: flex; gap: 5px; justify-content: center; min-height: 55px; }
         .slot { width: 13vw; height: 13vw; max-width: 55px; max-height: 55px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         
-        /* בנק אותיות */
         .bank-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 60px; }
         
-        /* אריח */
         .tile { 
             width: 13vw; height: 13vw; max-width: 55px; max-height: 55px; 
-            background: var(--tile-bg); color: #2B1E4A; border-radius: 12px; 
+            background: var(--tile); color: #2B1E4A; border-radius: 12px; 
             font-size: 1.6rem; font-weight: bold; display: flex; align-items: center; justify-content: center; 
             box-shadow: 0 4px 0 #ccc; cursor: pointer; transition: transform 0.1s;
         }
         .tile:active { transform: scale(0.95); }
 
-        /* כפתורים */
         .controls { display: flex; gap: 10px; height: 50px; }
         .btn-game { flex: 1; border: none; border-radius: 12px; font-size: 1.4rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
         .btn-clear { background: #e74c3c; flex: 0.7; }
         .btn-submit { background: #2ecc71; flex: 2; font-weight: 800; }
         .btn-game:active { transform: translateY(3px); box-shadow: none; }
+        
+        .help-icon { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.6); font-size: 1.5rem; cursor: pointer; text-decoration: none; }
 
         .hidden { display: none !important; }
         @keyframes popIn { from{transform:scale(0)} to{transform:scale(1)} }
@@ -66,7 +59,8 @@
 </head>
 <body>
 
-    <!-- Login -->
+    <a href="../instructions.html" target="_blank" class="help-icon"><i class="ph-bold ph-question"></i></a>
+
     <div id="loginScreen">
         <h1 style="color:var(--accent); font-size:2.5rem; margin-bottom:5px;">ספיד מניה ⚡</h1>
         <p style="opacity:0.8; margin-bottom:30px;">הצטרפות למשחק קבוצתי</p>
@@ -77,14 +71,12 @@
         <p id="statusMsg" style="color:#ff6b6b; margin-top:10px; font-size:0.9rem;"></p>
     </div>
 
-    <!-- Wait -->
     <div id="waitScreen" class="hidden">
         <h2 style="color:var(--accent);" id="teamNameTitle"></h2>
         <p>ממתינים למנהל שיתחיל את הסיבוב...</p>
         <div style="font-size:3rem; margin-top:20px; animation: popIn 1s infinite alternate;">⏳</div>
     </div>
 
-    <!-- Game -->
     <div id="gameScreen" class="hidden">
         <div class="top-bar">
             <div class="score-box">
@@ -115,11 +107,18 @@
         let slotsState = Array(7).fill(null);
         let myTeamId = null;
 
-        // חיבור בטוח
-        try { if(typeof io !== 'undefined') socket = io(); else throw new Error(); } 
-        catch(e) { console.warn("Mock Mode"); socket = { on:()=>{}, emit:()=>{} }; }
+        // אתחול בטוח של Socket.io
+        try {
+            if (typeof io !== 'undefined') {
+                socket = io();
+            } else {
+                throw new Error("Socket.io not found");
+            }
+        } catch (e) {
+            console.warn("Running in Mock Mode (UI Only)");
+            socket = { on: () => {}, emit: () => {} };
+        }
 
-        // אוטומציה לפרמטרים ב-URL (תיקון שם המשתנה ל-urlParams)
         const urlParams = new URLSearchParams(location.search);
         if(urlParams.get('code')) document.getElementById('pCode').value = urlParams.get('code');
         if(urlParams.get('name')) document.getElementById('pName').value = urlParams.get('name');
