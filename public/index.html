@@ -101,7 +101,7 @@
                 <div class="card-meta"><span><i class="ph ph-users"></i> 4+ שחקנים</span><span><i class="ph ph-smiley"></i> מסיבה</span></div>
             </div>
 
-            <!-- ספיד מניה (פעיל עכשיו!) -->
+            <!-- ספיד מניה (פעיל!) -->
             <div class="game-card" style="border: 2px solid var(--secondary); background: rgba(21, 196, 193, 0.1);" onclick="startGame('speed')">
                 <div class="new-tag">חדש! ⚡</div>
                 <div class="card-icon">⚡</div>
@@ -139,8 +139,15 @@
         <button onclick="closeJoinPanel()" style="background:none; border:none; color:#888; margin-top:15px; cursor:pointer; text-decoration:underline;">ביטול</button>
     </div>
 
+    <!-- באנר תחתון -->
+    <div id="globalBottomBanner" style="position: fixed; bottom: 0; width: 100%; text-align: center; background: rgba(0,0,0,0.5); padding: 10px; display: none;">
+        <a id="globalBottomBannerLink" href="#" target="_blank">
+            <img id="globalBottomBannerImg" src="" alt="פרסומת" style="max-height: 80px; max-width: 100%;">
+        </a>
+    </div>
+
     <script>
-        // ניהול באנרים גלובלי (אם קיים)
+        // ניהול באנרים גלובלי
         fetch("/api/banners").then(r=>r.json()).then(d => {
             if(d.bottomBanner && d.bottomBanner.img) {
                 document.getElementById("globalBottomBannerImg").src = d.bottomBanner.img;
