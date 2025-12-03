@@ -9,45 +9,43 @@
     <style>
         :root { --bg: #1a1a2e; --card: #fff; --primary: #F84779; }
         body { margin: 0; background: radial-gradient(circle, #2B1E4A, #1a1a2e); font-family: "Varela Round", sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
         .nav { background: rgba(0,0,0,0.4); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; color: white; }
-        .nav-left { display: flex; gap: 10px; align-items: center; }
-        .icon-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; text-decoration: none; }
-        
         .tabs { display: flex; gap: 10px; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 30px; }
         .tab-btn { background: none; border: none; color: #ccc; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; font-family: inherit; }
         .tab-btn.active { background: var(--primary); color: white; }
-        
+        .home-btn, .help-btn { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 5px; }
         .content { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
-        .card { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 900px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 20px; }
-        
+        .card { background: var(--card); padding: 25px; border-radius: 20px; width: 100%; max-width: 900px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 20px; }
+        h2 { margin-top: 0; color: #2B1E4A; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0 15px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 1rem; }
+        .btn-main { width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--primary), #ff8e53); color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
         .info-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 900px; margin-bottom: 20px; color: white; }
         .code { font-size: 2.5rem; font-weight: 900; color: #FFD700; letter-spacing: 5px; }
-        
-        .teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; width: 100%; }
+        .teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; width: 100%; }
         .team-card { background: white; padding: 15px; border-radius: 15px; border-top: 5px solid #ccc; position: relative; }
+        .team-words { height: 100px; overflow-y: auto; background: #f5f5f5; border-radius: 10px; padding: 5px; margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start; }
+        .word-badge { background: #ddd; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; }
         .score-badge { position: absolute; top: 10px; left: 10px; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
-        .wa-btn { background: #25D366; color: white; text-decoration: none; padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; }
-
+        .wa-link { display: inline-flex; align-items: center; gap: 5px; background: #25D366; color: white; padding: 5px 12px; border-radius: 20px; text-decoration: none; font-size: 0.85rem; font-weight: bold; margin-top: 5px; }
         iframe { width: 100%; height: 100%; border: none; border-radius: 15px; background: #2B1E4A; }
         .hidden { display: none !important; }
-        
         .game-controls { display: flex; gap: 10px; align-items: center; }
-        .start-btn { background: #2ecc71; color: white; border: none; padding: 8px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.1rem; box-shadow: 0 4px 0 #27ae60; }
+        .btn-ctrl { background: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.1rem; box-shadow: 0 4px 0 #27ae60; }
+        .timer { font-size: 1.5rem; font-weight: bold; font-variant-numeric: tabular-nums; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 8px; }
     </style>
 </head>
 <body>
 
     <div class="nav">
-        <div class="nav-left">
-            <a href="/index.html" class="icon-btn" title="הביתה"><i class="ph-bold ph-house"></i></a>
-            <a href="/instructions.html" target="_blank" class="icon-btn" title="הוראות"><i class="ph-bold ph-question"></i></a>
-            <div style="font-weight:bold; font-size:1.2rem; margin-right:10px;">⚡ ספיד</div>
+        <div style="display:flex; gap:5px; align-items:center;">
+            <button class="home-btn" onclick="location.href='../index.html'" title="בית"><i class="ph-bold ph-house"></i></button>
+            <button class="help-btn" onclick="window.open('../instructions.html', '_blank')" title="הוראות"><i class="ph-bold ph-question"></i></button>
+            <div style="font-weight:bold; font-size:1.2rem;">⚡ ספיד</div>
         </div>
-
+        
         <div class="game-controls hidden" id="gameControls">
-            <div id="dTimer" style="font-size:1.5rem; font-weight:bold; font-variant-numeric:tabular-nums;">00:00</div>
-            <button class="start-btn" onclick="start()">▶ התחל</button>
+            <div class="timer" id="dTimer">00:00</div>
+            <button class="btn-ctrl" onclick="start()">▶ התחל</button>
         </div>
 
         <div class="tabs">
@@ -61,22 +59,20 @@
         <div id="view-host" style="width:100%; display:flex; flex-direction:column; align-items:center;">
             <div id="setup" class="card">
                 <h2>הגדרות משחק</h2>
-                <label>שם המנהל</label><input type="text" id="hName" placeholder="שם" style="width:100%; padding:10px; margin-bottom:10px;">
+                <label>שם המנהל</label><input type="text" id="hName" placeholder="שם">
                 <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label>קבוצות</label><select id="hTeams" style="width:100%; padding:10px;"><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
-                    <div style="flex:1"><label>זמן</label><input type="number" id="hTime" value="60" style="width:100%; padding:10px;"></div>
+                    <div style="flex:1"><label>קבוצות</label><select id="hTeams"><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+                    <div style="flex:1"><label>זמן</label><input type="number" id="hTime" value="60"></div>
                 </div>
-                <button onclick="create()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:10px; font-size:1.2rem; margin-top:20px; cursor:pointer;">פתח חדר</button>
+                <button class="btn-main" onclick="create()">פתח חדר</button>
             </div>
 
             <div id="dashboard" class="hidden" style="width:100%; display:flex; flex-direction:column; align-items:center;">
                 <div class="info-bar">
                     <div><span style="opacity:0.7">קוד:</span><div class="code" id="dCode">---</div></div>
-                    
-                    <!-- Join as Player -->
                     <div style="background:rgba(255,255,255,0.1); padding:10px; border-radius:15px; display:flex; align-items:center; gap:10px;">
                         <span>שחק בעצמך:</span>
-                        <select id="joinTeamSelect" style="margin:0; width:120px;"></select>
+                        <select id="joinTeamSelect" style="margin:0; width:120px; color:black;"></select>
                         <button onclick="joinAsPlayer()" style="background:#3498db; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer;">כנס</button>
                     </div>
                 </div>
@@ -92,9 +88,12 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    
     <script>
-        let socket, gameCode;
-        try { socket = io(); } catch(e) { socket = { on:()=>{}, emit:()=>{} }; }
+        let socket;
+        try { if(typeof io !== 'undefined') socket = io(); else throw new Error(); } catch(e) { socket = { on:()=>{}, emit:()=>{} }; }
+
+        let gameCode = null, hostName = '';
 
         function setTab(t) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -104,9 +103,9 @@
         }
 
         function create() {
-            const name = document.getElementById('hName').value;
-            if(!name) return alert('נא להזין שם');
-            socket.emit('speed:createGame', { hostName: name, teamCount: parseInt(document.getElementById('hTeams').value), duration: parseInt(document.getElementById('hTime').value) });
+            hostName = document.getElementById('hName').value;
+            if(!hostName) return alert('נא להזין שם');
+            socket.emit('speed:createGame', { hostName, teamCount: parseInt(document.getElementById('hTeams').value), duration: parseInt(document.getElementById('hTime').value) });
         }
 
         socket.on('speed:gameCreated', ({ gameCode: code, teams }) => {
@@ -135,19 +134,18 @@
             }
 
             Object.values(teams).forEach(t => {
-                const players = t.players.map(p => p.name).join(', ');
                 const link = `${window.location.origin}/speed/player.html?code=${gameCode}&teamId=${t.id}`;
-                const waLink = `https://wa.me/?text=${encodeURIComponent('בואו לשחק בקבוצה שלי בספיד-מניה! ⚡\n' + link)}`;
+                const waLink = `https://wa.me/?text=${encodeURIComponent('בואו לשחק בקבוצה שלי! ' + link)}`;
+                const words = t.foundWords.map(w => `<span class="word-badge">${w}</span>`).join('');
 
                 grid.innerHTML += `
                     <div class="team-card" style="border-top-color:${t.color}">
                         <div style="margin-bottom:10px;">
                             <strong>${t.name}</strong>
-                            <a href="${waLink}" target="_blank" class="wa-btn">שלח בווצאפ <i class="ph-bold ph-whatsapp-logo"></i></a>
+                            <a href="${waLink}" target="_blank" class="wa-link">ווצאפ 📲</a>
                         </div>
                         <div class="score-badge">${t.score}</div>
-                        <div style="font-size:0.8rem; color:#666;">${players}</div>
-                        <div class="team-words">${t.foundWords.length} מילים נמצאו</div>
+                        <div class="team-words">${words}</div>
                     </div>
                 `;
             });
@@ -157,8 +155,7 @@
 
         function joinAsPlayer() {
             const teamId = document.getElementById('joinTeamSelect').value;
-            const name = document.getElementById('hName').value;
-            document.getElementById('playerFrame').src = `player.html?code=${gameCode}&name=${encodeURIComponent(name + ' (מ)')}&teamId=${teamId}`;
+            document.getElementById('playerFrame').src = `player.html?code=${gameCode}&name=${encodeURIComponent(hostName + ' (מ)')}&teamId=${teamId}`;
             setTab('player');
             document.querySelectorAll('.tab-btn')[1].classList.add('active');
             document.querySelectorAll('.tab-btn')[0].classList.remove('active');
