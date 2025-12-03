@@ -10,33 +10,41 @@
         :root { --bg: #2B1E4A; --tile: #fff; --accent: #FFD700; --primary: #F84779; }
         body { margin:0; background: var(--bg); color: white; font-family: "Varela Round", sans-serif; overflow: hidden; user-select: none; display: flex; flex-direction: column; height: 100dvh; }
         
+        .help-icon { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.6); font-size: 1.5rem; text-decoration: none; z-index: 100; }
+        
         #loginScreen, #waitScreen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
         input { width: 100%; max-width: 300px; padding: 15px; margin-bottom: 10px; border-radius: 12px; border: none; text-align: center; font-size: 1.2rem; }
         .btn { width: 100%; max-width: 300px; padding: 15px; border-radius: 50px; background: linear-gradient(135deg, var(--primary), #ff8e53); border: none; color: white; font-weight: bold; font-size: 1.2rem; cursor: pointer; }
 
+        /* Team Members Bar */
+        .team-members-bar { padding: 5px; background: rgba(0,0,0,0.2); font-size: 0.8rem; text-align: center; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
         #gameScreen { height: 100%; display: flex; flex-direction: column; }
-        .top-bar { padding: 15px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; }
+        .top-bar { padding: 10px 15px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; }
         .timer { background: var(--primary); padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 1.2rem; }
         
         .words-area { flex: 1; margin: 10px; background: rgba(255,255,255,0.05); border-radius: 15px; padding: 10px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
-        .word-tag { background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; animation: popIn 0.3s; }
-
+        .word-tag { background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; animation: popIn 0.3s; font-size: 0.9rem; }
+        
         .play-area { background: rgba(0,0,0,0.3); border-radius: 25px 25px 0 0; padding: 20px 10px 30px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.3); }
         .slots { display: flex; gap: 5px; justify-content: center; height: 60px; }
         .slot { width: 13vw; height: 13vw; max-width: 60px; max-height: 60px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         .bank { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 70px; }
         .tile { width: 13vw; height: 13vw; max-width: 60px; max-height: 60px; background: var(--tile); color: #2B1E4A; border-radius: 12px; font-size: 1.8rem; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #ccc; cursor: pointer; }
+        
         .actions { display: flex; gap: 10px; width: 100%; max-width: 600px; margin: 0 auto; }
         .act-btn { flex: 1; padding: 15px; border-radius: 15px; border: none; font-size: 1.4rem; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-clear { background: #e74c3c; flex: 0.6; }
         .btn-submit { background: #2ecc71; flex: 2; font-weight: 800; }
-        .btn-submit:active { transform: scale(0.95); }
+        .btn-submit:active { background: #27ae60; transform: scale(0.98); }
 
         .hidden { display: none !important; }
         @keyframes popIn { from{transform:scale(0)} to{transform:scale(1)} }
     </style>
 </head>
 <body>
+    <a href="../instructions.html" target="_blank" class="help-icon"><i class="ph-bold ph-question"></i></a>
+
     <div id="loginScreen">
         <h1 style="margin-bottom:20px; color:var(--accent);">ספיד מניה ⚡</h1>
         <input type="text" id="code" placeholder="קוד משחק" style="text-transform:uppercase;">
@@ -44,26 +52,31 @@
         <button class="btn" onclick="join()">כנס למשחק</button>
         <p id="statusMsg" style="color:#ff6b6b; margin-top:10px;"></p>
     </div>
+
     <div id="waitScreen" class="hidden">
         <h2 id="waitTitle"></h2>
-        <p>ממתינים למנהל...</p>
+        <p>ממתינים למנהל שיתחיל...</p>
         <div style="font-size:4rem; margin-top:20px;">⏳</div>
+        <div id="rosterList" style="margin-top:20px; color:#aaa; font-size:0.9rem;"></div>
     </div>
+
     <div id="gameScreen" class="hidden">
         <div class="top-bar">
             <span id="teamDisplay" style="font-weight:bold;"></span>
             <div class="timer" id="timer">60</div>
         </div>
+        <div id="membersBar" class="team-members-bar"></div>
         <div id="words" class="words-area"></div>
         <div class="play-area">
             <div class="slots" id="slots"></div>
             <div class="bank" id="bank"></div>
             <div class="actions">
                 <button class="act-btn btn-clear" onclick="clearBoard()"><i class="ph-bold ph-x"></i></button>
-                <button class="act-btn btn-submit" onclick="submit()">שלח <i class="ph-bold ph-paper-plane-right" style="margin-right:10px;"></i></button>
+                <button class="act-btn btn-submit" onclick="submit()" ontouchstart="submit()">שלח <i class="ph-bold ph-paper-plane-right" style="margin-right:10px;"></i></button>
             </div>
         </div>
     </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
@@ -93,6 +106,13 @@
             else document.getElementById('waitScreen').classList.remove('hidden');
         });
 
+        socket.on('speed:rosterUpdate', ({teams}) => {
+            if(!myTeamId || !teams[myTeamId]) return;
+            const names = teams[myTeamId].players.map(p => p.name).join(', ');
+            document.getElementById('rosterList').innerText = "חברים בקבוצה: " + names;
+            document.getElementById('membersBar').innerText = names;
+        });
+
         socket.on('speed:roundStart', ({ letters: l, duration }) => startRoundLogic(l, duration));
 
         function startRoundLogic(l, duration) {
@@ -120,7 +140,9 @@
             const tag = document.createElement('div');
             tag.className = 'word-tag';
             tag.innerText = word;
-            document.getElementById('words').appendChild(tag);
+            const area = document.getElementById('words');
+            area.appendChild(tag);
+            area.scrollTop = area.scrollHeight;
             slotsState.fill(null);
             render(false);
         });
@@ -129,6 +151,7 @@
             const slotsEl = document.getElementById('slots');
             const bankEl = document.getElementById('bank');
             slotsEl.innerHTML = ''; bankEl.innerHTML = '';
+
             for(let i=0; i<7; i++) {
                 const slot = document.createElement('div');
                 slot.className = 'slot';
@@ -139,6 +162,7 @@
                 }
                 slotsEl.appendChild(slot);
             }
+
             letters.forEach(l => {
                 if(!slotsState.includes(l)) {
                     const tile = createTile(l);
@@ -149,6 +173,7 @@
                     bankEl.appendChild(tile);
                 }
             });
+
             if(emit && myTeamId) {
                 const indices = slotsState.map(o => o ? o.id : null);
                 socket.emit('speed:updateTeamBoard', { indices });
@@ -166,7 +191,13 @@
         
         function submit() {
             const word = slotsState.filter(x => x).map(x => x.char).join('');
-            if(word.length >= 2) socket.emit('speed:submitWord', { word });
+            if(word.length >= 2) {
+                socket.emit('speed:submitWord', { word });
+                // פידבק מיידי
+                const btn = document.querySelector('.btn-submit');
+                btn.style.transform = 'scale(0.95)';
+                setTimeout(() => btn.style.transform = 'scale(1)', 100);
+            }
         }
     </script>
 </body>
