@@ -10,7 +10,6 @@
         :root { --bg: #2B1E4A; --tile: #fff; --accent: #FFD700; --primary: #F84779; }
         body { margin:0; background: var(--bg); color: white; font-family: "Varela Round", sans-serif; overflow: hidden; user-select: none; display: flex; flex-direction: column; height: 100dvh; }
         
-        .help-icon { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.6); font-size: 1.5rem; text-decoration: none; }
         #loginScreen, #waitScreen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
         input { width: 100%; max-width: 300px; padding: 15px; margin-bottom: 10px; border-radius: 12px; border: none; text-align: center; font-size: 1.2rem; }
         .btn { width: 100%; max-width: 300px; padding: 15px; border-radius: 50px; background: linear-gradient(135deg, var(--primary), #ff8e53); border: none; color: white; font-weight: bold; font-size: 1.2rem; cursor: pointer; }
@@ -19,7 +18,7 @@
         .top-bar { padding: 15px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; }
         .timer { background: var(--primary); padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 1.2rem; }
         
-        .words-area { flex: 1; margin: 10px; background: rgba(255,255,255,0.05); border-radius: 15px; padding: 10px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; border: 1px solid rgba(255,255,255,0.1); }
+        .words-area { flex: 1; margin: 10px; background: rgba(255,255,255,0.05); border-radius: 15px; padding: 10px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
         .word-tag { background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; animation: popIn 0.3s; }
 
         .play-area { background: rgba(0,0,0,0.3); border-radius: 25px 25px 0 0; padding: 20px 10px 30px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.3); }
@@ -31,19 +30,13 @@
         .act-btn { flex: 1; padding: 15px; border-radius: 15px; border: none; font-size: 1.4rem; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-clear { background: #e74c3c; flex: 0.6; }
         .btn-submit { background: #2ecc71; flex: 2; font-weight: 800; }
-        
-        /* אנימציית שגיאה */
-        .shake { animation: shake 0.3s; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .btn-submit:active { transform: scale(0.95); }
 
         .hidden { display: none !important; }
         @keyframes popIn { from{transform:scale(0)} to{transform:scale(1)} }
     </style>
 </head>
 <body>
-
-    <a href="../instructions.html" target="_blank" class="help-icon"><i class="ph-bold ph-question"></i></a>
-
     <div id="loginScreen">
         <h1 style="margin-bottom:20px; color:var(--accent);">ספיד מניה ⚡</h1>
         <input type="text" id="code" placeholder="קוד משחק" style="text-transform:uppercase;">
@@ -51,13 +44,11 @@
         <button class="btn" onclick="join()">כנס למשחק</button>
         <p id="statusMsg" style="color:#ff6b6b; margin-top:10px;"></p>
     </div>
-
     <div id="waitScreen" class="hidden">
         <h2 id="waitTitle"></h2>
-        <p>ממתינים למנהל שיתחיל...</p>
+        <p>ממתינים למנהל...</p>
         <div style="font-size:4rem; margin-top:20px;">⏳</div>
     </div>
-
     <div id="gameScreen" class="hidden">
         <div class="top-bar">
             <span id="teamDisplay" style="font-weight:bold;"></span>
@@ -69,18 +60,15 @@
             <div class="bank" id="bank"></div>
             <div class="actions">
                 <button class="act-btn btn-clear" onclick="clearBoard()"><i class="ph-bold ph-x"></i></button>
-                <button class="act-btn btn-submit" onclick="sendCurrentWord()">שלח <i class="ph-bold ph-paper-plane-right" style="margin-right:10px;"></i></button>
+                <button class="act-btn btn-submit" onclick="submit()">שלח <i class="ph-bold ph-paper-plane-right" style="margin-right:10px;"></i></button>
             </div>
         </div>
     </div>
-
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
-        let socket;
-        try { if(typeof io !== 'undefined') socket = io(); else throw new Error("No Socket"); } catch(e) { socket = { on:()=>{}, emit:()=>{} }; }
-        
-        let letters = [], slotsState = Array(7).fill(null), myTeamId = null;
+        let socket, letters = [], slotsState = Array(7).fill(null), myTeamId = null;
+        try { socket = io(); } catch(e) { socket = { on:()=>{}, emit:()=>{} }; }
 
         const urlParams = new URLSearchParams(location.search);
         if(urlParams.get('code')) document.getElementById('code').value = urlParams.get('code');
@@ -118,8 +106,7 @@
             let sec = duration;
             const t = setInterval(() => {
                 sec--;
-                const timerEl = document.getElementById('timer');
-                if(timerEl) timerEl.innerText = sec;
+                document.getElementById('timer').innerText = sec;
                 if(sec<=0) clearInterval(t);
             }, 1000);
         }
@@ -133,9 +120,7 @@
             const tag = document.createElement('div');
             tag.className = 'word-tag';
             tag.innerText = word;
-            const area = document.getElementById('words');
-            area.appendChild(tag);
-            area.scrollTop = area.scrollHeight;
+            document.getElementById('words').appendChild(tag);
             slotsState.fill(null);
             render(false);
         });
@@ -144,7 +129,6 @@
             const slotsEl = document.getElementById('slots');
             const bankEl = document.getElementById('bank');
             slotsEl.innerHTML = ''; bankEl.innerHTML = '';
-
             for(let i=0; i<7; i++) {
                 const slot = document.createElement('div');
                 slot.className = 'slot';
@@ -155,7 +139,6 @@
                 }
                 slotsEl.appendChild(slot);
             }
-
             letters.forEach(l => {
                 if(!slotsState.includes(l)) {
                     const tile = createTile(l);
@@ -166,7 +149,6 @@
                     bankEl.appendChild(tile);
                 }
             });
-
             if(emit && myTeamId) {
                 const indices = slotsState.map(o => o ? o.id : null);
                 socket.emit('speed:updateTeamBoard', { indices });
@@ -182,23 +164,9 @@
 
         function clearBoard() { slotsState.fill(null); render(); }
         
-        // שיניתי את שם הפונקציה מ-submit ל-sendCurrentWord
-        function sendCurrentWord() {
+        function submit() {
             const word = slotsState.filter(x => x).map(x => x.char).join('');
-            
-            if(word.length < 2) {
-                // פידבק ויזואלי לשגיאה
-                const btn = document.querySelector('.btn-submit');
-                btn.style.backgroundColor = '#e74c3c';
-                btn.classList.add('shake');
-                setTimeout(() => {
-                    btn.style.backgroundColor = '#2ecc71';
-                    btn.classList.remove('shake');
-                }, 500);
-                return;
-            }
-            
-            socket.emit('speed:submitWord', { word });
+            if(word.length >= 2) socket.emit('speed:submitWord', { word });
         }
     </script>
 </body>
